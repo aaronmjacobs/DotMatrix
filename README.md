@@ -1,3 +1,3 @@
 #run-gbc
-##GameBoy Color Emulator
+##Game Boy Color Emulator
 
