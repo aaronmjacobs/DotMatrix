@@ -1,0 +1,20 @@
+#ifndef CONSTANTS_H
+#define CONSTANTS_H
+
+#define PROJECT_NAME "@PROJECT_NAME@"
+
+#define VERSION_TYPE "@VERSION_TYPE@"
+#define VERSION_MAJOR @VERSION_MAJOR@
+#define VERSION_MINOR @VERSION_MINOR@
+#define VERSION_MICRO @VERSION_MICRO@
+#define VERSION_BUILD @VERSION_BUILD@
+
+#cmakedefine LOG_TO_FILE
+
+#ifdef NDEBUG
+#define DATA_DIR "data"
+#else
+#define DATA_DIR "@DATA_DIR@"
+#endif // NDEBUG
+
+#endif

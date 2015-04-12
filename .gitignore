@@ -1,31 +1,3 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Ignore content built with CMake
+build/
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# Temporary Files
-*~
