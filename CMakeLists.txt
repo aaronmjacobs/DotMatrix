@@ -2,6 +2,7 @@
 
 cmake_minimum_required(VERSION 2.8)
 project(run-gbc)
+set(PROJECT_DISPLAY_NAME "Run-G.B.C.")
 
 # Version info
 set(VERSION_TYPE "Pre-Alpha")
@@ -33,6 +34,7 @@ set(SOURCES
 set(HEADERS
    ${BIN_INCLUDE_DIR}/Constants.h
    ${SRC_DIR}/FancyAssert.h
+   ${SRC_DIR}/GLIncludes.h
    ${SRC_DIR}/LogHelper.h
 )
 
@@ -58,12 +60,36 @@ set(BOXER_INCLUDE_DIR "${BOXER_DIR}/include")
 set(BOXER_LIBRARY Boxer)
 add_subdirectory(${BOXER_DIR})
 
+# GLFW
+set(GLFW_DIR "${DEP_DIR}/glfw")
+set(GLFW_INCLUDE_DIR "${GLFW_DIR}/include")
+set(GLFW_LIBRARY glfw)
+set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build shared libraries")
+set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs")
+set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs")
+set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
+set(GLFW_INSTALL OFF CACHE INTERNAL "Generate installation target")
+add_subdirectory(${GLFW_DIR})
+
+# glad
+set(GLAD_DIR "${DEP_DIR}/glad")
+set(GLAD_INCLUDE_DIR "${GLAD_DIR}/include")
+list(APPEND SOURCES
+   ${GLAD_DIR}/src/glad.c
+)
+
 ### Building ###
 
 # C++11
 if (NOT WIN32)
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif (NOT WIN32)
+
+# OpenGL
+find_package(OpenGL REQUIRED)
+if(NOT OPENGL_FOUND)
+    message(ERROR " OpenGL not found!")
+endif(NOT OPENGL_FOUND)
 
 # Includes
 include_directories(
@@ -72,15 +98,23 @@ include_directories(
    ${PEMPEK_INCLUDE_DIR}
    ${TEMPLOG_INCLUDE_DIR}
    ${BOXER_INCLUDE_DIR}
+   ${GLFW_INCLUDE_DIR}
+   ${GLAD_INCLUDE_DIR}
 )
 
 # Libraries
 set(RELEASE_LIBRARIES
+   ${OPENGL_LIBRARIES}
    ${BOXER_LIBRARY}
+   ${GLFW_LIBRARY}
+   ${CMAKE_DL_LIBS} # Needed for glad on Linux
 )
 
 set(DEBUG_LIBRARIES
+   ${OPENGL_LIBRARIES}
    ${BOXER_LIBRARY}
+   ${GLFW_LIBRARY}
+   ${CMAKE_DL_LIBS} # Needed for glad on Linux
 )
 
 foreach(RELEASE_LIBRARY ${RELEASE_LIBRARIES})
