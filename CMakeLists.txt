@@ -29,6 +29,12 @@ configure_file (
 # Source content
 set(SOURCES
    ${SRC_DIR}/main.cpp
+   ${SRC_DIR}/wrapper/Mesh.cpp
+   ${SRC_DIR}/wrapper/Model.cpp
+   ${SRC_DIR}/wrapper/Renderer.cpp
+   ${SRC_DIR}/wrapper/Shader.cpp
+   ${SRC_DIR}/wrapper/ShaderProgram.cpp
+   ${SRC_DIR}/wrapper/Texture.cpp
 )
 
 set(HEADERS
@@ -36,6 +42,14 @@ set(HEADERS
    ${SRC_DIR}/FancyAssert.h
    ${SRC_DIR}/GLIncludes.h
    ${SRC_DIR}/LogHelper.h
+   ${SRC_DIR}/Types.h
+   ${SRC_DIR}/gbc/Video.h
+   ${SRC_DIR}/wrapper/Mesh.h
+   ${SRC_DIR}/wrapper/Model.h
+   ${SRC_DIR}/wrapper/Renderer.h
+   ${SRC_DIR}/wrapper/Shader.h
+   ${SRC_DIR}/wrapper/ShaderProgram.h
+   ${SRC_DIR}/wrapper/Texture.h
 )
 
 ### Libraries ###
