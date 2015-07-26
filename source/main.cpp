@@ -1,6 +1,7 @@
 #include "Constants.h"
 #include "GLIncludes.h"
 #include "LogHelper.h"
+#include "wrapper/Renderer.h"
 
 #include <cstdlib>
 
@@ -39,6 +40,16 @@ GLFWwindow* init() {
    return window;
 }
 
+uint8_t dist(float x1, float y1, float x2, float y2) {
+   const float MAX_DIST = 80.0f;
+
+   float xDiff = x2 - x1;
+   float yDiff = y2 - y1;
+   float dist = sqrt(yDiff * yDiff + xDiff * xDiff);
+   float relativeDist = fmin(dist / MAX_DIST, 1.0f);
+   return 0x1F - (uint8_t)(relativeDist * 0x1F);
+}
+
 } // namespace
 
 int main(int argc, char *argv[]) {
@@ -50,8 +61,18 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
    }
 
+   Renderer renderer;
+   std::array<GBC::Pixel, GBC::SCREEN_WIDTH * GBC::SCREEN_HEIGHT> pixels;
+   for (int i = 0; i < pixels.size(); ++i) {
+      int x = i % GBC::SCREEN_WIDTH;
+      int y = i / GBC::SCREEN_WIDTH;
+      pixels[i] = { dist(x, y, GBC::SCREEN_WIDTH * 0.25f, GBC::SCREEN_HEIGHT * 0.35f),
+                    dist(x, y, GBC::SCREEN_WIDTH * 0.50f, GBC::SCREEN_HEIGHT * 0.75f),
+                    dist(x, y, GBC::SCREEN_WIDTH * 0.75f, GBC::SCREEN_HEIGHT * 0.35f) };
+   }
+
    while (!glfwWindowShouldClose(window)) {
-      glClear(GL_COLOR_BUFFER_BIT);
+      renderer.draw(pixels);
 
       glfwSwapBuffers(window);
 
