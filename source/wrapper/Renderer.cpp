@@ -127,6 +127,12 @@ Renderer::Renderer()
 Renderer::~Renderer() {
 }
 
+void Renderer::onFramebufferSizeChange(int width, int height) {
+   ASSERT(width >= 0 && height >= 0, "Invalid framebuffer size: %d x %d", width, height);
+
+   glViewport(0, 0, width, height);
+}
+
 void Renderer::draw(const std::array<GBC::Pixel, GBC::SCREEN_WIDTH * GBC::SCREEN_HEIGHT> &pixels) {
    RUN_DEBUG(checkGLError();)
 

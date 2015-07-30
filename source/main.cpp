@@ -4,8 +4,17 @@
 #include "wrapper/Renderer.h"
 
 #include <cstdlib>
+#include <functional>
 
 namespace {
+
+std::function<void(int, int)> framebufferCallback;
+
+void onFramebufferSizeChange(GLFWwindow *window, int width, int height) {
+   if (framebufferCallback) {
+      framebufferCallback(width, height);
+   }
+}
 
 GLFWwindow* init() {
    int glfwInitRes = glfwInit();
@@ -19,13 +28,14 @@ GLFWwindow* init() {
    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-   GLFWwindow *window = glfwCreateWindow(160, 144, PROJECT_DISPLAY_NAME, nullptr, nullptr);
+   GLFWwindow *window = glfwCreateWindow(GBC::SCREEN_WIDTH, GBC::SCREEN_HEIGHT, PROJECT_DISPLAY_NAME, nullptr, nullptr);
    if (!window) {
       glfwTerminate();
       LOG_ERROR("Unable to create GLFW window");
       return nullptr;
    }
 
+   glfwSetFramebufferSizeCallback(window, onFramebufferSizeChange);
    glfwMakeContextCurrent(window);
    glfwSwapInterval(1); // VSYNC
 
@@ -70,6 +80,10 @@ int main(int argc, char *argv[]) {
                     dist(x, y, GBC::SCREEN_WIDTH * 0.50f, GBC::SCREEN_HEIGHT * 0.75f),
                     dist(x, y, GBC::SCREEN_WIDTH * 0.75f, GBC::SCREEN_HEIGHT * 0.35f) };
    }
+
+   framebufferCallback = [&renderer](int width, int height) {
+      renderer.onFramebufferSizeChange(width, height);
+   };
 
    while (!glfwWindowShouldClose(window)) {
       renderer.draw(pixels);

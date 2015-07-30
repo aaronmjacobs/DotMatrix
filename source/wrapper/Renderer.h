@@ -18,6 +18,8 @@ public:
 
    virtual ~Renderer();
 
+   void onFramebufferSizeChange(int width, int height);
+
    void draw(const std::array<GBC::Pixel, GBC::SCREEN_WIDTH * GBC::SCREEN_HEIGHT> &pixels);
 };
 
