@@ -6,8 +6,8 @@
 
 namespace GBC {
 
-const size_t SCREEN_WIDTH = 160;
-const size_t SCREEN_HEIGHT = 144;
+const size_t kScreenWidth = 160;
+const size_t kScreenHeight = 144;
 
 // 15 bits per pixel
 struct Pixel {
@@ -19,3 +19,4 @@ struct Pixel {
 } // namespace GBC
 
 #endif
+

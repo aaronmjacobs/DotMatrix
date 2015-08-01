@@ -74,8 +74,8 @@ void checkGLError() {
    }
 }
 
-void fiveToEightBit(const std::array<GBC::Pixel, GBC::SCREEN_WIDTH * GBC::SCREEN_HEIGHT> &pixels,
-                    std::array<GBC::Pixel, GBC::SCREEN_WIDTH * GBC::SCREEN_HEIGHT> &eightBitPixels) {
+void fiveToEightBit(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> &pixels,
+                    std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> &eightBitPixels) {
    // Transform pixels from 5-bit to 8-bit format
    for (int i = 0; i < pixels.size(); ++i) {
       eightBitPixels[i].r = (pixels[i].r * 255) / 31;
@@ -119,7 +119,7 @@ Renderer::Renderer()
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, GBC::SCREEN_WIDTH, GBC::SCREEN_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, GBC::kScreenWidth, GBC::kScreenHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
    model.getProgram().setUniformValue("uTexture", textureUnit);
 }
@@ -133,13 +133,13 @@ void Renderer::onFramebufferSizeChange(int width, int height) {
    glViewport(0, 0, width, height);
 }
 
-void Renderer::draw(const std::array<GBC::Pixel, GBC::SCREEN_WIDTH * GBC::SCREEN_HEIGHT> &pixels) {
+void Renderer::draw(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> &pixels) {
    RUN_DEBUG(checkGLError();)
 
-   std::array<GBC::Pixel, GBC::SCREEN_WIDTH * GBC::SCREEN_HEIGHT> eightBitPixels;
+   std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> eightBitPixels;
    fiveToEightBit(pixels, eightBitPixels);
 
-   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GBC::SCREEN_WIDTH, GBC::SCREEN_HEIGHT,
+   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GBC::kScreenWidth, GBC::kScreenHeight,
                    GL_RGB, GL_UNSIGNED_BYTE, eightBitPixels.data());
  
    model.draw();

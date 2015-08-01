@@ -20,7 +20,7 @@ public:
 
    void onFramebufferSizeChange(int width, int height);
 
-   void draw(const std::array<GBC::Pixel, GBC::SCREEN_WIDTH * GBC::SCREEN_HEIGHT> &pixels);
+   void draw(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> &pixels);
 };
 
 #endif

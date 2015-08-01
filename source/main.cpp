@@ -28,7 +28,7 @@ GLFWwindow* init() {
    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-   GLFWwindow *window = glfwCreateWindow(GBC::SCREEN_WIDTH, GBC::SCREEN_HEIGHT, PROJECT_DISPLAY_NAME, nullptr, nullptr);
+   GLFWwindow *window = glfwCreateWindow(GBC::kScreenWidth, GBC::kScreenHeight, PROJECT_DISPLAY_NAME, nullptr, nullptr);
    if (!window) {
       glfwTerminate();
       LOG_ERROR("Unable to create GLFW window");
@@ -72,13 +72,13 @@ int main(int argc, char *argv[]) {
    }
 
    Renderer renderer;
-   std::array<GBC::Pixel, GBC::SCREEN_WIDTH * GBC::SCREEN_HEIGHT> pixels;
+   std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> pixels;
    for (int i = 0; i < pixels.size(); ++i) {
-      int x = i % GBC::SCREEN_WIDTH;
-      int y = i / GBC::SCREEN_WIDTH;
-      pixels[i] = { dist(x, y, GBC::SCREEN_WIDTH * 0.25f, GBC::SCREEN_HEIGHT * 0.35f),
-                    dist(x, y, GBC::SCREEN_WIDTH * 0.50f, GBC::SCREEN_HEIGHT * 0.75f),
-                    dist(x, y, GBC::SCREEN_WIDTH * 0.75f, GBC::SCREEN_HEIGHT * 0.35f) };
+      int x = i % GBC::kScreenWidth;
+      int y = i / GBC::kScreenWidth;
+      pixels[i] = { dist(x, y, GBC::kScreenWidth * 0.25f, GBC::kScreenHeight * 0.35f),
+                    dist(x, y, GBC::kScreenWidth * 0.50f, GBC::kScreenHeight * 0.75f),
+                    dist(x, y, GBC::kScreenWidth * 0.75f, GBC::kScreenHeight * 0.35f) };
    }
 
    framebufferCallback = [&renderer](int width, int height) {
