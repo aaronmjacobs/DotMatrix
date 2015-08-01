@@ -29,6 +29,7 @@ configure_file (
 # Source content
 set(SOURCES
    ${SRC_DIR}/main.cpp
+   ${SRC_DIR}/wrapper/KeyboardInputDevice.cpp
    ${SRC_DIR}/wrapper/Mesh.cpp
    ${SRC_DIR}/wrapper/Model.cpp
    ${SRC_DIR}/wrapper/Renderer.cpp
@@ -44,6 +45,8 @@ set(HEADERS
    ${SRC_DIR}/LogHelper.h
    ${SRC_DIR}/Types.h
    ${SRC_DIR}/gbc/Video.h
+   ${SRC_DIR}/wrapper/InputDevice.h
+   ${SRC_DIR}/wrapper/KeyboardInputDevice.h
    ${SRC_DIR}/wrapper/Mesh.h
    ${SRC_DIR}/wrapper/Model.h
    ${SRC_DIR}/wrapper/Renderer.h
