@@ -30,6 +30,7 @@ configure_file (
 set(SOURCES
    ${SRC_DIR}/main.cpp
    ${SRC_DIR}/gbc/CPU.cpp
+   ${SRC_DIR}/wrapper/AudioManager.cpp
    ${SRC_DIR}/wrapper/KeyboardInputDevice.cpp
    ${SRC_DIR}/wrapper/Mesh.cpp
    ${SRC_DIR}/wrapper/Model.cpp
@@ -48,6 +49,7 @@ set(HEADERS
    ${SRC_DIR}/gbc/CPU.h
    ${SRC_DIR}/gbc/Memory.h
    ${SRC_DIR}/gbc/Video.h
+   ${SRC_DIR}/wrapper/AudioManager.h
    ${SRC_DIR}/wrapper/InputDevice.h
    ${SRC_DIR}/wrapper/KeyboardInputDevice.h
    ${SRC_DIR}/wrapper/Mesh.h
