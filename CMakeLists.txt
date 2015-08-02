@@ -98,6 +98,21 @@ list(APPEND SOURCES
    ${GLAD_DIR}/src/glad.c
 )
 
+# OpenAL
+set(OPENAL_DIR "${DEP_DIR}/openal-soft")
+set(OPENAL_INCLUDE_DIR "${OPENAL_DIR}/include")
+if(WIN32)
+   set(OPENAL_LIBRARY OpenAL32)
+else()
+   set(OPENAL_LIBRARY openal)
+endif()
+set(ALSOFT_UTILS OFF CACHE INTERNAL "Build and install utility programs")
+set(ALSOFT_NO_CONFIG_UTIL ON CACHE INTERNAL "Disable building the alsoft-config utility")
+set(ALSOFT_EXAMPLES OFF CACHE INTERNAL "Build and install example programs")
+set(ALSOFT_CONFIG OFF CACHE INTERNAL "Install alsoft.conf sample configuration file")
+set(ALSOFT_HRTF_DEFS OFF CACHE INTERNAL "Install HRTF definition files")
+add_subdirectory(${OPENAL_DIR})
+
 ### Building ###
 
 # C++11
@@ -120,6 +135,7 @@ include_directories(
    ${BOXER_INCLUDE_DIR}
    ${GLFW_INCLUDE_DIR}
    ${GLAD_INCLUDE_DIR}
+   ${OPENAL_INCLUDE_DIR}
 )
 
 # Libraries
@@ -128,6 +144,7 @@ set(RELEASE_LIBRARIES
    ${BOXER_LIBRARY}
    ${GLFW_LIBRARY}
    ${CMAKE_DL_LIBS} # Needed for glad on Linux
+   ${OPENAL_LIBRARY}
 )
 
 set(DEBUG_LIBRARIES
@@ -135,6 +152,7 @@ set(DEBUG_LIBRARIES
    ${BOXER_LIBRARY}
    ${GLFW_LIBRARY}
    ${CMAKE_DL_LIBS} # Needed for glad on Linux
+   ${OPENAL_LIBRARY}
 )
 
 foreach(RELEASE_LIBRARY ${RELEASE_LIBRARIES})

@@ -1,3 +1,6 @@
 [submodule "dependencies/glfw"]
 	path = dependencies/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "dependencies/openal-soft"]
+	path = dependencies/openal-soft
+	url = git://repo.or.cz/openal-soft.git
