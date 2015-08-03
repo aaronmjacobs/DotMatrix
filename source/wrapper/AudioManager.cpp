@@ -2,11 +2,14 @@
 
 #include "FancyAssert.h"
 #include "LogHelper.h"
+#include "gbc/Audio.h"
 
 #include <AL/al.h>
 #include <AL/alc.h>
 
 namespace {
+
+const ALsizei kAudioFrequency = 44100;
 
 void deleteDevice(ALCdevice *device) {
    if (device) {
@@ -81,11 +84,18 @@ AudioManager::AudioManager()
    alSourcei(source, AL_LOOPING, AL_FALSE);
    RUN_DEBUG(checkError("disabling source looping");)
 
-   alGenBuffers(1, &buffer);
-   RUN_DEBUG(checkError("generating buffer");)
+   alGenBuffers(buffers.size(), buffers.data());
+   RUN_DEBUG(checkError("generating buffers");)
 
-   alSourcei(source, AL_BUFFER, buffer);
-   RUN_DEBUG(checkError("binding buffer to source");)
+   std::array<uint8_t, GBC::kAudioBufferSize> silence;
+   silence.fill(128);
+   for (ALuint buffer : buffers) {
+      alBufferData(buffer, AL_FORMAT_MONO8, silence.data(), silence.size(), kAudioFrequency);
+      RUN_DEBUG(checkError("setting buffer data");)
+   }
+
+   alSourceQueueBuffers(source, buffers.size(), buffers.data());
+   RUN_DEBUG(checkError("queueing buffers");)
 
    alSourcePlay(source);
    RUN_DEBUG(checkError("playing source");)
@@ -94,10 +104,7 @@ AudioManager::AudioManager()
 AudioManager::~AudioManager() {
    if (alIsSource(source)) {
       alDeleteSources(1, &source);
-   }
-
-   if (alIsBuffer(buffer)) {
-      alDeleteBuffers(1, &buffer);
+      alDeleteBuffers(buffers.size(), buffers.data());
    }
 
    alcMakeContextCurrent(nullptr);
@@ -107,7 +114,32 @@ AudioManager::~AudioManager() {
    device = nullptr;
 }
 
-void AudioManager::bufferData(const uint8_t *data, size_t size) {
-   alBufferData(buffer, AL_FORMAT_MONO8, data, size, 44100);
+void AudioManager::queue(const uint8_t *data, size_t size) {
+   ALint numProcessed;
+   alGetSourcei(source, AL_BUFFERS_PROCESSED, &numProcessed);
+   RUN_DEBUG(checkError("querying number of buffers processed");)
+
+   if (numProcessed < 1) {
+      // No room for more audio data
+      return;
+   }
+
+   ALuint buffer;
+   alSourceUnqueueBuffers(source, 1, &buffer);
+   RUN_DEBUG(checkError("unqueueing buffer");)
+
+   alBufferData(buffer, AL_FORMAT_MONO8, data, size, kAudioFrequency);
    RUN_DEBUG(checkError("setting buffer data");)
+
+   alSourceQueueBuffers(source, 1, &buffer);
+   RUN_DEBUG(checkError("queueing buffer");)
+
+   ALint state;
+   alGetSourcei(source, AL_SOURCE_STATE, &state);
+   RUN_DEBUG(checkError("getting source state");)
+
+   if (state != AL_PLAYING) {
+      alSourcePlay(source);
+      RUN_DEBUG(checkError("playing source");)
+   }
 }

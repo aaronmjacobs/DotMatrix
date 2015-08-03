@@ -3,6 +3,7 @@
 
 #include "Types.h"
 
+#include <array>
 #include <cstdint>
 #include <functional>
 
@@ -17,14 +18,14 @@ private:
    UPtr<ALCdevice, std::function<void(ALCdevice*)>> device;
    UPtr<ALCcontext, std::function<void(ALCcontext*)>> context;
    ALuint source;
-   ALuint buffer;
+   std::array<ALuint, 2> buffers;
 
 public:
    AudioManager();
 
    virtual ~AudioManager();
 
-   void bufferData(const uint8_t *data, size_t size);
+   void queue(const uint8_t *data, size_t size);
 };
 
 #endif
