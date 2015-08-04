@@ -30,14 +30,14 @@ configure_file (
 set(SOURCES
    ${SRC_DIR}/main.cpp
    ${SRC_DIR}/gbc/CPU.cpp
-   ${SRC_DIR}/wrapper/AudioManager.cpp
-   ${SRC_DIR}/wrapper/KeyboardInputDevice.cpp
-   ${SRC_DIR}/wrapper/Mesh.cpp
-   ${SRC_DIR}/wrapper/Model.cpp
-   ${SRC_DIR}/wrapper/Renderer.cpp
-   ${SRC_DIR}/wrapper/Shader.cpp
-   ${SRC_DIR}/wrapper/ShaderProgram.cpp
-   ${SRC_DIR}/wrapper/Texture.cpp
+   ${SRC_DIR}/wrapper/audio/AudioManager.cpp
+   ${SRC_DIR}/wrapper/input/KeyboardInputDevice.cpp
+   ${SRC_DIR}/wrapper/video/Mesh.cpp
+   ${SRC_DIR}/wrapper/video/Model.cpp
+   ${SRC_DIR}/wrapper/video/Renderer.cpp
+   ${SRC_DIR}/wrapper/video/Shader.cpp
+   ${SRC_DIR}/wrapper/video/ShaderProgram.cpp
+   ${SRC_DIR}/wrapper/video/Texture.cpp
 )
 
 set(HEADERS
@@ -49,15 +49,15 @@ set(HEADERS
    ${SRC_DIR}/gbc/CPU.h
    ${SRC_DIR}/gbc/Memory.h
    ${SRC_DIR}/gbc/Video.h
-   ${SRC_DIR}/wrapper/AudioManager.h
-   ${SRC_DIR}/wrapper/InputDevice.h
-   ${SRC_DIR}/wrapper/KeyboardInputDevice.h
-   ${SRC_DIR}/wrapper/Mesh.h
-   ${SRC_DIR}/wrapper/Model.h
-   ${SRC_DIR}/wrapper/Renderer.h
-   ${SRC_DIR}/wrapper/Shader.h
-   ${SRC_DIR}/wrapper/ShaderProgram.h
-   ${SRC_DIR}/wrapper/Texture.h
+   ${SRC_DIR}/wrapper/audio/AudioManager.h
+   ${SRC_DIR}/wrapper/input/InputDevice.h
+   ${SRC_DIR}/wrapper/input/KeyboardInputDevice.h
+   ${SRC_DIR}/wrapper/video/Mesh.h
+   ${SRC_DIR}/wrapper/video/Model.h
+   ${SRC_DIR}/wrapper/video/Renderer.h
+   ${SRC_DIR}/wrapper/video/Shader.h
+   ${SRC_DIR}/wrapper/video/ShaderProgram.h
+   ${SRC_DIR}/wrapper/video/Texture.h
 )
 
 ### Libraries ###

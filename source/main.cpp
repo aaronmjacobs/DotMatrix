@@ -1,7 +1,7 @@
 #include "Constants.h"
 #include "GLIncludes.h"
 #include "LogHelper.h"
-#include "wrapper/Renderer.h"
+#include "wrapper/video/Renderer.h"
 
 #include <cstdlib>
 #include <functional>
