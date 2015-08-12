@@ -176,17 +176,17 @@ set(FULL_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/${INSTALL_DIR}")
 
 if(WIN32)
    # Install the executable
-   install(TARGETS ${PROJECT_NAME} DESTINATION "${INSTALL_DIR}" COMPONENT Runtime)
+   install(TARGETS ${PROJECT_NAME} DESTINATION "${INSTALL_DIR}")
 
    # Install all shared libraries
    foreach(COPY_LIB ${COPY_LIBS})
-      install(FILES "$<TARGET_FILE:${COPY_LIB}>" DESTINATION ${INSTALL_DIR} COMPONENT Runtime)
+      install(FILES "$<TARGET_FILE:${COPY_LIB}>" DESTINATION ${INSTALL_DIR})
    endforeach(COPY_LIB)
 
    # Install system libraries
    include(InstallRequiredSystemLibraries)
    if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
-      install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION "${INSTALL_DIR}" COMPONENT Runtime)
+      install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION "${INSTALL_DIR}")
    endif(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
 endif(WIN32)
 
@@ -216,11 +216,11 @@ if(APPLE)
    install(FILES "${RES_DIR}/osx/Run-GBC.icns" DESTINATION "${RESOURCES_DIR}")
 
    # Copy the executable (not install, so that the internal lib paths don't change)
-   install(FILES "$<TARGET_FILE:${PROJECT_NAME}>" DESTINATION "${INSTALL_DIR}/${PROJECT_NAME}.app/Contents/MacOS/"
+   install(FILES "$<TARGET_FILE:${PROJECT_NAME}>" DESTINATION "${MACOS_DIR}"
            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
    # Fix the bundle (copies and fixes shared libraries)
-   install(CODE "include(BundleUtilities)
-                 fixup_bundle(\"${FULL_INSTALL_DIR}/${PROJECT_NAME}.app\" \"\" \"\")"
-           COMPONENT Runtime)
+   install(CODE "
+      include(BundleUtilities)
+      fixup_bundle(\"${APP_DIR}\" \"\" \"\")")
 endif(APPLE)
