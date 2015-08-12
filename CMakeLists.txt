@@ -11,6 +11,10 @@ set(VERSION_MINOR 0)
 set(VERSION_MICRO 0)
 set(VERSION_BUILD 1)
 
+# Compiler requirements
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Directories
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/source")
 set(DEP_DIR "${PROJECT_SOURCE_DIR}/dependencies")
@@ -21,7 +25,7 @@ set(DATA_DIR "${PROJECT_SOURCE_DIR}/data")
 option(LOG_TO_FILE "Enable logging to a file" OFF)
 
 # Generated content
-configure_file (
+configure_file(
   "${SRC_DIR}/Constants.h.in"
   "${BIN_INCLUDE_DIR}/Constants.h"
 )
@@ -60,117 +64,104 @@ set(HEADERS
    ${SRC_DIR}/wrapper/video/Texture.h
 )
 
+list(APPEND INCLUDES
+   ${SRC_DIR}
+   ${BIN_INCLUDE_DIR}
+)
+
 ### Libraries ###
+
+function(attachlib include source lib)
+   if(include)
+      list(APPEND INCLUDES ${include})
+      set(INCLUDES ${INCLUDES} PARENT_SCOPE)
+   endif(include)
+
+   if(source)
+      list(APPEND SOURCES ${source})
+      set(SOURCES ${SOURCES} PARENT_SCOPE)
+   endif(source)
+
+   if(lib)
+      list(APPEND LIBS ${lib})
+      set(LIBS ${LIBS} PARENT_SCOPE)
+
+      if(BUILD_SHARED_LIBS)
+         list(APPEND COPY_LIBS ${lib})
+         set(COPY_LIBS ${COPY_LIBS} PARENT_SCOPE)
+      endif(BUILD_SHARED_LIBS)
+   endif(lib)
+endfunction(attachlib)
+
+## Integrated ##
+
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "Build shared libraries")
 
 # Pempek Assert
 set(PEMPEK_DIR "${DEP_DIR}/PempekAssert")
-set(PEMPEK_INCLUDE_DIR "${PEMPEK_DIR}/include")
-list(APPEND SOURCES
-   ${PEMPEK_DIR}/lib/pempek_assert.cpp
-)
+attachlib("${PEMPEK_DIR}/include" "${PEMPEK_DIR}/lib/pempek_assert.cpp" "")
 
 # templog
 set(TEMPLOG_DIR "${DEP_DIR}/templog")
-set(TEMPLOG_INCLUDE_DIR "${TEMPLOG_DIR}/include")
-list(APPEND SOURCES
-   ${TEMPLOG_DIR}/imp/logging.cpp
-)
+attachlib("${TEMPLOG_DIR}/include" "${TEMPLOG_DIR}/imp/logging.cpp" "")
+
+# glad
+set(GLAD_DIR "${DEP_DIR}/glad")
+attachlib("${GLAD_DIR}/include" "${GLAD_DIR}/src/glad.c" "${CMAKE_DL_LIBS}")
+
+## Static ##
 
 # Boxer
 set(BOXER_DIR "${DEP_DIR}/Boxer")
-set(BOXER_INCLUDE_DIR "${BOXER_DIR}/include")
-set(BOXER_LIBRARY Boxer)
 add_subdirectory(${BOXER_DIR})
+attachlib("${BOXER_DIR}/include" "" "Boxer")
+
+## Shared ##
+
+set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build shared libraries")
 
 # GLFW
 set(GLFW_DIR "${DEP_DIR}/glfw")
-set(GLFW_INCLUDE_DIR "${GLFW_DIR}/include")
-set(GLFW_LIBRARY glfw)
-set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build shared libraries")
 set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs")
 set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs")
 set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
 set(GLFW_INSTALL OFF CACHE INTERNAL "Generate installation target")
 add_subdirectory(${GLFW_DIR})
-
-# glad
-set(GLAD_DIR "${DEP_DIR}/glad")
-set(GLAD_INCLUDE_DIR "${GLAD_DIR}/include")
-list(APPEND SOURCES
-   ${GLAD_DIR}/src/glad.c
-)
+attachlib("${GLFW_DIR}/include" "" "glfw")
 
 # OpenAL
 set(OPENAL_DIR "${DEP_DIR}/openal-soft")
-set(OPENAL_INCLUDE_DIR "${OPENAL_DIR}/include")
-if(WIN32)
-   set(OPENAL_LIBRARY OpenAL32)
-else()
-   set(OPENAL_LIBRARY openal)
-endif()
 set(ALSOFT_UTILS OFF CACHE INTERNAL "Build and install utility programs")
 set(ALSOFT_NO_CONFIG_UTIL ON CACHE INTERNAL "Disable building the alsoft-config utility")
 set(ALSOFT_EXAMPLES OFF CACHE INTERNAL "Build and install example programs")
 set(ALSOFT_CONFIG OFF CACHE INTERNAL "Install alsoft.conf sample configuration file")
 set(ALSOFT_HRTF_DEFS OFF CACHE INTERNAL "Install HRTF definition files")
 add_subdirectory(${OPENAL_DIR})
+if(WIN32)
+   set(OPENAL_LIBRARY OpenAL32)
+else(WIN32)
+   set(OPENAL_LIBRARY openal)
+endif(WIN32)
+attachlib("${OPENAL_DIR}/include" "" "${OPENAL_LIBRARY}")
 
 ### Building ###
 
-# C++11
-if (NOT WIN32)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-endif (NOT WIN32)
-
-# OpenGL
-find_package(OpenGL REQUIRED)
-if(NOT OPENGL_FOUND)
-    message(ERROR " OpenGL not found!")
-endif(NOT OPENGL_FOUND)
-
 # Includes
-include_directories(
-   ${SRC_DIR}
-   ${BIN_INCLUDE_DIR}
-   ${PEMPEK_INCLUDE_DIR}
-   ${TEMPLOG_INCLUDE_DIR}
-   ${BOXER_INCLUDE_DIR}
-   ${GLFW_INCLUDE_DIR}
-   ${GLAD_INCLUDE_DIR}
-   ${OPENAL_INCLUDE_DIR}
-)
-
-# Libraries
-set(RELEASE_LIBRARIES
-   ${OPENGL_LIBRARIES}
-   ${BOXER_LIBRARY}
-   ${GLFW_LIBRARY}
-   ${CMAKE_DL_LIBS} # Needed for glad on Linux
-   ${OPENAL_LIBRARY}
-)
-
-set(DEBUG_LIBRARIES
-   ${OPENGL_LIBRARIES}
-   ${BOXER_LIBRARY}
-   ${GLFW_LIBRARY}
-   ${CMAKE_DL_LIBS} # Needed for glad on Linux
-   ${OPENAL_LIBRARY}
-)
-
-foreach(RELEASE_LIBRARY ${RELEASE_LIBRARIES})
-   list(APPEND TAGGED_RELEASE_LIBRARIES
-      optimized ${RELEASE_LIBRARY}
-   )
-endforeach(RELEASE_LIBRARY)
-
-foreach(DEBUG_LIBRARY ${DEBUG_LIBRARIES})
-   list(APPEND TAGGED_DEBUG_LIBRARIES
-      debug ${DEBUG_LIBRARY}
-   )
-endforeach(DEBUG_LIBRARY)
+include_directories(${INCLUDES})
 
 # Binary
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
 # Link
-target_link_libraries(${PROJECT_NAME} ${TAGGED_RELEASE_LIBRARIES} ${TAGGED_DEBUG_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${LIBS})
+
+### Post-Build ###
+
+# Copy DLLs
+if(WIN32)
+   foreach(COPY_LIB ${COPY_LIBS})
+      add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+         COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${COPY_LIB}>" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+      )
+   endforeach(COPY_LIB)
+endif(WIN32)
