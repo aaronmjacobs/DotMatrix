@@ -1,9 +1,8 @@
 ### Project Info ###
 
-cmake_minimum_required(VERSION 2.8)
-project(run-gbc)
+cmake_minimum_required(VERSION 3.1)
+project(Run-GBC)
 set(PROJECT_DISPLAY_NAME "Run-G.B.C.")
-set(PROJECT_DISPLAY_NAME_FILE_SAFE "Run-GBC")
 
 # Version info
 set(VERSION_TYPE "Pre-Alpha")
@@ -20,7 +19,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/source")
 set(DEP_DIR "${PROJECT_SOURCE_DIR}/dependencies")
 set(BIN_INCLUDE_DIR "${PROJECT_BINARY_DIR}/include")
-set(DATA_DIR "${PROJECT_SOURCE_DIR}/data")
+set(RES_DIR "${PROJECT_SOURCE_DIR}/resources")
+set(BIN_RES_DIR "${PROJECT_BINARY_DIR}/resources")
 
 # Options
 option(LOG_TO_FILE "Enable logging to a file" OFF)
@@ -169,20 +169,58 @@ endif(WIN32)
 
 ### Install ###
 
-set(INSTALL_DIR ${PROJECT_DISPLAY_NAME_FILE_SAFE})
+set(INSTALL_DIR ${PROJECT_NAME})
+set(FULL_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/${INSTALL_DIR}")
 
-# Install the executable
-install(TARGETS ${PROJECT_NAME} DESTINATION "${INSTALL_DIR}" COMPONENT Runtime)
+## Windows ##
 
-# Install all shared libraries
-foreach(COPY_LIB ${COPY_LIBS})
-   install(FILES "$<TARGET_FILE:${COPY_LIB}>" DESTINATION ${INSTALL_DIR} COMPONENT Runtime)
-endforeach(COPY_LIB)
-
-# Install system libraries
 if(WIN32)
+   # Install the executable
+   install(TARGETS ${PROJECT_NAME} DESTINATION "${INSTALL_DIR}" COMPONENT Runtime)
+
+   # Install all shared libraries
+   foreach(COPY_LIB ${COPY_LIBS})
+      install(FILES "$<TARGET_FILE:${COPY_LIB}>" DESTINATION ${INSTALL_DIR} COMPONENT Runtime)
+   endforeach(COPY_LIB)
+
+   # Install system libraries
    include(InstallRequiredSystemLibraries)
    if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
       install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION "${INSTALL_DIR}" COMPONENT Runtime)
    endif(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
 endif(WIN32)
+
+## OS X ##
+
+if(APPLE)
+   set(APP_DIR "${FULL_INSTALL_DIR}/${PROJECT_NAME}.app")
+   set(CONTENTS_DIR "${APP_DIR}/Contents")
+   set(MACOS_DIR "${CONTENTS_DIR}/MacOS")
+   set(RESOURCES_DIR "${CONTENTS_DIR}/Resources")
+
+   # Generate the .app file
+   install(CODE "
+      file(MAKE_DIRECTORY \"${MACOS_DIR}\")
+      file(MAKE_DIRECTORY \"${RESOURCES_DIR}\")")
+
+   # Generate the Info.plist file (at build time, not install time)
+   configure_file(
+     "${RES_DIR}/osx/Info.plist.in"
+     "${BIN_RES_DIR}/Info.plist"
+   )
+
+   # Copy the generated Info.plist file
+   install(FILES "${BIN_RES_DIR}/Info.plist" DESTINATION "${CONTENTS_DIR}")
+
+   # Copy the icon
+   install(FILES "${RES_DIR}/osx/Run-GBC.icns" DESTINATION "${RESOURCES_DIR}")
+
+   # Copy the executable (not install, so that the internal lib paths don't change)
+   install(FILES "$<TARGET_FILE:${PROJECT_NAME}>" DESTINATION "${INSTALL_DIR}/${PROJECT_NAME}.app/Contents/MacOS/"
+           PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+   # Fix the bundle (copies and fixes shared libraries)
+   install(CODE "include(BundleUtilities)
+                 fixup_bundle(\"${FULL_INSTALL_DIR}/${PROJECT_NAME}.app\" \"\" \"\")"
+           COMPONENT Runtime)
+endif(APPLE)
