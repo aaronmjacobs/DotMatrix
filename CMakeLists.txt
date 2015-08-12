@@ -3,6 +3,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(run-gbc)
 set(PROJECT_DISPLAY_NAME "Run-G.B.C.")
+set(PROJECT_DISPLAY_NAME_FILE_SAFE "Run-GBC")
 
 # Version info
 set(VERSION_TYPE "Pre-Alpha")
@@ -164,4 +165,24 @@ if(WIN32)
          COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${COPY_LIB}>" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
       )
    endforeach(COPY_LIB)
+endif(WIN32)
+
+### Install ###
+
+set(INSTALL_DIR ${PROJECT_DISPLAY_NAME_FILE_SAFE})
+
+# Install the executable
+install(TARGETS ${PROJECT_NAME} DESTINATION "${INSTALL_DIR}" COMPONENT Runtime)
+
+# Install all shared libraries
+foreach(COPY_LIB ${COPY_LIBS})
+   install(FILES "$<TARGET_FILE:${COPY_LIB}>" DESTINATION ${INSTALL_DIR} COMPONENT Runtime)
+endforeach(COPY_LIB)
+
+# Install system libraries
+if(WIN32)
+   include(InstallRequiredSystemLibraries)
+   if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+      install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION "${INSTALL_DIR}" COMPONENT Runtime)
+   endif(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
 endif(WIN32)
