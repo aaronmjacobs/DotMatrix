@@ -4,3 +4,6 @@
 [submodule "dependencies/openal-soft"]
 	path = dependencies/openal-soft
 	url = https://github.com/kcat/openal-soft.git
+[submodule "dependencies/Boxer"]
+	path = dependencies/Boxer
+	url = https://github.com/aaronmjacobs/Boxer.git
