@@ -56,12 +56,6 @@ std::string getErrorName(GLenum error) {
          return "GL_INVALID_FRAMEBUFFER_OPERATION";
       case GL_OUT_OF_MEMORY:
          return "GL_OUT_OF_MEMORY";
-      case GL_STACK_UNDERFLOW:
-         return "GL_STACK_UNDERFLOW";
-      case GL_STACK_OVERFLOW:
-         return "GL_STACK_OVERFLOW";
-      case GL_TABLE_TOO_LARGE:
-         return "GL_TABLE_TOO_LARGE";
       default:
          return "Unknown";
    }
