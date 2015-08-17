@@ -3,4 +3,4 @@
 	url = https://github.com/glfw/glfw.git
 [submodule "dependencies/openal-soft"]
 	path = dependencies/openal-soft
-	url = git://repo.or.cz/openal-soft.git
+	url = https://github.com/kcat/openal-soft.git
