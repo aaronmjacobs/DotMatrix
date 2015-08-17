@@ -64,7 +64,7 @@ uint8_t dist(float x1, float y1, float x2, float y2) {
 
 int main(int argc, char *argv[]) {
    LOG_INFO(PROJECT_NAME << " " << VERSION_TYPE << " " << VERSION_MAJOR << "." << VERSION_MINOR << "."
-      << VERSION_MICRO << "." << VERSION_BUILD);
+      << VERSION_MICRO << " (" << VERSION_BUILD << ")");
 
    GLFWwindow *window = init();
    if (!window) {
