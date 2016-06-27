@@ -3,6 +3,8 @@
 #include "LogHelper.h"
 #include "wrapper/video/Renderer.h"
 
+#include "gbc/Device.h"
+
 #include <cstdlib>
 #include <functional>
 
@@ -84,6 +86,9 @@ int main(int argc, char *argv[]) {
    framebufferCallback = [&renderer](int width, int height) {
       renderer.onFramebufferSizeChange(width, height);
    };
+
+   GBC::Device device;
+   device.run();
 
    while (!glfwWindowShouldClose(window)) {
       renderer.draw(pixels);

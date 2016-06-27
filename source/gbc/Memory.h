@@ -7,6 +7,7 @@ namespace GBC {
 
 union Memory {
    uint8_t raw[0x10000];    // Memory map                   (0x0000-0xFFFF, 64k)
+
    struct {
       uint8_t romb[0x4000]; // Permanently-mapped ROM bank  (0x0000-0x3FFF, 16k)
       uint8_t roms[0x4000]; // Switchable ROM bank          (0x4000-0x7FFF, 16k)

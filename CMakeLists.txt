@@ -59,6 +59,7 @@ configure_file(
 set(SOURCES
    ${SRC_DIR}/main.cpp
    ${SRC_DIR}/gbc/CPU.cpp
+   ${SRC_DIR}/gbc/Device.cpp
    ${SRC_DIR}/wrapper/audio/AudioManager.cpp
    ${SRC_DIR}/wrapper/input/KeyboardInputDevice.cpp
    ${SRC_DIR}/wrapper/video/Mesh.cpp
@@ -76,6 +77,7 @@ set(HEADERS
    ${SRC_DIR}/LogHelper.h
    ${SRC_DIR}/Types.h
    ${SRC_DIR}/gbc/CPU.h
+   ${SRC_DIR}/gbc/Device.h
    ${SRC_DIR}/gbc/Memory.h
    ${SRC_DIR}/gbc/Video.h
    ${SRC_DIR}/wrapper/audio/AudioManager.h
