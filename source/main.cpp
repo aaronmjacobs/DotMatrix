@@ -1,6 +1,6 @@
 #include "Constants.h"
 #include "GLIncludes.h"
-#include "LogHelper.h"
+#include "Log.h"
 #include "wrapper/video/Renderer.h"
 
 #include "gbc/Device.h"
@@ -21,7 +21,7 @@ void onFramebufferSizeChange(GLFWwindow *window, int width, int height) {
 GLFWwindow* init() {
    int glfwInitRes = glfwInit();
    if (!glfwInitRes) {
-      LOG_ERROR("Unable to initialize GLFW");
+      LOG_ERROR_MSG_BOX("Unable to initialize GLFW");
       return nullptr;
    }
 
@@ -33,7 +33,7 @@ GLFWwindow* init() {
    GLFWwindow *window = glfwCreateWindow(GBC::kScreenWidth, GBC::kScreenHeight, PROJECT_DISPLAY_NAME, nullptr, nullptr);
    if (!window) {
       glfwTerminate();
-      LOG_ERROR("Unable to create GLFW window");
+      LOG_ERROR_MSG_BOX("Unable to create GLFW window");
       return nullptr;
    }
 
@@ -45,7 +45,7 @@ GLFWwindow* init() {
    if (!gladInitRes) {
       glfwDestroyWindow(window);
       glfwTerminate();
-      LOG_ERROR("Unable to initialize glad");
+      LOG_ERROR_MSG_BOX("Unable to initialize glad");
       return nullptr;
    }
 

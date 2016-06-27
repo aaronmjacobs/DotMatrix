@@ -1,7 +1,6 @@
 #include "ShaderProgram.h"
 
 #include "FancyAssert.h"
-#include "LogHelper.h"
 #include "Shader.h"
 
 namespace {

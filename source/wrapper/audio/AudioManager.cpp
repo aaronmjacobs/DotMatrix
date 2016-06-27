@@ -1,7 +1,7 @@
 #include "AudioManager.h"
 
 #include "FancyAssert.h"
-#include "LogHelper.h"
+#include "Log.h"
 #include "gbc/Audio.h"
 
 #include <AL/al.h>
@@ -54,18 +54,18 @@ void checkError(const char *location) {
 AudioManager::AudioManager()
    : device(alcOpenDevice(nullptr), deleteDevice), source(0) {
    if (!device) {
-      LOG_ERROR("Unable to open audio device");
+      LOG_ERROR_MSG_BOX("Unable to open audio device");
       return;
    }
 
    context = UPtr<ALCcontext, std::function<void(ALCcontext*)>>(alcCreateContext(device.get(), nullptr), deleteContext);
    if (!context) {
-      LOG_ERROR("Unable to create audio context");
+      LOG_ERROR_MSG_BOX("Unable to create audio context");
       return;
    }
 
    if (!alcMakeContextCurrent(context.get())) {
-      LOG_ERROR("Unable to make audio context current");
+      LOG_ERROR_MSG_BOX("Unable to make audio context current");
       return;
    }
    RUN_DEBUG(checkError("making audio context current");)

@@ -1,4 +1,5 @@
 #include "CPU.h"
+#include "Log.h"
 #include "Operations.h"
 
 namespace GBC {

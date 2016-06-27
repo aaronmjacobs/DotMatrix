@@ -74,7 +74,7 @@ set(HEADERS
    ${BIN_INCLUDE_DIR}/Constants.h
    ${SRC_DIR}/FancyAssert.h
    ${SRC_DIR}/GLIncludes.h
-   ${SRC_DIR}/LogHelper.h
+   ${SRC_DIR}/Log.h
    ${SRC_DIR}/Types.h
    ${SRC_DIR}/gbc/CPU.h
    ${SRC_DIR}/gbc/Device.h

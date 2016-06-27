@@ -2,7 +2,7 @@
 #define SHADER_PROGRAM_H
 
 #include "GLIncludes.h"
-#include "LogHelper.h"
+#include "Log.h"
 #include "Types.h"
 
 #include <array>
