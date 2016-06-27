@@ -157,8 +157,8 @@ private:
       struct {
          union {
             struct {
-               uint8_t a; // accumulator register
-               uint8_t f; // status register
+               uint8_t a;  // accumulator register
+               uint8_t f;  // status register
                uint8_t b;
                uint8_t c;
                uint8_t d;
@@ -174,8 +174,8 @@ private:
             };
          };
 
-         uint16_t sp;     // stack pointer
-         uint16_t pc;     // program counter
+         uint16_t sp;      // stack pointer
+         uint16_t pc;      // program counter
       };
    };
 
@@ -217,7 +217,7 @@ private:
 
    bool getFlag(Flag flag) {
       ASSERT(flag == kZero || flag == kSub || flag == kHalfCarry || flag == kCarry, "Invalid flag value: %hhu", flag);
-      
+
       return (reg.f & flag) != 0;
    }
 
