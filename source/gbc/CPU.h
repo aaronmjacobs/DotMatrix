@@ -202,9 +202,11 @@ private:
       ASSERT(flag == kZero || flag == kSub || flag == kHalfCarry || flag == kCarry, "Invalid flag value: %hhu", flag);
 
       uint8_t mask = ~(static_cast<uint8_t>(val) - 1); // 0xFF if true, 0x00 if false
+      ASSERT((val && mask == 0xFF) || (!val && mask == 0x00));
 
       uint8_t setVal = (reg.f | flag) & mask; // Sets the flag if val is true, otherwise results in 0x00
       uint8_t clearVal = reg.f & ~(flag | mask); // Clears the flag if val is false, otherwise results in 0x00
+      ASSERT((setVal >= 0xFF && clearVal == 0xFF) || (clearVal >= 0xFF && setVal == 0xFF));
 
       reg.f = setVal | clearVal; // TODO Test!
 

@@ -28,14 +28,15 @@ bool checkBitOperand(Opr operand, uint8_t val) {
 }
 
 // Determine the BIT value from the operand
-uint8_t bitVal(Opr operand) {
+uint8_t bitOprMask(Opr operand) {
    // TODO Make static assert
    ASSERT(checkBitOperand(Opr::k1, 1) && checkBitOperand(Opr::k2, 2) && checkBitOperand(Opr::k3, 3)
        && checkBitOperand(Opr::k4, 4) && checkBitOperand(Opr::k5, 5) && checkBitOperand(Opr::k6, 6)
        && checkBitOperand(Opr::k7, 7), "Number operands are in an incorrect order");
-   ASSERT(operand >= Opr::k0 && operand <= Opr::k7, "Bad bitVal() operand: %hhu", operand);
+   ASSERT(operand >= Opr::k0 && operand <= Opr::k7, "Bad bitOprMask() operand: %hhu", operand);
 
-   return static_cast<uint8_t>(operand) - static_cast<uint8_t>(Opr::k0);
+   uint8_t val = static_cast<uint8_t>(operand) - static_cast<uint8_t>(Opr::k0);
+   return 1 << val;
 }
 
 // Calculate the restart offset from the operand
@@ -138,7 +139,7 @@ void CPU::execute(Operation operation) {
    // Prepare immediate values if necessary
    uint8_t imm8 = 0;
    uint16_t imm16 = 0;
-   if (operation.param1 == Opr::kImm8 || operation.param2 == Opr::kDrefImm8
+   if (operation.param1 == Opr::kImm8 || operation.param1 == Opr::kDrefImm8
       || operation.param2 == Opr::kImm8 || operation.param2 == Opr::kDrefImm8) {
       imm8 = readPC();
    } else if (operation.param1 == Opr::kDrefImm16 || operation.param2 == Opr::kDrefImm16) {
@@ -532,25 +533,25 @@ void CPU::execute(Operation operation) {
       // Bit operations
       case Ins::kBIT:
       {
-         uint8_t val = bitVal(operation.param1);
+         uint8_t mask = bitOprMask(operation.param1);
 
-         setFlag(kZero, (*param2 & (1 << val)) == 1);
+         setFlag(kZero, (*param2 & mask) == 1);
          setFlag(kSub, false);
          setFlag(kHalfCarry, true);
          break;
       }
       case Ins::kSET:
       {
-         uint8_t val = bitVal(operation.param1);
+         uint8_t mask = bitOprMask(operation.param1);
 
-         *param2 |= 1 << val;
+         *param2 |= mask;
          break;
       }
       case Ins::kRES:
       {
-         uint8_t val = bitVal(operation.param1);
+         uint8_t mask = bitOprMask(operation.param1);
 
-         *param2 &= ~(1 << val);
+         *param2 &= ~mask;
          break;
       }
 
@@ -577,7 +578,7 @@ void CPU::execute16(Operation operation) {
    // Prepare immediate values if necessary
    uint8_t imm8 = 0;
    uint16_t imm16 = 0;
-   if (operation.param1 == Opr::kImm8 || operation.param2 == Opr::kDrefImm8
+   if (operation.param1 == Opr::kImm8 || operation.param1 == Opr::kDrefImm8
       || operation.param2 == Opr::kImm8 || operation.param2 == Opr::kDrefImm8) {
       imm8 = readPC();
    } else if (operation.param1 == Opr::kImm16 || operation.param2 == Opr::kImm16) {
