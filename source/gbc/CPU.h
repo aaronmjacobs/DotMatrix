@@ -1,13 +1,15 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include "FancyAssert.h"
 #include "Memory.h"
 
 #include <cstdint>
 
 namespace GBC {
 
-enum Instruction : uint8_t {
+// Instructions
+enum class Ins : uint8_t {
    kInvalid,
 
    kLD,
@@ -69,7 +71,8 @@ enum Instruction : uint8_t {
    kPREFIX
 };
 
-enum Operand : uint8_t {
+// Operands
+enum class Opr : uint8_t {
    kNone,
 
    kA,
@@ -131,12 +134,12 @@ enum Operand : uint8_t {
 };
 
 struct Operation {
-   Instruction ins;
-   Operand param1;
-   Operand param2;
+   Ins ins;
+   Opr param1;
+   Opr param2;
    uint8_t cycles;
 
-   Operation(Instruction i, Operand p1, Operand p2, uint8_t c)
+   Operation(Ins i, Opr p1, Opr p2, uint8_t c)
       : ins(i), param1(p1), param2(p2), cycles(c) {
    }
 };
@@ -196,6 +199,8 @@ private:
    }
 
    void setFlag(Flag flag, bool val) {
+      ASSERT(flag == kZero || flag == kSub || flag == kHalfCarry || flag == kCarry, "Invalid flag value: %hhu", flag);
+
       uint8_t mask = ~(static_cast<uint8_t>(val) - 1); // 0xFF if true, 0x00 if false
 
       uint8_t setVal = (reg.f | flag) & mask; // Sets the flag if val is true, otherwise results in 0x00
@@ -211,6 +216,8 @@ private:
    }
 
    bool getFlag(Flag flag) {
+      ASSERT(flag == kZero || flag == kSub || flag == kHalfCarry || flag == kCarry, "Invalid flag value: %hhu", flag);
+      
       return (reg.f & flag) != 0;
    }
 
@@ -222,9 +229,9 @@ private:
 
    uint16_t pop();
 
-   uint8_t* addr8(Operand operand, uint8_t* imm8, uint16_t* imm16);
+   uint8_t* addr8(Opr operand, uint8_t* imm8, uint16_t* imm16);
 
-   uint16_t* addr16(Operand operand, uint8_t* imm8, uint16_t* imm16);
+   uint16_t* addr16(Opr operand, uint8_t* imm8, uint16_t* imm16);
 
    Registers reg;
    Memory& mem;
