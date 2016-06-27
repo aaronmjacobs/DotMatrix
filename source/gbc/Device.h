@@ -13,8 +13,8 @@ public:
    void run();
 
 private:
-   CPU cpu;
    Memory memory;
+   CPU cpu;
 };
 
 } // namespace GBC

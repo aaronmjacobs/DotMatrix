@@ -3,7 +3,7 @@
 namespace GBC {
 
 Device::Device()
-   : cpu(memory), memory({0}) {
+   : memory({0}), cpu(memory) {
 }
 
 void Device::run() {
