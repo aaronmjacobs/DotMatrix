@@ -594,7 +594,7 @@ void CPU::execute16(Operation operation) {
             ASSERT(operation.param2 == Opr::kSP);
 
             // TODO Make sure this is right (should be? gameboy is little endian)
-            mem.raw[imm16] = *param2 = 0xFF;
+            mem.raw[imm16] = *param2 & 0xFF;
             mem.raw[imm16 + 1] = (*param2 >> 8) & 0xFF;
          } else {
             *param1 = *param2;
