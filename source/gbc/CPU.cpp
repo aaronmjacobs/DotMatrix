@@ -124,11 +124,11 @@ void CPU::execute(Operation operation) {
    // If this is a compound operation, execute each part
    if (operation.ins == Ins::kLDD) {
       execute(Operation(Ins::kLD, operation.param1, operation.param2, 0));
-      execute(Operation(Ins::kDEC, Opr::kDrefHL, Opr::kNone, 0));
+      execute(Operation(Ins::kDEC, Opr::kHL, Opr::kNone, 0));
       return;
    } else if (operation.ins == Ins::kLDI) {
       execute(Operation(Ins::kLD, operation.param1, operation.param2, 0));
-      execute(Operation(Ins::kINC, Opr::kDrefHL, Opr::kNone, 0));
+      execute(Operation(Ins::kINC, Opr::kHL, Opr::kNone, 0));
       return;
    } else if (operation.ins == Ins::kRETI) {
       execute(Operation(Ins::kRET, Opr::kNone, Opr::kNone, 0));
