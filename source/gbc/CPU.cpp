@@ -83,7 +83,7 @@ bool evalJumpCondition(Opr operand, bool zero, bool carry) {
 
 } // namespace
 
-CPU::CPU(union Memory& memory)
+CPU::CPU(Memory& memory)
    : reg({0}), mem(memory), cycles(0), halted(false), stopped(false), executedPrefixCB(false),
      interruptEnableRequested(false), interruptDisableRequested(false) {
    reg.pc = 0x0100;
