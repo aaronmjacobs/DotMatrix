@@ -774,76 +774,76 @@ uint8_t* CPU::addr8(Opr operand, uint8_t* imm8, uint16_t* imm16) {
    uint8_t* address = nullptr;
 
    switch (operand) {
-   case Opr::kNone:
-   case Opr::kCB:
-   case Opr::kFlagC:
-   case Opr::kFlagNC:
-   case Opr::kFlagZ:
-   case Opr::kFlagNZ:
-   case Opr::k0:
-   case Opr::k1:
-   case Opr::k2:
-   case Opr::k3:
-   case Opr::k4:
-   case Opr::k5:
-   case Opr::k6:
-   case Opr::k7:
-   case Opr::k00H:
-   case Opr::k08H:
-   case Opr::k10H:
-   case Opr::k18H:
-   case Opr::k20H:
-   case Opr::k28H:
-   case Opr::k30H:
-   case Opr::k38H:
-      break;
-   case Opr::kA:
-      address = &reg.a;
-      break;
-   case Opr::kF:
-      address = &reg.f;
-      break;
-   case Opr::kB:
-      address = &reg.b;
-      break;
-   case Opr::kC:
-      address = &reg.c;
-      break;
-   case Opr::kD:
-      address = &reg.d;
-      break;
-   case Opr::kE:
-      address = &reg.e;
-      break;
-   case Opr::kH:
-      address = &reg.h;
-      break;
-   case Opr::kL:
-      address = &reg.l;
-      break;
-   case Opr::kImm8:
-      address = imm8;
-      break;
-   case Opr::kDrefC:
-      address = &mem.raw[0xFF00 + reg.c];
-      break;
-   case Opr::kDrefBC:
-      address = &mem.raw[reg.bc];
-      break;
-   case Opr::kDrefDE:
-      address = &mem.raw[reg.de];
-      break;
-   case Opr::kDrefHL:
-      address = &mem.raw[reg.hl];
-      break;
-   case Opr::kDrefImm8:
-      address = &mem.raw[0xFF00 + *imm8];
-      break;
-   case Opr::kDrefImm16:
-      address = &mem.raw[*imm16];
-      break;
-   default:
-      ASSERT(false);
+      case Opr::kNone:
+      case Opr::kCB:
+      case Opr::kFlagC:
+      case Opr::kFlagNC:
+      case Opr::kFlagZ:
+      case Opr::kFlagNZ:
+      case Opr::k0:
+      case Opr::k1:
+      case Opr::k2:
+      case Opr::k3:
+      case Opr::k4:
+      case Opr::k5:
+      case Opr::k6:
+      case Opr::k7:
+      case Opr::k00H:
+      case Opr::k08H:
+      case Opr::k10H:
+      case Opr::k18H:
+      case Opr::k20H:
+      case Opr::k28H:
+      case Opr::k30H:
+      case Opr::k38H:
+         break;
+      case Opr::kA:
+         address = &reg.a;
+         break;
+      case Opr::kF:
+         address = &reg.f;
+         break;
+      case Opr::kB:
+         address = &reg.b;
+         break;
+      case Opr::kC:
+         address = &reg.c;
+         break;
+      case Opr::kD:
+         address = &reg.d;
+         break;
+      case Opr::kE:
+         address = &reg.e;
+         break;
+      case Opr::kH:
+         address = &reg.h;
+         break;
+      case Opr::kL:
+         address = &reg.l;
+         break;
+      case Opr::kImm8:
+         address = imm8;
+         break;
+      case Opr::kDrefC:
+         address = &mem.raw[0xFF00 + reg.c];
+         break;
+      case Opr::kDrefBC:
+         address = &mem.raw[reg.bc];
+         break;
+      case Opr::kDrefDE:
+         address = &mem.raw[reg.de];
+         break;
+      case Opr::kDrefHL:
+         address = &mem.raw[reg.hl];
+         break;
+      case Opr::kDrefImm8:
+         address = &mem.raw[0xFF00 + *imm8];
+         break;
+      case Opr::kDrefImm16:
+         address = &mem.raw[*imm16];
+         break;
+      default:
+         ASSERT(false);
    }
 
    return address;
@@ -853,32 +853,32 @@ uint16_t* CPU::addr16(Opr operand, uint8_t* imm8, uint16_t* imm16) {
    uint16_t* address = nullptr;
 
    switch (operand) {
-   case Opr::kNone:
-   case Opr::kImm8Signed: // 8 bit signed value used with 16 bit values - needs to be handled as a special case
-      break;
-   case Opr::kAF:
-      address = &reg.af;
-      break;
-   case Opr::kBC:
-      address = &reg.bc;
-      break;
-   case Opr::kDE:
-      address = &reg.de;
-      break;
-   case Opr::kHL:
-      address = &reg.hl;
-      break;
-   case Opr::kSP:
-      address = &reg.sp;
-      break;
-   case Opr::kPC:
-      address = &reg.pc;
-      break;
-   case Opr::kImm16:
-      address = imm16;
-      break;
-   default:
-      ASSERT(false);
+      case Opr::kNone:
+      case Opr::kImm8Signed: // 8 bit signed value used with 16 bit values - needs to be handled as a special case
+         break;
+      case Opr::kAF:
+         address = &reg.af;
+         break;
+      case Opr::kBC:
+         address = &reg.bc;
+         break;
+      case Opr::kDE:
+         address = &reg.de;
+         break;
+      case Opr::kHL:
+         address = &reg.hl;
+         break;
+      case Opr::kSP:
+         address = &reg.sp;
+         break;
+      case Opr::kPC:
+         address = &reg.pc;
+         break;
+      case Opr::kImm16:
+         address = imm16;
+         break;
+      default:
+         ASSERT(false);
    }
 
    return address;
