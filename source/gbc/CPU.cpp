@@ -776,10 +776,6 @@ uint8_t* CPU::addr8(Opr operand, uint8_t* imm8, uint16_t* imm16) {
    switch (operand) {
       case Opr::kNone:
       case Opr::kCB:
-      case Opr::kFlagC:
-      case Opr::kFlagNC:
-      case Opr::kFlagZ:
-      case Opr::kFlagNZ:
       case Opr::k0:
       case Opr::k1:
       case Opr::k2:
@@ -855,6 +851,10 @@ uint16_t* CPU::addr16(Opr operand, uint8_t* imm8, uint16_t* imm16) {
    switch (operand) {
       case Opr::kNone:
       case Opr::kImm8Signed: // 8 bit signed value used with 16 bit values - needs to be handled as a special case
+      case Opr::kFlagC:
+      case Opr::kFlagNC:
+      case Opr::kFlagZ:
+      case Opr::kFlagNZ:
          break;
       case Opr::kAF:
          address = &reg.af;
