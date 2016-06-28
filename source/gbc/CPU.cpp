@@ -842,7 +842,7 @@ uint8_t* CPU::addr8(Opr operand, uint8_t* imm8, uint16_t* imm16) {
          address = &mem.raw[*imm16];
          break;
       default:
-         ASSERT(false);
+         ASSERT(false, "Invalid 8-bit operand: %hhu", operand);
    }
 
    return address;
@@ -884,7 +884,7 @@ uint16_t* CPU::addr16(Opr operand, uint8_t* imm8, uint16_t* imm16) {
          address = reinterpret_cast<uint16_t*>(&mem.raw[*imm16]); // TODO Is this ok? Endian issues?
          break;
       default:
-         ASSERT(false);
+         ASSERT(false, "Invalid 16-bit operand: %hhu", operand);
    }
 
    return address;
