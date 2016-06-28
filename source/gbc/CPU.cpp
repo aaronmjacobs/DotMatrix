@@ -140,9 +140,11 @@ void CPU::execute(Operation operation) {
    uint8_t imm8 = 0;
    uint16_t imm16 = 0;
    if (operation.param1 == Opr::kImm8 || operation.param1 == Opr::kDrefImm8
-      || operation.param2 == Opr::kImm8 || operation.param2 == Opr::kDrefImm8) {
+      || operation.param2 == Opr::kImm8 || operation.param2 == Opr::kDrefImm8
+      || operation.param1 == Opr::kImm8Signed || operation.param2 == Opr::kImm8Signed) {
       imm8 = readPC();
-   } else if (operation.param1 == Opr::kDrefImm16 || operation.param2 == Opr::kDrefImm16) {
+   } else if (operation.param1 == Opr::kImm16 || operation.param2 == Opr::kImm16
+      || operation.param1 == Opr::kDrefImm16 || operation.param2 == Opr::kDrefImm16) {
       imm16 = readPC16();
    }
 
