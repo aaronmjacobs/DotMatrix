@@ -387,7 +387,8 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kSTOP:
       {
-         ASSERT(operation.param1 == Opr::kNone && operation.param2 == Opr::kNone);
+         // STOP should be followed by 0x00 (treated here as an immediate)
+         ASSERT(*param1 == 0x00);
 
          // TODO
          stopped = true;
