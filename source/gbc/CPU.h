@@ -157,14 +157,18 @@ private:
       struct {
          union {
             struct {
-               uint8_t a;  // accumulator register
+               // TODO Swap order on big endian machines
                uint8_t f;  // status register
-               uint8_t b;
+               uint8_t a;  // accumulator register
+
                uint8_t c;
-               uint8_t d;
+               uint8_t b;
+
                uint8_t e;
-               uint8_t h;
+               uint8_t d;
+
                uint8_t l;
+               uint8_t h;
             };
             struct {
                uint16_t af;
@@ -206,7 +210,7 @@ private:
 
       uint8_t setVal = (reg.f | flag) & mask; // Sets the flag if val is true, otherwise results in 0x00
       uint8_t clearVal = reg.f & ~(flag | mask); // Clears the flag if val is false, otherwise results in 0x00
-      ASSERT((setVal >= 0xFF && clearVal == 0xFF) || (clearVal >= 0xFF && setVal == 0xFF));
+      ASSERT((setVal >= 0x00 && clearVal == 0x00) || (clearVal >= 0x00 && setVal == 0x00));
 
       reg.f = setVal | clearVal; // TODO Test!
 
