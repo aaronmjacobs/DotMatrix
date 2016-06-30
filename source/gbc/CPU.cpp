@@ -612,12 +612,12 @@ void CPU::execute16(Operation operation) {
       }
       case Ins::kLDHL:
       {
-         ASSERT(operation.param1 == Opr::kHL && operation.param2 == Opr::kSP);
+         ASSERT(operation.param1 == Opr::kSP && operation.param2 == Opr::kImm8Signed);
          // Special case - uses one byte signed immediate value
          int8_t n = toSigned(imm8);
 
-         uint32_t result = *param2 + n;
-         uint32_t carryBits = *param2 ^ n ^ result; // TODO Correct if n is signed?
+         uint32_t result = *param1 + n;
+         uint32_t carryBits = *param1 ^ n ^ result; // TODO Correct if n is signed?
 
          *param1 = static_cast<uint16_t>(result);
 
@@ -658,8 +658,8 @@ void CPU::execute16(Operation operation) {
             // Special case - uses one byte signed immediate value
             int8_t n = toSigned(imm8);
 
-            uint32_t result = *param1 + *param2 + n;
-            uint32_t carryBits = *param1 ^ *param2 ^ n ^ result; // TODO Correct if n is signed?
+            uint32_t result = *param1 + n;
+            uint32_t carryBits = *param1 ^ n ^ result; // TODO Correct if n is signed?
 
             *param1 = static_cast<uint16_t>(result);
 
