@@ -243,7 +243,7 @@ const std::array<Operation, 256> kOperations = {
    /* 0xE6 */ Operation(Ins::kAND, Opr::kImm8, Opr::kNone, 8),
    /* 0xE7 */ Operation(Ins::kRST, Opr::k20H, Opr::kNone, 16),
    /* 0xE8 */ Operation(Ins::kADD, Opr::kSP, Opr::kImm8Signed, 16),
-   /* 0xE9 */ Operation(Ins::kJP, Opr::kDrefHL, Opr::kNone, 4),
+   /* 0xE9 */ Operation(Ins::kJP, Opr::kHL, Opr::kNone, 4),
    /* 0xEA */ Operation(Ins::kLD, Opr::kDrefImm16, Opr::kA, 16),
    /* 0xEB */ Operation(Ins::kInvalid, Opr::kNone, Opr::kNone, 0),
    /* 0xEC */ Operation(Ins::kInvalid, Opr::kNone, Opr::kNone, 0),
