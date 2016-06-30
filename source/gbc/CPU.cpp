@@ -9,7 +9,9 @@ namespace {
 bool is16BitOperand(Opr operand) {
    return operand == Opr::kImm8Signed || operand == Opr::kAF || operand == Opr::kBC || operand == Opr::kDE
        || operand == Opr::kHL || operand == Opr::kSP || operand == Opr::kPC || operand == Opr::kImm16
-       || operand == Opr::kFlagC || operand == Opr::kFlagNC || operand == Opr::kFlagZ || operand == Opr::kFlagNZ;
+       || operand == Opr::kFlagC || operand == Opr::kFlagNC || operand == Opr::kFlagZ || operand == Opr::kFlagNZ
+       || operand == Opr::k00H || operand == Opr::k08H || operand == Opr::k10H || operand == Opr::k18H
+       || operand == Opr::k20H || operand == Opr::k28H || operand == Opr::k30H || operand == Opr::k38H;
 }
 
 bool is16BitOperation(const Operation& operation) {
@@ -788,14 +790,6 @@ uint8_t* CPU::addr8(Opr operand, uint8_t* imm8, uint16_t* imm16) {
       case Opr::k5:
       case Opr::k6:
       case Opr::k7:
-      case Opr::k00H:
-      case Opr::k08H:
-      case Opr::k10H:
-      case Opr::k18H:
-      case Opr::k20H:
-      case Opr::k28H:
-      case Opr::k30H:
-      case Opr::k38H:
          break;
       case Opr::kA:
          address = &reg.a;
@@ -859,6 +853,14 @@ uint16_t* CPU::addr16(Opr operand, uint8_t* imm8, uint16_t* imm16) {
       case Opr::kFlagNC:
       case Opr::kFlagZ:
       case Opr::kFlagNZ:
+      case Opr::k00H:
+      case Opr::k08H:
+      case Opr::k10H:
+      case Opr::k18H:
+      case Opr::k20H:
+      case Opr::k28H:
+      case Opr::k30H:
+      case Opr::k38H:
          break;
       case Opr::kAF:
          address = &reg.af;
