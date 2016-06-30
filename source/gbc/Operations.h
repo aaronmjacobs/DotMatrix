@@ -226,7 +226,7 @@ const std::array<Operation, 256> kOperations = {
    /* 0xD5 */ Operation(Ins::kPUSH, Opr::kDE, Opr::kNone, 16),
    /* 0xD6 */ Operation(Ins::kSUB, Opr::kImm8, Opr::kNone, 8),
    /* 0xD7 */ Operation(Ins::kRST, Opr::k10H, Opr::kNone, 16),
-   /* 0xD8 */ Operation(Ins::kRET, Opr::kC, Opr::kNone, 20),
+   /* 0xD8 */ Operation(Ins::kRET, Opr::kFlagC, Opr::kNone, 20),
    /* 0xD9 */ Operation(Ins::kRETI, Opr::kNone, Opr::kNone, 16),
    /* 0xDA */ Operation(Ins::kJP, Opr::kFlagC, Opr::kImm16, 16),
    /* 0xDB */ Operation(Ins::kInvalid, Opr::kNone, Opr::kNone, 0),
