@@ -15,7 +15,8 @@ bool is16BitOperand(Opr operand) {
 }
 
 bool is16BitOperation(const Operation& operation) {
-   return is16BitOperand(operation.param1) || is16BitOperand(operation.param2);
+   return operation.ins == Ins::kRET // Opcode 0xC9 is a RET with no operands
+      || is16BitOperand(operation.param1) || is16BitOperand(operation.param2);
 }
 
 // Interpret a uint8_t as an int8_t
