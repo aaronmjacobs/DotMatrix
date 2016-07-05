@@ -14,9 +14,20 @@ bool is16BitOperand(Opr operand) {
        || operand == Opr::k20H || operand == Opr::k28H || operand == Opr::k30H || operand == Opr::k38H;
 }
 
-bool is16BitOperation(const Operation& operation) {
+bool is16BitOperation(Operation operation) {
    return operation.ins == Ins::kRET // Opcode 0xC9 is a RET with no operands
       || is16BitOperand(operation.param1) || is16BitOperand(operation.param2);
+}
+
+bool usesImm8(Operation operation) {
+   return operation.param1 == Opr::kImm8 || operation.param2 == Opr::kImm8
+      || operation.param1 == Opr::kDrefImm8 || operation.param2 == Opr::kDrefImm8
+      || operation.param1 == Opr::kImm8Signed || operation.param2 == Opr::kImm8Signed;
+}
+
+bool usesImm16(Operation operation) {
+   return operation.param1 == Opr::kImm16 || operation.param2 == Opr::kImm16
+      || operation.param1 == Opr::kDrefImm16 || operation.param2 == Opr::kDrefImm16;
 }
 
 // Interpret a uint8_t as an int8_t
@@ -90,8 +101,8 @@ bool evalJumpCondition(Opr operand, bool zero, bool carry) {
 CPU::CPU(Memory& memory)
    : reg({0}), mem(memory), cycles(0), halted(false), stopped(false), executedPrefixCB(false),
      interruptEnableRequested(false), interruptDisableRequested(false) {
-   reg.pc = 0x0100;
    reg.sp = 0xFFFE;
+   reg.pc = 0x0100;
 }
 
 void CPU::tick() {
@@ -143,12 +154,9 @@ void CPU::execute(Operation operation) {
    // Prepare immediate values if necessary
    uint8_t imm8 = 0;
    uint16_t imm16 = 0;
-   if (operation.param1 == Opr::kImm8 || operation.param2 == Opr::kImm8
-      || operation.param1 == Opr::kDrefImm8 || operation.param2 == Opr::kDrefImm8
-      || operation.param1 == Opr::kImm8Signed || operation.param2 == Opr::kImm8Signed) {
+   if (usesImm8(operation)) {
       imm8 = readPC();
-   } else if (operation.param1 == Opr::kImm16 || operation.param2 == Opr::kImm16
-      || operation.param1 == Opr::kDrefImm16 || operation.param2 == Opr::kDrefImm16) {
+   } else if (usesImm16(operation)) {
       imm16 = readPC16();
    }
 
@@ -419,10 +427,10 @@ void CPU::execute(Operation operation) {
       {
          reg.a = (reg.a << 1) | (reg.a >> 7);
 
-         setFlag(kZero, reg.a == 0);
+         setFlag(kZero, false);
          setFlag(kSub, false);
          setFlag(kHalfCarry, false);
-         setFlag(kCarry, (reg.a & 0x01) == 1);
+         setFlag(kCarry, (reg.a & 0x01) != 0);
          break;
       }
       case Ins::kRLA: // TODO Handle as special case above?
@@ -431,20 +439,20 @@ void CPU::execute(Operation operation) {
          uint8_t newCarryVal = reg.a & 0x80;
          reg.a = (reg.a << 1) | carryVal;
 
-         setFlag(kZero, reg.a == 0);
+         setFlag(kZero, false);
          setFlag(kSub, false);
          setFlag(kHalfCarry, false);
-         setFlag(kCarry, newCarryVal == 1);
+         setFlag(kCarry, newCarryVal != 0);
          break;
       }
       case Ins::kRRCA: // TODO Handle as special case above?
       {
          reg.a = (reg.a >> 1) | (reg.a << 7);
 
-         setFlag(kZero, reg.a == 0);
+         setFlag(kZero, false);
          setFlag(kSub, false);
          setFlag(kHalfCarry, false);
-         setFlag(kCarry, (reg.a & 0x80) == 1);
+         setFlag(kCarry, (reg.a & 0x80) != 0);
          break;
       }
       case Ins::kRRA: // TODO Handle as special case above?
@@ -453,10 +461,10 @@ void CPU::execute(Operation operation) {
          uint8_t newCarryVal = reg.a & 0x01;
          reg.a = (reg.a >> 1) | (carryVal << 7);
 
-         setFlag(kZero, reg.a == 0);
+         setFlag(kZero, false);
          setFlag(kSub, false);
          setFlag(kHalfCarry, false);
-         setFlag(kCarry, newCarryVal == 1);
+         setFlag(kCarry, newCarryVal != 0);
          break;
       }
       case Ins::kRLC:
@@ -585,10 +593,9 @@ void CPU::execute16(Operation operation) {
    // Prepare immediate values if necessary
    uint8_t imm8 = 0;
    uint16_t imm16 = 0;
-   if (operation.param1 == Opr::kImm8 || operation.param2 == Opr::kImm8
-      || operation.param1 == Opr::kDrefImm8 || operation.param2 == Opr::kDrefImm8) {
+   if (usesImm8(operation)) {
       imm8 = readPC();
-   } else if (operation.param1 == Opr::kImm16 || operation.param2 == Opr::kImm16) {
+   } else if (usesImm16(operation)) {
       imm16 = readPC16();
    }
 
