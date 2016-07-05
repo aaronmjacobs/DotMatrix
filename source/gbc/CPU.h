@@ -150,7 +150,9 @@ public:
 
    void tick();
 
+#if !defined(RUN_TESTS) // Need direct access when running tests
 private:
+#endif
    union Registers {
       uint8_t raw[12];
 

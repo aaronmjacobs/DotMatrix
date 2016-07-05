@@ -4,6 +4,9 @@
 #include "wrapper/video/Renderer.h"
 
 #include "gbc/Device.h"
+#if defined(RUN_TESTS)
+#  include "test/CPUTester.h"
+#endif // defined(RUN_TESTS)
 
 #include <cstdlib>
 #include <functional>
@@ -86,6 +89,11 @@ int main(int argc, char *argv[]) {
    framebufferCallback = [&renderer](int width, int height) {
       renderer.onFramebufferSizeChange(width, height);
    };
+
+#if defined(RUN_TESTS)
+   GBC::CPUTester cpuTester;
+   cpuTester.runTests(true);
+#endif // defined(RUN_TESTS)
 
    GBC::Device device;
    device.run();
