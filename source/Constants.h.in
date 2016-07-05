@@ -1,17 +1,21 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#define PROJECT_NAME "@PROJECT_NAME@"
-#define PROJECT_DISPLAY_NAME "@PROJECT_DISPLAY_NAME@"
-
-#define VERSION_TYPE "@VERSION_TYPE@"
-#define VERSION_MAJOR @VERSION_MAJOR@
-#define VERSION_MINOR @VERSION_MINOR@
-#define VERSION_MICRO @VERSION_MICRO@
-#define VERSION_BUILD @VERSION_BUILD@
-
 #cmakedefine LOG_TO_FILE
 
 #cmakedefine RUN_TESTS
+
+namespace {
+
+constexpr const char* kProjectName = "@PROJECT_NAME@";
+constexpr const char* kProjectDisplayName = "@PROJECT_DISPLAY_NAME@";
+
+constexpr const char* kVersionType = "@VERSION_TYPE@";
+constexpr int kVersionMajor = @VERSION_MAJOR@;
+constexpr int kVersionMinor = @VERSION_MINOR@;
+constexpr int kVersionMicro = @VERSION_MICRO@;
+constexpr int kVersionBuild = @VERSION_BUILD@;
+
+} // namespace
 
 #endif

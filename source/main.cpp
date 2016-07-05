@@ -33,7 +33,7 @@ GLFWwindow* init() {
    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-   GLFWwindow *window = glfwCreateWindow(GBC::kScreenWidth, GBC::kScreenHeight, PROJECT_DISPLAY_NAME, nullptr, nullptr);
+   GLFWwindow *window = glfwCreateWindow(GBC::kScreenWidth, GBC::kScreenHeight, kProjectDisplayName, nullptr, nullptr);
    if (!window) {
       glfwTerminate();
       LOG_ERROR_MSG_BOX("Unable to create GLFW window");
@@ -68,8 +68,8 @@ uint8_t dist(float x1, float y1, float x2, float y2) {
 } // namespace
 
 int main(int argc, char *argv[]) {
-   LOG_INFO(PROJECT_NAME << " " << VERSION_TYPE << " " << VERSION_MAJOR << "." << VERSION_MINOR << "."
-      << VERSION_MICRO << " (" << VERSION_BUILD << ")");
+   LOG_INFO(kProjectName << " " << kVersionType << " " << kVersionMajor << "." << kVersionMinor << "."
+      << kVersionMicro << " (" << kVersionBuild << ")");
 
    GLFWwindow *window = init();
    if (!window) {
