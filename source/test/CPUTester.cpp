@@ -312,6 +312,659 @@ void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
 
 void CPUTester::init() {
    testGroups = {
+      {
+         {
+            0x00, // NOP
+            [](CPU& initial, CPU& final) {
+            }
+         }
+      },
+      {
+         {
+            0x01, // LD BC,d16
+            [](CPU& initial, CPU& final) {
+               final.reg.bc = imm16(initial);
+            }
+         }
+      },
+      {
+         {
+            0x02, // LD (BC),A
+            [](CPU& initial, CPU& final) {
+               final.mem.raw[initial.reg.bc] = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0x03, // INC BC
+            [](CPU& initial, CPU& final) {
+               ++final.reg.bc;
+            }
+         }
+      },
+      {
+         {
+            0x04, // INC B
+            [](CPU& initial, CPU& final) {
+               ++final.reg.b;
+
+               UPDATE_FLAGS(b, "Z0H-")
+            }
+         }
+      },
+      {
+         {
+            0x05, // DEC B
+            [](CPU& initial, CPU& final) {
+               --final.reg.b;
+
+               UPDATE_FLAGS(b, "Z1H-")
+            }
+         }
+      },
+      {
+         {
+            0x06, // LD B,d8
+            [](CPU& initial, CPU& final) {
+               final.reg.b = imm8(initial);
+            }
+         }
+      },
+      {
+         {
+            0x07, // RLCA
+            [](CPU& initial, CPU& final) {
+               final.reg.a = (initial.reg.a << 1) | (initial.reg.a >> 7);
+
+               UPDATE_FLAGS(c, "000C")
+               // Old bit 7 to carry
+               if (initial.reg.a & 0x80) {
+                  final.reg.f |= CPU::kCarry;
+               } else {
+                  final.reg.f &= ~CPU::kCarry;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x08, // LD (a16),SP
+            [](CPU& initial, CPU& final) {
+               uint8_t spLow = initial.reg.sp & 0xFF;
+               uint8_t spHigh = (initial.reg.sp >> 8) & 0xFF;
+               uint16_t a16 = imm16(initial);
+
+               final.mem.raw[a16] = spLow;
+               final.mem.raw[a16 + 1] = spHigh;
+            }
+         }
+      },
+      {
+         {
+            0x09, // ADD HL,BC
+            [](CPU& initial, CPU& final) {
+               final.reg.hl = initial.reg.hl + initial.reg.bc;
+
+               UPDATE_FLAGS(hl, "-0HC")
+            }
+         }
+      },
+      {
+         {
+            0x0A, // LD A,(BC)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.mem.raw[initial.reg.bc] | (initial.mem.raw[initial.reg.bc + 1] << 8);
+            }
+         }
+      },
+      {
+         {
+            0x0B, // DEC BC
+            [](CPU& initial, CPU& final) {
+               final.reg.bc = initial.reg.bc - 1;
+            }
+         }
+      },
+      {
+         {
+            0x0C, // INC C
+            [](CPU& initial, CPU& final) {
+               final.reg.c = initial.reg.c + 1;
+
+               UPDATE_FLAGS(c, "Z0H-")
+            }
+         }
+      },
+      {
+         {
+            0x0D, // DEC C
+            [](CPU& initial, CPU& final) {
+               final.reg.c = initial.reg.c - 1;
+
+               UPDATE_FLAGS(c, "Z1H-")
+            }
+         }
+      },
+      {
+         {
+            0x0E, // LD C,d8
+            [](CPU& initial, CPU& final) {
+               final.reg.c = imm8(initial);
+            }
+         }
+      },
+      {
+         {
+            0x0F, // RRCA
+            [](CPU& initial, CPU& final) {
+               final.reg.a = (initial.reg.a >> 1) | (initial.reg.a << 7);
+
+               UPDATE_FLAGS(c, "000C")
+               // Old bit 0 to carry
+               if (initial.reg.a & 0x01) {
+                  final.reg.f |= CPU::kCarry;
+               } else {
+                  final.reg.f &= ~CPU::kCarry;
+               }
+            }
+         }
+      },
+
+      {
+         {
+            0x10, // STOP 0
+            [](CPU& initial, CPU& final) {
+               final.mem.raw[initial.reg.pc + 1] = initial.mem.raw[initial.reg.pc + 1] = 0x00;
+
+               final.stopped = true;
+            }
+         }
+      },
+      {
+         {
+            0x11, // LD DE,d16
+            [](CPU& initial, CPU& final) {
+               final.reg.de = imm16(initial);
+            }
+         }
+      },
+      {
+         {
+            0x12, // LD (DE),A
+            [](CPU& initial, CPU& final) {
+               final.mem.raw[initial.reg.de] = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0x13, // INC DE
+            [](CPU& initial, CPU& final) {
+               ++final.reg.de;
+            }
+         }
+      },
+      {
+         {
+            0x14, // INC D
+            [](CPU& initial, CPU& final) {
+               final.reg.d = initial.reg.d + 1;
+
+               UPDATE_FLAGS(d, "Z0H-")
+            }
+         }
+      },
+      {
+         {
+            0x15, // DEC D
+            [](CPU& initial, CPU& final) {
+               final.reg.d = initial.reg.d - 1;
+
+               UPDATE_FLAGS(d, "Z1H-")
+            }
+         }
+      },
+      {
+         {
+            0x16, // LD D,d8
+            [](CPU& initial, CPU& final) {
+               final.reg.d = imm8(initial);
+            }
+         }
+      },
+      {
+         {
+            0x17, // RLA
+            [](CPU& initial, CPU& final) {
+               final.reg.a = (initial.reg.a << 1) | ((initial.reg.f & CPU::kCarry) ? 0x01 : 0x00);
+
+               UPDATE_FLAGS(c, "000C")
+               // Old bit 7 to carry
+               if (initial.reg.a & 0x80) {
+                  final.reg.f |= CPU::kCarry;
+               } else {
+                  final.reg.f &= ~CPU::kCarry;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x18, // JR r8
+            [](CPU& initial, CPU& final) {
+               uint8_t offset = imm8(initial);
+               int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
+               final.reg.pc = initial.reg.pc + 2 + signedOffset;
+            }
+         }
+      },
+      {
+         {
+            0x19, // ADD HL,DE
+            [](CPU& initial, CPU& final) {
+               final.reg.hl = initial.reg.hl + initial.reg.de;
+
+               UPDATE_FLAGS(hl, "-0HC")
+            }
+         }
+      },
+      {
+         {
+            0x1A, // LD A,(DE)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.mem.raw[initial.reg.de];
+            }
+         }
+      },
+      {
+         {
+            0x1B, // DEC DE
+            [](CPU& initial, CPU& final) {
+               final.reg.de = initial.reg.de - 1;
+            }
+         }
+      },
+      {
+         {
+            0x1C, // INC E
+            [](CPU& initial, CPU& final) {
+               final.reg.e = initial.reg.e + 1;
+
+               UPDATE_FLAGS(e, "Z0H-")
+            }
+         }
+      },
+      {
+         {
+            0x1D, // DEC E
+            [](CPU& initial, CPU& final) {
+               final.reg.e = initial.reg.e - 1;
+
+               UPDATE_FLAGS(e, "Z1H-")
+            }
+         }
+      },
+      {
+         {
+            0x1E, // LD E,d8
+            [](CPU& initial, CPU& final) {
+               final.reg.e = imm8(initial);
+            }
+         }
+      },
+      {
+         {
+            0x1F, // RRA
+            [](CPU& initial, CPU& final) {
+               final.reg.a = (initial.reg.a >> 1) | ((initial.reg.f & CPU::kCarry) ? 0x80 : 0x00);
+
+               UPDATE_FLAGS(c, "000C")
+               // Old bit 0 to carry
+               if (initial.reg.a & 0x01) {
+                  final.reg.f |= CPU::kCarry;
+               } else {
+                  final.reg.f &= ~CPU::kCarry;
+               }
+            }
+         }
+      },
+
+      {
+         {
+            0x20, // JR NZ,r8
+            [](CPU& initial, CPU& final) {
+               if ((initial.reg.f & CPU::kZero) == 0x00) {
+                  uint8_t offset = imm8(initial);
+                  int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
+                  final.reg.pc = initial.reg.pc + 2 + signedOffset;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x21, // LD HL,d16
+            [](CPU& initial, CPU& final) {
+               final.reg.hl = imm16(initial);
+            }
+         }
+      },
+      {
+         {
+            0x22, // LD (HL+),A
+            [](CPU& initial, CPU& final) {
+               final.mem.raw[initial.reg.hl] = initial.reg.a;
+               final.reg.hl = initial.reg.hl + 1;
+            }
+         }
+      },
+      {
+         {
+            0x23, // INC HL
+            [](CPU& initial, CPU& final) {
+               final.reg.hl = initial.reg.hl + 1;
+            }
+         }
+      },
+      {
+         {
+            0x24, // INC H
+            [](CPU& initial, CPU& final) {
+               final.reg.h = initial.reg.h + 1;
+
+               UPDATE_FLAGS(h, "Z0H-")
+            }
+         }
+      },
+      {
+         {
+            0x25, // DEC H
+            [](CPU& initial, CPU& final) {
+               final.reg.h = initial.reg.h - 1;
+
+               UPDATE_FLAGS(h, "Z1H-")
+            }
+         }
+      },
+      {
+         {
+            0x26, // LD H,d8
+            [](CPU& initial, CPU& final) {
+               final.reg.h = imm8(initial);
+            }
+         }
+      },
+      {
+         {
+            0x27, // DAA
+            [](CPU& initial, CPU& final) {
+               uint16_t val = initial.reg.a;
+
+               if (initial.reg.f & CPU::kSub) {
+                  if (initial.reg.f & CPU::kHalfCarry) {
+                     val = (val - 0x06) & 0xFF;
+                  }
+                  if (initial.reg.f & CPU::kCarry) {
+                     val -= 0x60;
+                  }
+               } else {
+                  if (initial.reg.f & CPU::kHalfCarry || (val & 0x0F) > 9) {
+                     val += 0x06;
+                  }
+                  if (initial.reg.f & CPU::kCarry || val > 0x9F) {
+                     val += 0x60;
+                  }
+               }
+
+               final.reg.a = val;
+
+               UPDATE_FLAGS(a, "Z-0C")
+               // See DAA table
+               if ((val & 0x0100) == 0x0100) {
+                  final.reg.f |= CPU::kCarry;
+               } else {
+                  final.reg.f &= ~CPU::kCarry;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x28, // JR Z,r8
+            [](CPU& initial, CPU& final) {
+               if ((initial.reg.f & CPU::kZero) != 0x00) {
+                  uint8_t offset = imm8(initial);
+                  int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
+                  final.reg.pc = initial.reg.pc + 2 + signedOffset;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x29, // ADD HL,HL
+            [](CPU& initial, CPU& final) {
+               final.reg.hl = initial.reg.hl + initial.reg.hl;
+
+               UPDATE_FLAGS(hl, "-0HC")
+            }
+         }
+      },
+      {
+         {
+            0x2A, // LD A,(HL+)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.mem.raw[initial.reg.hl];
+               final.reg.hl = initial.reg.hl + 1;
+            }
+         }
+      },
+      {
+         {
+            0x2B, // DEC HL
+            [](CPU& initial, CPU& final) {
+               final.reg.hl = initial.reg.hl - 1;
+            }
+         }
+      },
+      {
+         {
+            0x2C, // INC L
+            [](CPU& initial, CPU& final) {
+               final.reg.l = initial.reg.l + 1;
+
+               UPDATE_FLAGS(l, "Z0H-")
+            }
+         }
+      },
+      {
+         {
+            0x2D, // DEC L
+            [](CPU& initial, CPU& final) {
+               final.reg.l = initial.reg.l - 1;
+
+               UPDATE_FLAGS(l, "Z1H-")
+            }
+         }
+      },
+      {
+         {
+            0x2E, // LD L,d8
+            [](CPU& initial, CPU& final) {
+               final.reg.l = imm8(initial);
+            }
+         }
+      },
+      {
+         {
+            0x2F, // CPL
+            [](CPU& initial, CPU& final) {
+               final.reg.a = ~initial.reg.a;
+
+               UPDATE_FLAGS(a, "-11-")
+            }
+         }
+      },
+
+      {
+         {
+            0x30, // JR NC,r8
+            [](CPU& initial, CPU& final) {
+               if ((initial.reg.f & CPU::kCarry) == 0x00) {
+                  uint8_t offset = imm8(initial);
+                  int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
+                  final.reg.pc = initial.reg.pc + 2 + signedOffset;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x31, // LD SP,d16
+            [](CPU& initial, CPU& final) {
+               final.reg.sp = imm16(initial);
+            }
+         }
+      },
+      {
+         {
+            0x32, // LD (HL-),A
+            [](CPU& initial, CPU& final) {
+               final.mem.raw[initial.reg.hl] = initial.reg.a;
+               final.reg.hl = initial.reg.hl - 1;
+            }
+         }
+      },
+      {
+         {
+            0x33, // INC SP
+            [](CPU& initial, CPU& final) {
+               final.reg.sp = initial.reg.sp + 1;
+            }
+         }
+      },
+      {
+         {
+            0x34, // INC (HL)
+            [](CPU& initial, CPU& final) {
+               final.mem.raw[initial.reg.hl] = initial.mem.raw[initial.reg.hl] + 1;
+
+               // hacky way to make macro still work - use a to store the result temporarily
+               uint8_t initialA = initial.reg.a;
+               initial.reg.a = initial.mem.raw[initial.reg.hl];
+               final.reg.a = initial.mem.raw[initial.reg.hl] + 1;
+               UPDATE_FLAGS(a, "Z0H-")
+               initial.reg.a = final.reg.a = initialA;
+            }
+         }
+      },
+      {
+         {
+            0x35, // DEC (HL)
+            [](CPU& initial, CPU& final) {
+               final.mem.raw[initial.reg.hl] = initial.mem.raw[initial.reg.hl] - 1;
+
+               // hacky way to make macro still work - use a to store the result temporarily
+               uint8_t initialA = initial.reg.a;
+               initial.reg.a = initial.mem.raw[initial.reg.hl];
+               final.reg.a = initial.mem.raw[initial.reg.hl] - 1;
+               UPDATE_FLAGS(a, "Z1H-")
+               initial.reg.a = final.reg.a = initialA;
+            }
+         }
+      },
+      {
+         {
+            0x36, // LD (HL),d8
+            [](CPU& initial, CPU& final) {
+               final.mem.raw[initial.reg.hl] = imm8(initial);
+            }
+         }
+      },
+      {
+         {
+            0x37, // SCF
+            [](CPU& initial, CPU& final) {
+               UPDATE_FLAGS(a, "-001")
+            }
+         }
+      },
+      {
+         {
+            0x38, // JR C,r8
+            [](CPU& initial, CPU& final) {
+               if ((initial.reg.f & CPU::kCarry) != 0x00) {
+                  uint8_t offset = imm8(initial);
+                  int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
+                  final.reg.pc = initial.reg.pc + 2 + signedOffset;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x39, // ADD HL,SP
+            [](CPU& initial, CPU& final) {
+               final.reg.hl = initial.reg.hl + initial.reg.sp;
+
+               UPDATE_FLAGS(hl, "-0HC")
+            }
+         }
+      },
+      {
+         {
+            0x3A, // LD A,(HL-)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.mem.raw[initial.reg.hl];
+               final.reg.hl = initial.reg.hl - 1;
+            }
+         }
+      },
+      {
+         {
+            0x3B, // DEC SP
+            [](CPU& initial, CPU& final) {
+               final.reg.sp = initial.reg.sp - 1;
+            }
+         }
+      },
+      {
+         {
+            0x3C, // INC A
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + 1;
+               UPDATE_FLAGS(a, "Z0H-")
+            }
+         }
+      },
+      {
+         {
+            0x3D, // DEC A
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - 1;
+               UPDATE_FLAGS(a, "Z1H-")
+            }
+         }
+      },
+      {
+         {
+            0x3E, // LD A,d8
+            [](CPU& initial, CPU& final) {
+               final.reg.a = imm8(initial);
+            }
+         }
+      },
+      {
+         {
+            0x3F, // CCF
+            [](CPU& initial, CPU& final) {
+               UPDATE_FLAGS(a, "-00C")
+               // Set carry to flipped initial carry
+               final.reg.f = (final.reg.f & 0xE0) | ((initial.reg.f & 0x10) ^ 0x10);
+            }
+         }
+      },
    };
 }
 
