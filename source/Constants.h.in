@@ -2,6 +2,7 @@
 #define CONSTANTS_H
 
 #cmakedefine LOG_TO_FILE
+#cmakedefine LOG_MSVC_STYLE
 
 #cmakedefine RUN_TESTS
 

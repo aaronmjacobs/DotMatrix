@@ -48,6 +48,7 @@ set(BIN_RES_DIR "${PROJECT_BINARY_DIR}/resources")
 
 # Options
 option(LOG_TO_FILE "Enable logging to a file" OFF)
+option(LOG_MSVC_STYLE "Format logs for MSVC" ${MSVC})
 
 # Generated content
 configure_file(
