@@ -216,10 +216,12 @@ void prepareInitial(CPU& cpu, const CPUTestGroup& testGroup, bool randomizeData,
    }
 }
 
-void prepareFinal(CPU& cpu, const CPUTestGroup& testGroup, bool randomizeData, uint16_t seed) {
+void prepareFinal(CPU& cpu, const CPUTestGroup& testGroup, size_t testIndex, bool randomizeData, uint16_t seed) {
    prepareInitial(cpu, testGroup, randomizeData, seed);
 
-   for (const CPUTest& test : testGroup) {
+   for (size_t i = 0; i <= testIndex; ++i) {
+      const CPUTest& test = testGroup[i];
+
       Operation operation = kOperations[test.opcode];
       cpu.cycles += operation.cycles;
 
@@ -268,10 +270,10 @@ void CPUTester::runTestGroup(const CPUTestGroup& testGroup, bool randomizeData, 
    CPU finalCPU(finalMemory);
 
    prepareInitial(cpu, testGroup, randomizeData, seed);
-   prepareFinal(finalCPU, testGroup, randomizeData, seed);
 
-   for (const CPUTest& test : testGroup) {
-      runTest(cpu, finalCPU, test);
+   for (size_t i = 0; i < testGroup.size(); ++i) {
+      prepareFinal(finalCPU, testGroup, i, randomizeData, seed);
+      runTest(cpu, finalCPU, testGroup[i]);
    }
 }
 
