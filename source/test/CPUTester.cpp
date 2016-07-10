@@ -163,7 +163,7 @@ void dumpMem(const Memory& mem, uint16_t start, uint16_t end, const char* name =
       if (i % 8 == 0) {
          out << "\n" << hex(i) << " |";
       }
-      out << " " << hex(mem.raw[i]);
+      out << " " << hex(mem[i]);
    }
    out << "\n";
    LOG_INFO(out.str());
@@ -205,13 +205,13 @@ void prepareInitial(CPU& cpu, const CPUTestGroup& testGroup, bool randomizeData,
    for (const CPUTest& test : testGroup) {
       Operation operation = kOperations[test.opcode];
 
-      cpu.mem.raw[cpu.reg.pc + pcOffset++] = test.opcode;
+      cpu.mem[cpu.reg.pc + pcOffset++] = test.opcode;
 
       if (usesImm8(operation)) {
-         cpu.mem.raw[cpu.reg.pc + pcOffset++] = kInitialMem1;
+         cpu.mem[cpu.reg.pc + pcOffset++] = kInitialMem1;
       } else if (usesImm16(operation)) {
-         cpu.mem.raw[cpu.reg.pc + pcOffset++] = kInitialMem1;
-         cpu.mem.raw[cpu.reg.pc + pcOffset++] = kInitialMem2;
+         cpu.mem[cpu.reg.pc + pcOffset++] = kInitialMem1;
+         cpu.mem[cpu.reg.pc + pcOffset++] = kInitialMem2;
       }
    }
 }
@@ -235,11 +235,11 @@ void prepareFinal(CPU& cpu, const CPUTestGroup& testGroup, size_t testIndex, boo
 }
 
 uint8_t imm8(CPU& cpu) {
-   return cpu.mem.raw[cpu.reg.pc + 1];
+   return cpu.mem[cpu.reg.pc + 1];
 }
 
 uint16_t imm16(CPU& cpu) {
-   return cpu.mem.raw[cpu.reg.pc + 1] | (cpu.mem.raw[cpu.reg.pc + 2] << 8);
+   return cpu.mem[cpu.reg.pc + 1] | (cpu.mem[cpu.reg.pc + 2] << 8);
 }
 
 } // namespace
@@ -286,7 +286,7 @@ void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
    bool memoryMatches = true;
    uint16_t mismatchLocation = 0;
    for (uint16_t i = 0, j = 0; i >= j; j = i++) {
-      if (cpu.mem.raw[i] != finalCPU.mem.raw[i]) {
+      if (cpu.mem[i] != finalCPU.mem[i]) {
          memoryMatches = false;
          mismatchLocation = i;
          break;
@@ -333,7 +333,7 @@ void CPUTester::init() {
          {
             0x02, // LD (BC),A
             [](CPU& initial, CPU& final) {
-               final.mem.raw[initial.reg.bc] = initial.reg.a;
+               final.mem[initial.reg.bc] = initial.reg.a;
             }
          }
       },
@@ -397,8 +397,8 @@ void CPUTester::init() {
                uint8_t spHigh = (initial.reg.sp >> 8) & 0xFF;
                uint16_t a16 = imm16(initial);
 
-               final.mem.raw[a16] = spLow;
-               final.mem.raw[a16 + 1] = spHigh;
+               final.mem[a16] = spLow;
+               final.mem[a16 + 1] = spHigh;
             }
          }
       },
@@ -416,7 +416,7 @@ void CPUTester::init() {
          {
             0x0A, // LD A,(BC)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.raw[initial.reg.bc] | (initial.mem.raw[initial.reg.bc + 1] << 8);
+               final.reg.a = initial.mem[initial.reg.bc] | (initial.mem[initial.reg.bc + 1] << 8);
             }
          }
       },
@@ -477,7 +477,7 @@ void CPUTester::init() {
          {
             0x10, // STOP 0
             [](CPU& initial, CPU& final) {
-               final.mem.raw[initial.reg.pc + 1] = initial.mem.raw[initial.reg.pc + 1] = 0x00;
+               final.mem[initial.reg.pc + 1] = initial.mem[initial.reg.pc + 1] = 0x00;
 
                final.stopped = true;
             }
@@ -495,7 +495,7 @@ void CPUTester::init() {
          {
             0x12, // LD (DE),A
             [](CPU& initial, CPU& final) {
-               final.mem.raw[initial.reg.de] = initial.reg.a;
+               final.mem[initial.reg.de] = initial.reg.a;
             }
          }
       },
@@ -575,7 +575,7 @@ void CPUTester::init() {
          {
             0x1A, // LD A,(DE)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.raw[initial.reg.de];
+               final.reg.a = initial.mem[initial.reg.de];
             }
          }
       },
@@ -656,7 +656,7 @@ void CPUTester::init() {
          {
             0x22, // LD (HL+),A
             [](CPU& initial, CPU& final) {
-               final.mem.raw[initial.reg.hl] = initial.reg.a;
+               final.mem[initial.reg.hl] = initial.reg.a;
                final.reg.hl = initial.reg.hl + 1;
             }
          }
@@ -757,7 +757,7 @@ void CPUTester::init() {
          {
             0x2A, // LD A,(HL+)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.raw[initial.reg.hl];
+               final.reg.a = initial.mem[initial.reg.hl];
                final.reg.hl = initial.reg.hl + 1;
             }
          }
@@ -833,7 +833,7 @@ void CPUTester::init() {
          {
             0x32, // LD (HL-),A
             [](CPU& initial, CPU& final) {
-               final.mem.raw[initial.reg.hl] = initial.reg.a;
+               final.mem[initial.reg.hl] = initial.reg.a;
                final.reg.hl = initial.reg.hl - 1;
             }
          }
@@ -850,12 +850,12 @@ void CPUTester::init() {
          {
             0x34, // INC (HL)
             [](CPU& initial, CPU& final) {
-               final.mem.raw[initial.reg.hl] = initial.mem.raw[initial.reg.hl] + 1;
+               final.mem[initial.reg.hl] = initial.mem[initial.reg.hl] + 1;
 
                // hacky way to make macro still work - use a to store the result temporarily
                uint8_t initialA = initial.reg.a;
-               initial.reg.a = initial.mem.raw[initial.reg.hl];
-               final.reg.a = initial.mem.raw[initial.reg.hl] + 1;
+               initial.reg.a = initial.mem[initial.reg.hl];
+               final.reg.a = initial.mem[initial.reg.hl] + 1;
                UPDATE_FLAGS(a, "Z0H-")
                initial.reg.a = final.reg.a = initialA;
             }
@@ -865,12 +865,12 @@ void CPUTester::init() {
          {
             0x35, // DEC (HL)
             [](CPU& initial, CPU& final) {
-               final.mem.raw[initial.reg.hl] = initial.mem.raw[initial.reg.hl] - 1;
+               final.mem[initial.reg.hl] = initial.mem[initial.reg.hl] - 1;
 
                // hacky way to make macro still work - use a to store the result temporarily
                uint8_t initialA = initial.reg.a;
-               initial.reg.a = initial.mem.raw[initial.reg.hl];
-               final.reg.a = initial.mem.raw[initial.reg.hl] - 1;
+               initial.reg.a = initial.mem[initial.reg.hl];
+               final.reg.a = initial.mem[initial.reg.hl] - 1;
                UPDATE_FLAGS(a, "Z1H-")
                initial.reg.a = final.reg.a = initialA;
             }
@@ -880,7 +880,7 @@ void CPUTester::init() {
          {
             0x36, // LD (HL),d8
             [](CPU& initial, CPU& final) {
-               final.mem.raw[initial.reg.hl] = imm8(initial);
+               final.mem[initial.reg.hl] = imm8(initial);
             }
          }
       },
@@ -918,7 +918,7 @@ void CPUTester::init() {
          {
             0x3A, // LD A,(HL-)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.raw[initial.reg.hl];
+               final.reg.a = initial.mem[initial.reg.hl];
                final.reg.hl = initial.reg.hl - 1;
             }
          }

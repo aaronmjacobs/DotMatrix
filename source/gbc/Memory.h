@@ -38,6 +38,21 @@ union Memory {
       uint8_t ramh[0x7F];     // High RAM area                (0xFF80-0xFFFE, 127)
       uint8_t ie;             // Interrupt enable register    (0xFFFF, 1)
    };
+
+   uint8_t& operator[](size_t index) {
+      ASSERT(index < 0x10000);
+
+      if (index >= 0xE000 && index < 0xFE00) {
+         // Mirror of working ram
+         index -= 0x2000;
+      }
+
+      return raw[index];
+   }
+
+   const uint8_t& operator[](size_t index) const {
+      return (*const_cast<Memory*>(this))[index];
+   }
 };
 
 } // namespace GBC

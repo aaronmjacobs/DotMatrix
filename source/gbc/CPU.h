@@ -201,7 +201,7 @@ private:
    };
 
    uint8_t readPC() {
-      return mem.raw[reg.pc++];
+      return mem[reg.pc++];
    }
 
    uint16_t readPC16() {

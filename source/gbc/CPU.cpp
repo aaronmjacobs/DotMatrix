@@ -814,8 +814,8 @@ void CPU::execute16(Operation operation) {
             ASSERT(operation.param2 == Opr::kSP);
 
             // TODO Make sure this is right (should be? gameboy is little endian)
-            mem.raw[imm16] = *param2 & 0xFF;
-            mem.raw[imm16 + 1] = (*param2 >> 8) & 0xFF;
+            mem[imm16] = *param2 & 0xFF;
+            mem[imm16 + 1] = (*param2 >> 8) & 0xFF;
          } else {
             *param1 = *param2;
          }
@@ -976,13 +976,13 @@ void CPU::execute16(Operation operation) {
 
 void CPU::push(uint16_t val) {
    reg.sp -= 2;
-   memcpy(&mem.raw[reg.sp], &val, 2);
+   memcpy(&mem[reg.sp], &val, 2);
 }
 
 uint16_t CPU::pop() {
    uint16_t val;
 
-   memcpy(&val, &mem.raw[reg.sp], 2);
+   memcpy(&val, &mem[reg.sp], 2);
    reg.sp += 2;
 
    return val;
@@ -1031,22 +1031,22 @@ uint8_t* CPU::addr8(Opr operand, uint8_t* imm8, uint16_t* imm16) {
          address = imm8;
          break;
       case Opr::kDrefC:
-         address = &mem.raw[0xFF00 + reg.c];
+         address = &mem[0xFF00 + reg.c];
          break;
       case Opr::kDrefBC:
-         address = &mem.raw[reg.bc];
+         address = &mem[reg.bc];
          break;
       case Opr::kDrefDE:
-         address = &mem.raw[reg.de];
+         address = &mem[reg.de];
          break;
       case Opr::kDrefHL:
-         address = &mem.raw[reg.hl];
+         address = &mem[reg.hl];
          break;
       case Opr::kDrefImm8:
-         address = &mem.raw[0xFF00 + *imm8];
+         address = &mem[0xFF00 + *imm8];
          break;
       case Opr::kDrefImm16:
-         address = &mem.raw[*imm16];
+         address = &mem[*imm16];
          break;
       default:
          ASSERT(false, "Invalid 8-bit operand: %hhu", operand);
@@ -1096,7 +1096,7 @@ uint16_t* CPU::addr16(Opr operand, uint8_t* imm8, uint16_t* imm16) {
          address = imm16;
          break;
       case Opr::kDrefImm16:
-         address = reinterpret_cast<uint16_t*>(&mem.raw[*imm16]); // TODO Is this ok? Endian issues?
+         address = reinterpret_cast<uint16_t*>(&mem[*imm16]); // TODO Is this ok? Endian issues?
          break;
       default:
          ASSERT(false, "Invalid 16-bit operand: %hhu", operand);
