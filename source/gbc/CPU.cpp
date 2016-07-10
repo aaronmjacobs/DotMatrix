@@ -238,6 +238,8 @@ CPU::CPU(Memory& memory)
 }
 
 void CPU::tick() {
+   handleInterrupts();
+
    bool goingToEnableInterrupts = interruptEnableRequested;
    bool goingToDisableInterrupts = interruptDisableRequested;
    interruptEnableRequested = interruptDisableRequested = false;
@@ -260,6 +262,58 @@ void CPU::tick() {
    } else if (goingToDisableInterrupts) {
       ime = false;
    }
+}
+
+void CPU::handleInterrupts() {
+   if (!ime) {
+      return;
+   }
+
+   if ((mem.ie & kVBlank) && (mem.iff & kVBlank)) {
+      handleInterrupt(kVBlank);
+   } else if ((mem.ie & kLCDState) && (mem.iff & kLCDState)) {
+      handleInterrupt(kLCDState);
+   } else if ((mem.ie & kTimer) && (mem.iff & kTimer)) {
+      handleInterrupt(kTimer);
+   } else if ((mem.ie & kSerial) && (mem.iff & kSerial)) {
+      handleInterrupt(kSerial);
+   } else if ((mem.ie & kJoypad) && (mem.iff & kJoypad)) {
+      handleInterrupt(kJoypad);
+   }
+}
+
+void CPU::handleInterrupt(Interrupt interrupt) {
+   ASSERT(ime && (mem.ie & interrupt) && (mem.iff & interrupt));
+
+   ime = false;
+   mem.iff &= ~interrupt;
+
+   // two wait states
+   cycles += 2;
+
+   // PC is pushed onto the stack
+   push(reg.pc);
+   cycles += 2;
+
+   // PC is set to the interrupt handler
+   switch (interrupt) {
+      case kVBlank:
+         reg.pc = 0x0040;
+         break;
+      case kLCDState:
+         reg.pc = 0x0048;
+         break;
+      case kTimer:
+         reg.pc = 0x0050;
+         break;
+      case kSerial:
+         reg.pc = 0x0058;
+         break;
+      case kJoypad:
+         reg.pc = 0x0060;
+         break;
+   }
+   ++cycles;
 }
 
 void CPU::execute(Operation operation) {

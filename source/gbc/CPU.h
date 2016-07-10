@@ -192,6 +192,14 @@ private:
       kCarry = 1 << 4,     // Carry flag
    };
 
+   enum Interrupt : uint8_t {
+      kVBlank = 1 << 0,
+      kLCDState = 1 << 1,
+      kTimer = 1 << 2,
+      kSerial = 1 << 3,
+      kJoypad = 1 << 4,
+   };
+
    uint8_t readPC() {
       return mem.raw[reg.pc++];
    }
@@ -228,6 +236,10 @@ private:
 
       return (reg.f & flag) != 0;
    }
+
+   void handleInterrupts();
+
+   void handleInterrupt(Interrupt interrupt);
 
    void execute(Operation operation);
 
