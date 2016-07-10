@@ -240,12 +240,25 @@ CPU::CPU(Memory& memory)
 void CPU::tick() {
    handleInterrupts();
 
+   if (halted && ime) {
+      cycles += 4;
+      return;
+   }
+
    bool goingToEnableInterrupts = interruptEnableRequested;
    bool goingToDisableInterrupts = interruptDisableRequested;
    interruptEnableRequested = interruptDisableRequested = false;
    ASSERT(!(goingToEnableInterrupts && goingToDisableInterrupts));
 
    uint8_t opcode = readPC();
+
+   if (halted && !ime) {
+      // Immediately leave the halted state, and prevent the PC from incrementing - since we already incremented the PC,
+      // put it back to where it was
+      halted = false;
+      --reg.pc; // TODO Don't do this for GBC?
+   }
+
    Operation operation = executedPrefixCB ? kCBOperations[opcode] : kOperations[opcode];
    executedPrefixCB = false;
 
@@ -287,6 +300,7 @@ void CPU::handleInterrupt(Interrupt interrupt) {
 
    ime = false;
    mem.iff &= ~interrupt;
+   halted = false;
 
    // two wait states
    cycles += 2;
@@ -584,9 +598,7 @@ void CPU::execute(Operation operation) {
       {
          ASSERT(operation.param1 == Opr::kNone && operation.param2 == Opr::kNone);
 
-         // TODO
          halted = true;
-
          break;
       }
       case Ins::kSTOP:
