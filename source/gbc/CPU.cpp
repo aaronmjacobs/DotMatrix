@@ -237,7 +237,16 @@ CPU::CPU(Memory& memory)
    reg.pc = 0x0100;
 }
 
-void CPU::tick() {
+void CPU::tick(float dt) {
+   static const uint64_t kClockSpeed = 4194304; // 4.194304 MHz TODO handle GBC / SGB
+
+   uint64_t targetCycles = cycles + kClockSpeed * dt;
+   while (cycles < targetCycles) {
+      tickOnce();
+   }
+}
+
+void CPU::tickOnce() {
    handleInterrupts();
 
    if (halted && ime) {
@@ -262,9 +271,9 @@ void CPU::tick() {
    Operation operation = executedPrefixCB ? kCBOperations[opcode] : kOperations[opcode];
    executedPrefixCB = false;
 
-   LOG_DEBUG("");
+   /*LOG_DEBUG("");
    LOG_DEBUG("Opcode: " << hex(opcode));
-   LOG_DEBUG(insName(operation.ins) << " " << oprName(operation.param1) << " " << oprName(operation.param2));
+   LOG_DEBUG(insName(operation.ins) << " " << oprName(operation.param1) << " " << oprName(operation.param2));*/
 
    execute(operation);
 
@@ -336,11 +345,11 @@ void CPU::execute(Operation operation) {
 
    // Check if the operation deals with 16-bit values
    if (is16BitOperation(operation)) {
-      LOG_DEBUG("16-bit");
+      //LOG_DEBUG("16-bit");
       execute16(operation);
       return;
    }
-   LOG_DEBUG("8-bit");
+   //LOG_DEBUG("8-bit");
 
    // If this is a compound operation, execute each part
    if (operation.ins == Ins::kLDD) {

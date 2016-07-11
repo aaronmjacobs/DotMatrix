@@ -10,7 +10,7 @@ class Device {
 public:
    Device();
 
-   void run();
+   void tick(float dt);
 
 private:
    Memory memory;

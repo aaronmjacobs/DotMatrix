@@ -148,7 +148,7 @@ class CPU {
 public:
    CPU(Memory& memory);
 
-   void tick();
+   void tick(float dt);
 
 #if !defined(RUN_TESTS) // Need direct access when running tests
 private:
@@ -236,6 +236,8 @@ private:
 
       return (reg.f & flag) != 0;
    }
+
+   void tickOnce();
 
    void handleInterrupts();
 

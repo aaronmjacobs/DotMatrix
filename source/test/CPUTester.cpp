@@ -280,7 +280,7 @@ void CPUTester::runTestGroup(const CPUTestGroup& testGroup, bool randomizeData, 
 void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
    test.testSetupFunction(cpu, finalCPU);
 
-   cpu.tick();
+   cpu.tickOnce();
 
    bool registersMatch = memcmp(&finalCPU.reg, &cpu.reg, sizeof(CPU::Registers)) == 0;
    bool memoryMatches = true;

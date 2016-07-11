@@ -96,13 +96,26 @@ int main(int argc, char *argv[]) {
 #endif // defined(RUN_TESTS)
 
    GBC::Device device;
-   device.run();
+
+   static const double kMaxFrameTime = 0.25;
+   static const double kDt = 1.0 / 60.0;
+   double lastTime = glfwGetTime();
+   double accumulator = 0.0;
 
    while (!glfwWindowShouldClose(window)) {
+      double now = glfwGetTime();
+      double frameTime = std::min(now - lastTime, kMaxFrameTime); // Cap the frame time to prevent spiraling
+      lastTime = now;
+
+      accumulator += frameTime;
+      while (accumulator >= kDt) {
+         device.tick(static_cast<float>(kDt));
+         accumulator -= kDt;
+      }
+
       renderer.draw(pixels);
 
       glfwSwapBuffers(window);
-
       glfwPollEvents();
    }
 
