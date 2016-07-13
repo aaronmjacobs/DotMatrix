@@ -291,24 +291,24 @@ void CPU::handleInterrupts() {
       return;
    }
 
-   if ((mem.ie & kVBlank) && (mem.iff & kVBlank)) {
+   if ((mem.ie & kVBlank) && (mem.ifr & kVBlank)) {
       handleInterrupt(kVBlank);
-   } else if ((mem.ie & kLCDState) && (mem.iff & kLCDState)) {
+   } else if ((mem.ie & kLCDState) && (mem.ifr & kLCDState)) {
       handleInterrupt(kLCDState);
-   } else if ((mem.ie & kTimer) && (mem.iff & kTimer)) {
+   } else if ((mem.ie & kTimer) && (mem.ifr & kTimer)) {
       handleInterrupt(kTimer);
-   } else if ((mem.ie & kSerial) && (mem.iff & kSerial)) {
+   } else if ((mem.ie & kSerial) && (mem.ifr & kSerial)) {
       handleInterrupt(kSerial);
-   } else if ((mem.ie & kJoypad) && (mem.iff & kJoypad)) {
+   } else if ((mem.ie & kJoypad) && (mem.ifr & kJoypad)) {
       handleInterrupt(kJoypad);
    }
 }
 
 void CPU::handleInterrupt(Interrupt interrupt) {
-   ASSERT(ime && (mem.ie & interrupt) && (mem.iff & interrupt));
+   ASSERT(ime && (mem.ie & interrupt) && (mem.ifr & interrupt));
 
    ime = false;
-   mem.iff &= ~interrupt;
+   mem.ifr &= ~interrupt;
    halted = false;
 
    // two wait states
