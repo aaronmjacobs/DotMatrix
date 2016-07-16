@@ -92,7 +92,9 @@ int main(int argc, char *argv[]) {
 
 #if defined(RUN_TESTS)
    GBC::CPUTester cpuTester;
-   cpuTester.runTests(true);
+   for (int i = 0; i < 10; ++i) {
+      cpuTester.runTests(true);
+   }
 #endif // defined(RUN_TESTS)
 
    GBC::Device device;
