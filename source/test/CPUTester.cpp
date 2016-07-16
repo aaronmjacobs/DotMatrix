@@ -967,6 +967,522 @@ void CPUTester::init() {
             }
          }
       },
+
+      {
+         {
+            0x40, // LD B,B
+            [](CPU& initial, CPU& final) {
+               final.reg.b = initial.reg.b;
+            }
+         }
+      },
+      {
+         {
+            0x41, // LD B,C
+            [](CPU& initial, CPU& final) {
+               final.reg.b = initial.reg.c;
+            }
+         }
+      },
+      {
+         {
+            0x42, // LD B,D
+            [](CPU& initial, CPU& final) {
+               final.reg.b = initial.reg.d;
+            }
+         }
+      },
+      {
+         {
+            0x43, // LD B,E
+            [](CPU& initial, CPU& final) {
+               final.reg.b = initial.reg.e;
+            }
+         }
+      },
+      {
+         {
+            0x44, // LD B,H
+            [](CPU& initial, CPU& final) {
+               final.reg.b = initial.reg.h;
+            }
+         }
+      },
+      {
+         {
+            0x45, // LD B,L
+            [](CPU& initial, CPU& final) {
+               final.reg.b = initial.reg.l;
+            }
+         }
+      },
+      {
+         {
+            0x46, // LD B,(HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.b = initial.mem[initial.reg.hl];
+            }
+         }
+      },
+      {
+         {
+            0x47, // LD B,A
+            [](CPU& initial, CPU& final) {
+               final.reg.b = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0x48, // LD C,B
+            [](CPU& initial, CPU& final) {
+               final.reg.c = initial.reg.b;
+            }
+         }
+      },
+      {
+         {
+            0x49, // LD C,C
+            [](CPU& initial, CPU& final) {
+               final.reg.c = initial.reg.c;
+            }
+         }
+      },
+      {
+         {
+            0x4A, // LD C,D
+            [](CPU& initial, CPU& final) {
+               final.reg.c = initial.reg.d;
+            }
+         }
+      },
+      {
+         {
+            0x4B, // LD C,E
+            [](CPU& initial, CPU& final) {
+               final.reg.c = initial.reg.e;
+            }
+         }
+      },
+      {
+         {
+            0x4C, // LD C,H
+            [](CPU& initial, CPU& final) {
+               final.reg.c = initial.reg.h;
+            }
+         }
+      },
+      {
+         {
+            0x4D, // LD C,L
+            [](CPU& initial, CPU& final) {
+               final.reg.c = initial.reg.l;
+            }
+         }
+      },
+      {
+         {
+            0x4E, // LD C,(HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.c = initial.mem[initial.reg.hl];
+            }
+         }
+      },
+      {
+         {
+            0x4F, // LD C,A
+            [](CPU& initial, CPU& final) {
+               final.reg.c = initial.reg.a;
+            }
+         }
+      },
+
+      {
+         {
+            0x50, // LD D,B
+            [](CPU& initial, CPU& final) {
+               final.reg.d = initial.reg.b;
+            }
+         }
+      },
+      {
+         {
+            0x51, // LD D,C
+            [](CPU& initial, CPU& final) {
+               final.reg.d = initial.reg.c;
+            }
+         }
+      },
+      {
+         {
+            0x52, // LD D,D
+            [](CPU& initial, CPU& final) {
+               final.reg.d = initial.reg.d;
+            }
+         }
+      },
+      {
+         {
+            0x53, // LD D,E
+            [](CPU& initial, CPU& final) {
+               final.reg.d = initial.reg.e;
+            }
+         }
+      },
+      {
+         {
+            0x54, // LD D,H
+            [](CPU& initial, CPU& final) {
+               final.reg.d = initial.reg.h;
+            }
+         }
+      },
+      {
+         {
+            0x55, // LD D,L
+            [](CPU& initial, CPU& final) {
+               final.reg.d = initial.reg.l;
+            }
+         }
+      },
+      {
+         {
+            0x56, // LD D,(HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.d = initial.mem[initial.reg.hl];
+            }
+         }
+      },
+      {
+         {
+            0x57, // LD D,A
+            [](CPU& initial, CPU& final) {
+               final.reg.d = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0x58, // LD E,B
+            [](CPU& initial, CPU& final) {
+               final.reg.e = initial.reg.b;
+            }
+         }
+      },
+      {
+         {
+            0x59, // LD E,C
+            [](CPU& initial, CPU& final) {
+               final.reg.e = initial.reg.c;
+            }
+         }
+      },
+      {
+         {
+            0x5A, // LD E,D
+            [](CPU& initial, CPU& final) {
+               final.reg.e = initial.reg.d;
+            }
+         }
+      },
+      {
+         {
+            0x5B, // LD E,E
+            [](CPU& initial, CPU& final) {
+               final.reg.e = initial.reg.e;
+            }
+         }
+      },
+      {
+         {
+            0x5C, // LD E,H
+            [](CPU& initial, CPU& final) {
+               final.reg.e = initial.reg.h;
+            }
+         }
+      },
+      {
+         {
+            0x5D, // LD E,L
+            [](CPU& initial, CPU& final) {
+               final.reg.e = initial.reg.l;
+            }
+         }
+      },
+      {
+         {
+            0x5E, // LD E,(HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.e = initial.mem[initial.reg.hl];
+            }
+         }
+      },
+      {
+         {
+            0x5F, // LD E,A
+            [](CPU& initial, CPU& final) {
+               final.reg.e = initial.reg.a;
+            }
+         }
+      },
+
+      {
+         {
+            0x60, // LD H,B
+            [](CPU& initial, CPU& final) {
+               final.reg.h = initial.reg.b;
+            }
+         }
+      },
+      {
+         {
+            0x61, // LD H,C
+            [](CPU& initial, CPU& final) {
+               final.reg.h = initial.reg.c;
+            }
+         }
+      },
+      {
+         {
+            0x62, // LD H,D
+            [](CPU& initial, CPU& final) {
+               final.reg.h = initial.reg.d;
+            }
+         }
+      },
+      {
+         {
+            0x63, // LD H,E
+            [](CPU& initial, CPU& final) {
+               final.reg.h = initial.reg.e;
+            }
+         }
+      },
+      {
+         {
+            0x64, // LD H,H
+            [](CPU& initial, CPU& final) {
+               final.reg.h = initial.reg.h;
+            }
+         }
+      },
+      {
+         {
+            0x65, // LD H,L
+            [](CPU& initial, CPU& final) {
+               final.reg.h = initial.reg.l;
+            }
+         }
+      },
+      {
+         {
+            0x66, // LD H,(HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.h = initial.mem[initial.reg.hl];
+            }
+         }
+      },
+      {
+         {
+            0x67, // LD H,A
+            [](CPU& initial, CPU& final) {
+               final.reg.h = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0x68, // LD L,B
+            [](CPU& initial, CPU& final) {
+               final.reg.l = initial.reg.b;
+            }
+         }
+      },
+      {
+         {
+            0x69, // LD L,C
+            [](CPU& initial, CPU& final) {
+               final.reg.l = initial.reg.c;
+            }
+         }
+      },
+      {
+         {
+            0x6A, // LD L,D
+            [](CPU& initial, CPU& final) {
+               final.reg.l = initial.reg.d;
+            }
+         }
+      },
+      {
+         {
+            0x6B, // LD L,E
+            [](CPU& initial, CPU& final) {
+               final.reg.l = initial.reg.e;
+            }
+         }
+      },
+      {
+         {
+            0x6C, // LD L,H
+            [](CPU& initial, CPU& final) {
+               final.reg.l = initial.reg.h;
+            }
+         }
+      },
+      {
+         {
+            0x6D, // LD L,L
+            [](CPU& initial, CPU& final) {
+               final.reg.l = initial.reg.l;
+            }
+         }
+      },
+      {
+         {
+            0x6E, // LD L,(HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.l = initial.mem[initial.reg.hl];
+            }
+         }
+      },
+      {
+         {
+            0x6F, // LD L,A
+            [](CPU& initial, CPU& final) {
+               final.reg.l = initial.reg.a;
+            }
+         }
+      },
+
+      {
+         {
+            0x70, // LD (HL),B
+            [](CPU& initial, CPU& final) {
+               final.mem[initial.reg.hl] = initial.reg.b;
+            }
+         }
+      },
+      {
+         {
+            0x71, // LD (HL),C
+            [](CPU& initial, CPU& final) {
+               final.mem[initial.reg.hl] = initial.reg.c;
+            }
+         }
+      },
+      {
+         {
+            0x72, // LD (HL),D
+            [](CPU& initial, CPU& final) {
+               final.mem[initial.reg.hl] = initial.reg.d;
+            }
+         }
+      },
+      {
+         {
+            0x73, // LD (HL),E
+            [](CPU& initial, CPU& final) {
+               final.mem[initial.reg.hl] = initial.reg.e;
+            }
+         }
+      },
+      {
+         {
+            0x74, // LD (HL),H
+            [](CPU& initial, CPU& final) {
+               final.mem[initial.reg.hl] = initial.reg.h;
+            }
+         }
+      },
+      {
+         {
+            0x75, // LD (HL),L
+            [](CPU& initial, CPU& final) {
+               final.mem[initial.reg.hl] = initial.reg.l;
+            }
+         }
+      },
+      {
+         {
+            0x76, // HALT
+            [](CPU& initial, CPU& final) {
+               final.halted = true;
+            }
+         }
+      },
+      {
+         {
+            0x77, // LD (HL),A
+            [](CPU& initial, CPU& final) {
+               final.mem[initial.reg.hl] = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0x78, // LD A,B
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.b;
+            }
+         }
+      },
+      {
+         {
+            0x79, // LD A,C
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.c;
+            }
+         }
+      },
+      {
+         {
+            0x7A, // LD A,D
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.d;
+            }
+         }
+      },
+      {
+         {
+            0x7B, // LD A,E
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.e;
+            }
+         }
+      },
+      {
+         {
+            0x7C, // LD A,H
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.h;
+            }
+         }
+      },
+      {
+         {
+            0x7D, // LD A,L
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.l;
+            }
+         }
+      },
+      {
+         {
+            0x7E, // LD A,(HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.mem[initial.reg.hl];
+            }
+         }
+      },
+      {
+         {
+            0x7F, // LD A,A
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a;
+            }
+         }
+      },
    };
 }
 
