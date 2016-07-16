@@ -495,7 +495,7 @@ void CPU::execute(Operation operation) {
          uint16_t result = reg.a - *param1;
          uint16_t carryBits = reg.a ^ *param1 ^ result;
 
-         setFlag(kZero, reg.a == 0);
+         setFlag(kZero, result == 0);
          setFlag(kSub, true);
          setFlag(kHalfCarry, (carryBits & kHalfCaryMask) != 0);
          setFlag(kCarry, (carryBits & kCaryMask) != 0);
