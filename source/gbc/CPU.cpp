@@ -912,6 +912,8 @@ void CPU::execute16(Operation operation) {
             bool shouldJump = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
             if (shouldJump) {
                reg.pc = *param2;
+            } else {
+               cycles -= 4;
             }
          }
          break;
@@ -931,6 +933,8 @@ void CPU::execute16(Operation operation) {
             bool shouldJump = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
             if (shouldJump) {
                reg.pc += n;
+            } else {
+               cycles -= 4;
             }
          }
          break;
@@ -947,6 +951,8 @@ void CPU::execute16(Operation operation) {
             if (shouldCall) {
                push(reg.pc);
                reg.pc = *param2;
+            } else {
+               cycles -= 12;
             }
          }
          break;
@@ -969,6 +975,8 @@ void CPU::execute16(Operation operation) {
             bool shouldReturn = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
             if (shouldReturn) {
                reg.pc = pop();
+            } else {
+               cycles -= 12;
             }
          }
          break;
