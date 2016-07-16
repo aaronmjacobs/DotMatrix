@@ -855,6 +855,10 @@ void CPU::execute16(Operation operation) {
       case Ins::kPOP:
       {
          *param1 = pop();
+
+         if (operation.param1 == Opr::kAF) {
+            reg.f &= 0xF0; // Don't allow any bits in the lower nibble
+         }
          break;
       }
 
