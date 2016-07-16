@@ -295,6 +295,12 @@ void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
 
    // TODO Also check other CPU vars (ime, cycles, etc.)
 
+   if (!registersMatch || !memoryMatches) {
+      std::ostringstream out;
+      out << "Opcode: " << hex(test.opcode);
+      LOG_INFO(out.str());
+   }
+
    if (!registersMatch) {
       dumpRegisters(finalCPU.reg, "Expected");
       dumpRegisters(cpu.reg, "Actual");
@@ -1479,6 +1485,794 @@ void CPUTester::init() {
          {
             0x7F, // LD A,A
             [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a;
+            }
+         }
+      },
+
+      {
+         {
+            0x80, // ADD A,B
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.b;
+
+               UPDATE_FLAGS(a, "Z0HC")
+            }
+         }
+      },
+      {
+         {
+            0x81, // ADD A,C
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.c;
+
+               UPDATE_FLAGS(a, "Z0HC")
+            }
+         }
+      },
+      {
+         {
+            0x82, // ADD A,D
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.d;
+
+               UPDATE_FLAGS(a, "Z0HC")
+            }
+         }
+      },
+      {
+         {
+            0x83, // ADD A,E
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.e;
+
+               UPDATE_FLAGS(a, "Z0HC")
+            }
+         }
+      },
+      {
+         {
+            0x84, // ADD A,H
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.h;
+
+               UPDATE_FLAGS(a, "Z0HC")
+            }
+         }
+      },
+      {
+         {
+            0x85, // ADD A,L
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.l;
+
+               UPDATE_FLAGS(a, "Z0HC")
+            }
+         }
+      },
+      {
+         {
+            0x86, // ADD A,(HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.mem[initial.reg.hl];
+
+               UPDATE_FLAGS(a, "Z0HC")
+            }
+         }
+      },
+      {
+         {
+            0x87, // ADD A,A
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.a;
+
+               UPDATE_FLAGS(a, "Z0HC")
+            }
+         }
+      },
+      {
+         {
+            0x88, // ADC A,B
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.b + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z0HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.b + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.b & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x89, // ADC A,C
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.c + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z0HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.c + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.c & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x8A, // ADC A,D
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.d + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z0HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.d + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.d & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x8B, // ADC A,E
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.e + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z0HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.e + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.e & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x8C, // ADC A,H
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.h + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z0HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.h + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.h & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x8D, // ADC A,L
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.l + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z0HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.l + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.l & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x8E, // ADC A,(HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.mem[initial.reg.hl] + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z0HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.mem[initial.reg.hl] + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.mem[initial.reg.hl] & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x8F, // ADC A,A
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + initial.reg.a + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z0HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.a + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.a & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+
+      {
+         {
+            0x90, // SUB B
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.b;
+
+               UPDATE_FLAGS(a, "Z1HC")
+            }
+         }
+      },
+      {
+         {
+            0x91, // SUB C
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.c;
+
+               UPDATE_FLAGS(a, "Z1HC")
+            }
+         }
+      },
+      {
+         {
+            0x92, // SUB D
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.d;
+
+               UPDATE_FLAGS(a, "Z1HC")
+            }
+         }
+      },
+      {
+         {
+            0x93, // SUB E
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.e;
+
+               UPDATE_FLAGS(a, "Z1HC")
+            }
+         }
+      },
+      {
+         {
+            0x94, // SUB H
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.h;
+
+               UPDATE_FLAGS(a, "Z1HC")
+            }
+         }
+      },
+      {
+         {
+            0x95, // SUB L
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.l;
+
+               UPDATE_FLAGS(a, "Z1HC")
+            }
+         }
+      },
+      {
+         {
+            0x96, // SUB (HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.mem[initial.reg.hl];
+
+               UPDATE_FLAGS(a, "Z1HC")
+            }
+         }
+      },
+      {
+         {
+            0x97, // SUB A
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.a;
+
+               UPDATE_FLAGS(a, "Z1HC")
+            }
+         }
+      },
+      {
+         {
+            0x98, // SBC A,B
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.b - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.b + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.b & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x99, // SBC A,C
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.c - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.c + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.c & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x9A, // SBC A,D
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.d - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.d + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.d & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x9B, // SBC A,E
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.e - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.e + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.e & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x9C, // SBC A,H
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.h - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.h + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.h & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x9D, // SBC A,L
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.l - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.l + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.l & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x9E, // SBC A,(HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.mem[initial.reg.hl] - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.mem[initial.reg.hl] + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.mem[initial.reg.hl] & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+      {
+         {
+            0x9F, // SBC A,A
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.a - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (initial.reg.a + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= 0x10;
+               }
+               if ((initial.reg.a & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= 0x20;
+               }
+            }
+         }
+      },
+
+      {
+         {
+            0xA0, // AND B
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a & initial.reg.b;
+
+               UPDATE_FLAGS(a, "Z010")
+            }
+         }
+      },
+      {
+         {
+            0xA1, // AND C
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a & initial.reg.c;
+
+               UPDATE_FLAGS(a, "Z010")
+            }
+         }
+      },
+      {
+         {
+            0xA2, // AND D
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a & initial.reg.d;
+
+               UPDATE_FLAGS(a, "Z010")
+            }
+         }
+      },
+      {
+         {
+            0xA3, // AND E
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a & initial.reg.e;
+
+               UPDATE_FLAGS(a, "Z010")
+            }
+         }
+      },
+      {
+         {
+            0xA4, // AND H
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a & initial.reg.h;
+
+               UPDATE_FLAGS(a, "Z010")
+            }
+         }
+      },
+      {
+         {
+            0xA5, // AND L
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a & initial.reg.l;
+
+               UPDATE_FLAGS(a, "Z010")
+            }
+         }
+      },
+      {
+         {
+            0xA6, // AND (HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a & initial.mem[initial.reg.hl];
+
+               UPDATE_FLAGS(a, "Z010")
+            }
+         }
+      },
+      {
+         {
+            0xA7, // AND A
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a & initial.reg.a;
+
+               UPDATE_FLAGS(a, "Z010")
+            }
+         }
+      },
+      {
+         {
+            0xA8, // XOR B
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a ^ initial.reg.b;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xA9, // XOR C
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a ^ initial.reg.c;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xAA, // XOR D
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a ^ initial.reg.d;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xAB, // XOR E
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a ^ initial.reg.e;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xAC, // XOR H
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a ^ initial.reg.h;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xAD, // XOR L
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a ^ initial.reg.l;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xAE, // XOR (HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a ^ initial.mem[initial.reg.hl];
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xAF, // XOR A
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a ^ initial.reg.a;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+
+      {
+         {
+            0xB0, // OR B
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a | initial.reg.b;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xB1, // OR C
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a | initial.reg.c;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xB2, // OR D
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a | initial.reg.d;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xB3, // OR E
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a | initial.reg.e;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xB4, // OR H
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a | initial.reg.h;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xB5, // OR L
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a | initial.reg.l;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xB6, // OR (HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a | initial.mem[initial.reg.hl];
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xB7, // OR A
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a | initial.reg.a;
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xB8, // CP B
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.b;
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               final.reg.a = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0xB9, // CP C
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.c;
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               final.reg.a = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0xBA, // CP D
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.d;
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               final.reg.a = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0xBB, // CP E
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.e;
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               final.reg.a = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0xBC, // CP H
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.h;
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               final.reg.a = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0xBD, // CP L
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.l;
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               final.reg.a = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0xBE, // CP (HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.mem[initial.reg.hl];
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               final.reg.a = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0xBF, // CP A
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - initial.reg.a;
+
+               UPDATE_FLAGS(a, "Z1HC")
+
                final.reg.a = initial.reg.a;
             }
          }
