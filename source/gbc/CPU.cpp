@@ -837,14 +837,15 @@ void CPU::execute16(Operation operation) {
          int8_t n = toSigned(imm8);
 
          uint32_t result = *param1 + n;
-         uint32_t carryBits = *param1 ^ n ^ result; // TODO Correct if n is signed?
+         uint32_t carryBits = *param1 ^ n ^ result;
 
-         *param1 = static_cast<uint16_t>(result);
+         reg.hl = static_cast<uint16_t>(result);
 
+         // Special case - treat carry and half carry as if this was an 8 bit add
          setFlag(kZero, false);
          setFlag(kSub, false);
-         setFlag(kHalfCarry, (carryBits & kHalfCaryMask) != 0);
-         setFlag(kCarry, (carryBits & kCaryMask) != 0);
+         setFlag(kHalfCarry, (carryBits & 0x0010) != 0);
+         setFlag(kCarry, (carryBits & 0x0100) != 0);
          break;
       }
       case Ins::kPUSH:
@@ -883,7 +884,7 @@ void CPU::execute16(Operation operation) {
             int8_t n = toSigned(imm8);
 
             uint32_t result = *param1 + n;
-            uint32_t carryBits = *param1 ^ n ^ result; // TODO Correct if n is signed?
+            uint32_t carryBits = *param1 ^ n ^ result;
 
             *param1 = static_cast<uint16_t>(result);
 
