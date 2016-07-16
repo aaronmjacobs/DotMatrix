@@ -282,6 +282,7 @@ void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
 
    cpu.tickOnce();
 
+   bool cyclesMatch = finalCPU.cycles == cpu.cycles;
    bool registersMatch = memcmp(&finalCPU.reg, &cpu.reg, sizeof(CPU::Registers)) == 0;
    bool memoryMatches = true;
    uint16_t mismatchLocation = 0;
@@ -295,10 +296,14 @@ void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
 
    // TODO Also check other CPU vars (ime, cycles, etc.)
 
-   if (!registersMatch || !memoryMatches) {
+   if (!registersMatch || !memoryMatches || !cyclesMatch) {
       std::ostringstream out;
       out << "Opcode: " << hex(test.opcode);
       LOG_INFO(out.str());
+   }
+
+   if (!cyclesMatch) {
+      LOG_INFO("Expected cycles: " << finalCPU.cycles << ", actual cycles: " << cpu.cycles);
    }
 
    if (!registersMatch) {
@@ -315,7 +320,7 @@ void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
       dumpMem(cpu.mem, previousLine * 8, nextLine * 8 + 8, "Actual");
    }
 
-   ASSERT(registersMatch && memoryMatches);
+   ASSERT(registersMatch && memoryMatches && cyclesMatch);
 }
 
 void CPUTester::init() {
@@ -646,6 +651,8 @@ void CPUTester::init() {
                   uint8_t offset = imm8(initial);
                   int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
                   final.reg.pc = initial.reg.pc + 2 + signedOffset;
+               } else {
+                  final.cycles -= 4;
                }
             }
          }
@@ -745,6 +752,8 @@ void CPUTester::init() {
                   uint8_t offset = imm8(initial);
                   int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
                   final.reg.pc = initial.reg.pc + 2 + signedOffset;
+               } else {
+                  final.cycles -= 4;
                }
             }
          }
@@ -823,6 +832,8 @@ void CPUTester::init() {
                   uint8_t offset = imm8(initial);
                   int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
                   final.reg.pc = initial.reg.pc + 2 + signedOffset;
+               } else {
+                  final.cycles -= 4;
                }
             }
          }
@@ -906,6 +917,8 @@ void CPUTester::init() {
                   uint8_t offset = imm8(initial);
                   int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
                   final.reg.pc = initial.reg.pc + 2 + signedOffset;
+               } else {
+                  final.cycles -= 4;
                }
             }
          }
@@ -969,7 +982,7 @@ void CPUTester::init() {
             [](CPU& initial, CPU& final) {
                UPDATE_FLAGS(a, "-00C")
                // Set carry to flipped initial carry
-               final.reg.f = (final.reg.f & 0xE0) | ((initial.reg.f & 0x10) ^ 0x10);
+               final.reg.f = (final.reg.f & 0xE0) | ((initial.reg.f & CPU::kCarry) ^ CPU::kCarry);
             }
          }
       },
@@ -1580,10 +1593,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.b + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.b & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1598,10 +1611,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.c + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.c & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1616,10 +1629,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.d + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.d & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1634,10 +1647,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.e + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.e & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1652,10 +1665,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.h + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.h & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1670,10 +1683,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.l + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.l & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1688,10 +1701,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.mem[initial.reg.hl] + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.mem[initial.reg.hl] & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1706,10 +1719,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.a + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.a & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1805,10 +1818,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.b + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.b & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1823,10 +1836,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.c + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.c & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1841,10 +1854,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.d + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.d & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1859,10 +1872,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.e + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.e & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1877,10 +1890,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.h + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.h & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1895,10 +1908,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.l + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.l & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1913,10 +1926,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.mem[initial.reg.hl] + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.mem[initial.reg.hl] & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1931,10 +1944,10 @@ void CPUTester::init() {
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
                if (initial.reg.a + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= 0x10;
+                  final.reg.f |= CPU::kCarry;
                }
                if ((initial.reg.a & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= 0x20;
+                  final.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -2274,6 +2287,591 @@ void CPUTester::init() {
                UPDATE_FLAGS(a, "Z1HC")
 
                final.reg.a = initial.reg.a;
+            }
+         }
+      },
+
+      {
+         {
+            0xC0, // RET NZ
+            [](CPU& initial, CPU& final) {
+               if (!(initial.reg.f & CPU::kZero)) {
+                  final.reg.pc = (initial.mem[initial.reg.sp] << 8) | (initial.mem[initial.reg.sp + 1]);
+                  final.reg.sp += 2;
+               } else {
+                  final.cycles -= 12;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xC1, // POP BC
+            [](CPU& initial, CPU& final) {
+               final.reg.bc = (initial.mem[initial.reg.sp] << 8) | (initial.mem[initial.reg.sp + 1]);
+               final.reg.sp += 2;
+            }
+         }
+      },
+      {
+         {
+            0xC2, // JP NZ,a16
+            [](CPU& initial, CPU& final) {
+               if (!(initial.reg.f & CPU::kZero)) {
+                  final.reg.pc = imm16(initial);
+               } else {
+                  final.cycles -= 4;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xC3, // JP a16
+            [](CPU& initial, CPU& final) {
+               final.reg.pc = imm16(initial);
+            }
+         }
+      },
+      {
+         {
+            0xC4, // CALL NZ,a16
+            [](CPU& initial, CPU& final) {
+               if (!(initial.reg.f & CPU::kZero)) {
+                  final.reg.sp -= 2;
+                  final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+                  final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+                  final.reg.pc = imm16(initial);
+               } else {
+                  final.cycles -= 12;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xC5, // PUSH BC
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = initial.reg.c;
+               final.mem[final.reg.sp + 1] = initial.reg.b;
+            }
+         }
+      },
+      {
+         {
+            0xC6, // ADD A,d8
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + imm8(initial);
+
+               UPDATE_FLAGS(a, "Z0HC");
+            }
+         }
+      },
+      {
+         {
+            0xC7, // RST 00H
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+               final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+               final.reg.pc = 0x0000;
+            }
+         }
+      },
+      {
+         {
+            0xC8, // RET Z
+            [](CPU& initial, CPU& final) {
+               if (initial.reg.f & CPU::kZero) {
+                  final.reg.pc = (initial.mem[initial.reg.sp] << 8) | (initial.mem[initial.reg.sp + 1]);
+                  final.reg.sp += 2;
+               } else {
+                  final.cycles -= 12;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xC9, // RET
+            [](CPU& initial, CPU& final) {
+               final.reg.pc = (initial.mem[initial.reg.sp] << 8) | (initial.mem[initial.reg.sp + 1]);
+               final.reg.sp += 2;
+            }
+         }
+      },
+      {
+         {
+            0xCA, // JP Z,a16
+            [](CPU& initial, CPU& final) {
+               if (initial.reg.f & CPU::kZero) {
+                  final.reg.pc = imm16(initial);
+               } else {
+                  final.cycles -= 4;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xCB, // PREFIX CB
+            [](CPU& initial, CPU& final) {
+               final.executedPrefixCB = true;
+            }
+         }
+      },
+      {
+         {
+            0xCC, // CALL Z,a16
+            [](CPU& initial, CPU& final) {
+               if (initial.reg.f & CPU::kZero) {
+                  final.reg.sp -= 2;
+                  final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+                  final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+                  final.reg.pc = imm16(initial);
+               } else {
+                  final.cycles -= 12;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xCD, // CALL a16
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+               final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+               final.reg.pc = imm16(initial);
+            }
+         }
+      },
+      {
+         {
+            0xCE, // ADC A,d8
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a + imm8(initial) + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z0HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (imm8(initial) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= CPU::kCarry;
+               }
+               if ((imm8(initial) & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= CPU::kHalfCarry;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xCF, // RST 08H
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+               final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+               final.reg.pc = 0x0008;
+            }
+         }
+      },
+
+      {
+         {
+            0xD0, // RET NC
+            [](CPU& initial, CPU& final) {
+               if (!(initial.reg.f & CPU::kCarry)) {
+                  final.reg.pc = (initial.mem[initial.reg.sp] << 8) | (initial.mem[initial.reg.sp + 1]);
+                  final.reg.sp += 2;
+               } else {
+                  final.cycles -= 12;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xD1, // POP DE
+            [](CPU& initial, CPU& final) {
+               final.reg.de = (initial.mem[initial.reg.sp] << 8) | (initial.mem[initial.reg.sp + 1]);
+               final.reg.sp += 2;
+            }
+         }
+      },
+      {
+         {
+            0xD2, // JP NC,a16
+            [](CPU& initial, CPU& final) {
+               if (!(initial.reg.f & CPU::kCarry)) {
+                  final.reg.pc = imm16(initial);
+               } else {
+                  final.cycles -= 4;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xD4, // CALL NC,a16
+            [](CPU& initial, CPU& final) {
+               if (!(initial.reg.f & CPU::kCarry)) {
+                  final.reg.sp -= 2;
+                  final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+                  final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+                  final.reg.pc = imm16(initial);
+               } else {
+                  final.cycles -= 12;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xD5, // PUSH DE
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = initial.reg.e;
+               final.mem[final.reg.sp + 1] = initial.reg.d;
+            }
+         }
+      },
+      {
+         {
+            0xD6, // SUB d8
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - imm8(initial);
+
+               UPDATE_FLAGS(a, "Z1HC");
+            }
+         }
+      },
+      {
+         {
+            0xD7, // RST 10H
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+               final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+               final.reg.pc = 0x0010;
+            }
+         }
+      },
+      {
+         {
+            0xD8, // RET C
+            [](CPU& initial, CPU& final) {
+               if (initial.reg.f & CPU::kCarry) {
+                  final.reg.pc = (initial.mem[initial.reg.sp] << 8) | (initial.mem[initial.reg.sp + 1]);
+                  final.reg.sp += 2;
+               } else {
+                  final.cycles -= 12;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xD9, // RETI
+            [](CPU& initial, CPU& final) {
+               final.reg.pc = (initial.mem[initial.reg.sp] << 8) | (initial.mem[initial.reg.sp + 1]);
+               final.reg.sp += 2;
+               final.interruptEnableRequested = true;
+            }
+         }
+      },
+      {
+         {
+            0xDA, // JP C,a16
+            [](CPU& initial, CPU& final) {
+               if (initial.reg.f & CPU::kCarry) {
+                  final.reg.pc = imm16(initial);
+               } else {
+                  final.cycles -= 4;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xDC, // CALL C,a16
+            [](CPU& initial, CPU& final) {
+               if (initial.reg.f & CPU::kCarry) {
+                  final.reg.sp -= 2;
+                  final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+                  final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+                  final.reg.pc = imm16(initial);
+               } else {
+                  final.cycles -= 12;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xDE, // SBC A,d8
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - imm8(initial) - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
+               if (imm8(initial) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.reg.f |= CPU::kCarry;
+               }
+               if ((imm8(initial) & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.reg.f |= CPU::kHalfCarry;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xDF, // RST 18H
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+               final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+               final.reg.pc = 0x0018;
+            }
+         }
+      },
+
+      {
+         {
+            0xE0, // LDH (a8),A
+            [](CPU& initial, CPU& final) {
+               final.mem[0xFF00 + imm8(initial)] = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0xE1, // POP HL
+            [](CPU& initial, CPU& final) {
+               final.reg.hl = (initial.mem[initial.reg.sp] << 8) | (initial.mem[initial.reg.sp + 1]);
+               final.reg.sp += 2;
+            }
+         }
+      },
+      {
+         {
+            0xE2, // LD (C),A
+            [](CPU& initial, CPU& final) {
+               final.mem[0xFF00 + initial.reg.c] = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0xE5, // PUSH HL
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = initial.reg.l;
+               final.mem[final.reg.sp + 1] = initial.reg.h;
+            }
+         }
+      },
+      {
+         {
+            0xE6, // AND d8
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a & imm8(initial);
+
+               UPDATE_FLAGS(a, "Z010");
+            }
+         }
+      },
+      {
+         {
+            0xE7, // RST 20H
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+               final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+               final.reg.pc = 0x0020;
+            }
+         }
+      },
+      {
+         {
+            0xE8, // ADD SP,r8
+            [](CPU& initial, CPU& final) {
+               uint8_t offset = imm8(initial);
+               int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
+               final.reg.sp = initial.reg.sp + signedOffset;
+
+               UPDATE_FLAGS(sp, "00HC")
+            }
+         }
+      },
+      {
+         {
+            0xE9, // JP (HL)
+            [](CPU& initial, CPU& final) {
+               final.reg.pc = initial.reg.hl;
+            }
+         }
+      },
+      {
+         {
+            0xEA, // LD (a16),A
+            [](CPU& initial, CPU& final) {
+               final.mem[imm16(initial)] = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0xEE, // XOR d8
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a ^ imm8(initial);
+
+               UPDATE_FLAGS(a, "Z000")
+            }
+         }
+      },
+      {
+         {
+            0xEF, // RST 28H
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+               final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+               final.reg.pc = 0x0028;
+            }
+         }
+      },
+
+      {
+         {
+            0xF0, // LDH A,(a8)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.mem[0xFF00 + imm8(initial)];
+            }
+         }
+      },
+      {
+         {
+            0xF1, // POP AF
+            [](CPU& initial, CPU& final) {
+               final.reg.af = (initial.mem[initial.reg.sp] << 8) | (initial.mem[initial.reg.sp + 1]);
+               final.reg.f &= 0xF0;
+               final.reg.sp += 2;
+            }
+         }
+      },
+      {
+         {
+            0xF2, // LD A,(C)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.mem[initial.reg.c];
+            }
+         }
+      },
+      {
+         {
+            0xF3, // DI
+            [](CPU& initial, CPU& final) {
+               final.interruptDisableRequested = true;
+            }
+         }
+      },
+      {
+         {
+            0xF5, // PUSH AF
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = initial.reg.f;
+               final.mem[final.reg.sp + 1] = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0xF6, // OR d8
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a | imm8(initial);
+
+               UPDATE_FLAGS(a, "Z000");
+            }
+         }
+      },
+      {
+         {
+            0xF7, // RST 30H
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+               final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+               final.reg.pc = 0x0030;
+            }
+         }
+      },
+      {
+         {
+            0xF8, // LD HL,SP+r8
+            [](CPU& initial, CPU& final) {
+               uint8_t offset = imm8(initial);
+               int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
+
+               final.reg.hl = initial.reg.sp + signedOffset;
+
+               // Special case - treat carry and half carry as if this was an 8 bit add
+               final.reg.f = 0x00;
+               if ((final.reg.hl & 0x000F) < (initial.reg.sp & 0x000F)) {
+                  final.reg.f |= CPU::kHalfCarry;
+               }
+               if ((final.reg.hl & 0x00FF) < (initial.reg.sp & 0x00FF)) {
+                  final.reg.f |= CPU::kCarry;
+               }
+            }
+         }
+      },
+      {
+         {
+            0xF9, // LD SP,HL
+            [](CPU& initial, CPU& final) {
+               final.reg.sp = initial.reg.hl;
+            }
+         }
+      },
+      {
+         {
+            0xFA, // LD A,(a16)
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.mem[imm16(initial)];
+            }
+         }
+      },
+      {
+         {
+            0xFB, // EI
+            [](CPU& initial, CPU& final) {
+               final.interruptEnableRequested = true;
+            }
+         }
+      },
+      {
+         {
+            0xFE, // CP d8
+            [](CPU& initial, CPU& final) {
+               final.reg.a = initial.reg.a - imm8(initial);
+
+               UPDATE_FLAGS(a, "Z1HC")
+
+               final.reg.a = initial.reg.a;
+            }
+         }
+      },
+      {
+         {
+            0xFF, // RST 38H
+            [](CPU& initial, CPU& final) {
+               final.reg.sp -= 2;
+               final.mem[final.reg.sp] = final.reg.pc & 0xFF;
+               final.mem[final.reg.sp + 1] = final.reg.pc >> 8;
+               final.reg.pc = 0x0038;
             }
          }
       },
