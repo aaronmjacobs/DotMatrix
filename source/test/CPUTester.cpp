@@ -139,6 +139,29 @@ bool usesImm16(Operation operation) {
       || operation.param1 == Opr::kDrefImm16 || operation.param2 == Opr::kDrefImm16;
 }
 
+bool miscFieldsMatch(const CPU& first, const CPU& second) {
+   return first.ime == second.ime && first.cycles == second.cycles && first.halted == second.halted
+      && first.stopped == second.stopped && first.executedPrefixCB == second.executedPrefixCB
+      && first.interruptEnableRequested == second.interruptEnableRequested
+      && first.interruptDisableRequested == second.interruptDisableRequested;
+}
+
+void dumpFields(const CPU& cpu, const char* name = nullptr) {
+   std::ostringstream out;
+   out << "Fields";
+   if (name) {
+      out << "\n" << name;
+   }
+   out << "\nIME: " << std::boolalpha << cpu.ime
+      << "\ncycles: " << cpu.cycles
+      << "\nhalted: " << cpu.halted
+      << "\nstopped: " << cpu.stopped
+      << "\nexecutedPrefixCB: " << cpu.executedPrefixCB
+      << "\ninterruptEnableRequested: " << cpu.interruptEnableRequested
+      << "\ninterruptDisableRequested: " << cpu.interruptDisableRequested << "\n";
+   LOG_INFO(out.str());
+}
+
 void dumpRegisters(const CPU::Registers& reg, const char* name = nullptr) {
    std::ostringstream out;
    out << "Registers";
@@ -282,7 +305,7 @@ void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
 
    cpu.tickOnce();
 
-   bool cyclesMatch = finalCPU.cycles == cpu.cycles;
+   bool fieldsMatch = miscFieldsMatch(finalCPU, cpu);
    bool registersMatch = memcmp(&finalCPU.reg, &cpu.reg, sizeof(CPU::Registers)) == 0;
    bool memoryMatches = true;
    uint16_t mismatchLocation = 0;
@@ -294,16 +317,15 @@ void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
       }
    }
 
-   // TODO Also check other CPU vars (ime, cycles, etc.)
-
-   if (!registersMatch || !memoryMatches || !cyclesMatch) {
+   if (!fieldsMatch || !registersMatch || !memoryMatches) {
       std::ostringstream out;
       out << "Opcode: " << hex(test.opcode);
       LOG_INFO(out.str());
    }
 
-   if (!cyclesMatch) {
-      LOG_INFO("Expected cycles: " << finalCPU.cycles << ", actual cycles: " << cpu.cycles);
+   if (!fieldsMatch) {
+      dumpFields(finalCPU, "Expected");
+      dumpFields(cpu, "Actual");
    }
 
    if (!registersMatch) {
@@ -320,7 +342,7 @@ void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
       dumpMem(cpu.mem, previousLine * 8, nextLine * 8 + 8, "Actual");
    }
 
-   ASSERT(registersMatch && memoryMatches && cyclesMatch);
+   ASSERT(fieldsMatch && registersMatch && memoryMatches);
 }
 
 void CPUTester::init() {
