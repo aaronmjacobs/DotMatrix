@@ -64,6 +64,8 @@ set(SOURCES
    ${SRC_DIR}/test/CPUTester.cpp
    ${SRC_DIR}/wrapper/audio/AudioManager.cpp
    ${SRC_DIR}/wrapper/input/KeyboardInputDevice.cpp
+   ${SRC_DIR}/wrapper/platform/IOUtils.cpp
+   ${SRC_DIR}/wrapper/platform/OSUtils.cpp
    ${SRC_DIR}/wrapper/video/Mesh.cpp
    ${SRC_DIR}/wrapper/video/Model.cpp
    ${SRC_DIR}/wrapper/video/Renderer.cpp
@@ -86,6 +88,8 @@ set(HEADERS
    ${SRC_DIR}/wrapper/audio/AudioManager.h
    ${SRC_DIR}/wrapper/input/InputDevice.h
    ${SRC_DIR}/wrapper/input/KeyboardInputDevice.h
+   ${SRC_DIR}/wrapper/platform/IOUtils.h
+   ${SRC_DIR}/wrapper/platform/OSUtils.h
    ${SRC_DIR}/wrapper/video/Mesh.h
    ${SRC_DIR}/wrapper/video/Model.h
    ${SRC_DIR}/wrapper/video/Renderer.h
