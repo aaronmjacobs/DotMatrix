@@ -59,6 +59,7 @@ configure_file(
 # Source content
 set(SOURCES
    ${SRC_DIR}/main.cpp
+   ${SRC_DIR}/gbc/Cartridge.cpp
    ${SRC_DIR}/gbc/CPU.cpp
    ${SRC_DIR}/gbc/Device.cpp
    ${SRC_DIR}/test/CPUTester.cpp
@@ -80,6 +81,7 @@ set(HEADERS
    ${SRC_DIR}/GLIncludes.h
    ${SRC_DIR}/Log.h
    ${SRC_DIR}/Types.h
+   ${SRC_DIR}/gbc/Cartridge.h
    ${SRC_DIR}/gbc/CPU.h
    ${SRC_DIR}/gbc/Device.h
    ${SRC_DIR}/gbc/Memory.h
