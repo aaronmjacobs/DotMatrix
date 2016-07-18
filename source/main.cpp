@@ -1,9 +1,11 @@
 #include "Constants.h"
 #include "GLIncludes.h"
 #include "Log.h"
+#include "wrapper/platform/IOUtils.h"
 #include "wrapper/platform/OSUtils.h"
 #include "wrapper/video/Renderer.h"
 
+#include "gbc/Cartridge.h"
 #include "gbc/Device.h"
 #if defined(RUN_TESTS)
 #  include "test/CPUTester.h"
@@ -103,6 +105,22 @@ int main(int argc, char *argv[]) {
 #endif // defined(RUN_TESTS)
 
    GBC::Device device;
+
+   // Try to load a cartridge
+   if (argc > 1) {
+      const char* cartPath = argv[1];
+      size_t numBytes;
+      UPtr<uint8_t[]> cartData = IOUtils::readBinaryFile(cartPath, &numBytes);
+
+      if (cartData && numBytes > 0 && numBytes <= 0x8000) {
+         LOG_INFO("Loading cartridge: " << cartPath);
+         UPtr<GBC::Cartridge> cartridge = GBC::Cartridge::fromData(std::move(cartData), numBytes);
+
+         if (cartridge) {
+            device.setCartridge(std::move(cartridge));
+         }
+      }
+   }
 
    static const double kMaxFrameTime = 0.25;
    static const double kDt = 1.0 / 60.0;
