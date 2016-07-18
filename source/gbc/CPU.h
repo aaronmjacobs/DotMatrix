@@ -146,9 +146,15 @@ struct Operation {
 
 class CPU {
 public:
+   static const uint64_t kClockSpeed = 4194304; // 4.194304 MHz TODO handle GBC / SGB
+
    CPU(Memory& memory);
 
-   void tick(float dt);
+   void tick();
+
+   uint64_t getCycles() const {
+      return cycles;
+   }
 
 #if !defined(RUN_TESTS) // Need direct access when running tests
 private:
@@ -236,8 +242,6 @@ private:
 
       return (reg.f & flag) != 0;
    }
-
-   void tickOnce();
 
    void handleInterrupts();
 

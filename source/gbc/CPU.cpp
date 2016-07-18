@@ -231,22 +231,13 @@ bool evalJumpCondition(Opr operand, bool zero, bool carry) {
 } // namespace
 
 CPU::CPU(Memory& memory)
-   : reg({0}), mem(memory), cycles(0), halted(false), stopped(false), executedPrefixCB(false),
+   : reg({0}), mem(memory), ime(false), cycles(0), halted(false), stopped(false), executedPrefixCB(false),
      interruptEnableRequested(false), interruptDisableRequested(false) {
    reg.sp = 0xFFFE;
    reg.pc = 0x0100;
 }
 
-void CPU::tick(float dt) {
-   static const uint64_t kClockSpeed = 4194304; // 4.194304 MHz TODO handle GBC / SGB
-
-   uint64_t targetCycles = cycles + kClockSpeed * dt;
-   while (cycles < targetCycles) {
-      tickOnce();
-   }
-}
-
-void CPU::tickOnce() {
+void CPU::tick() {
    handleInterrupts();
 
    if (halted && ime) {

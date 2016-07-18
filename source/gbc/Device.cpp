@@ -7,7 +7,12 @@ Device::Device()
 }
 
 void Device::tick(float dt) {
-   cpu.tick(dt);
+   uint64_t initialCycles = cpu.getCycles();
+   uint64_t targetCycles = initialCycles + CPU::kClockSpeed * dt;
+
+   while (cpu.getCycles() < targetCycles) {
+      cpu.tick();
+   }
 }
 
 void Device::setCartridge(UPtr<Cartridge>&& cartridge) {
