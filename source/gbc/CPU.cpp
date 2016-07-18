@@ -1086,6 +1086,7 @@ uint16_t* CPU::addr16(Opr operand, uint8_t* imm8, uint16_t* imm16) {
       case Opr::k28H:
       case Opr::k30H:
       case Opr::k38H:
+      case Opr::kDrefImm16: // Handled as a special case in execute16()
          break;
       case Opr::kAF:
          address = &reg.af;
@@ -1107,9 +1108,6 @@ uint16_t* CPU::addr16(Opr operand, uint8_t* imm8, uint16_t* imm16) {
          break;
       case Opr::kImm16:
          address = imm16;
-         break;
-      case Opr::kDrefImm16:
-         address = reinterpret_cast<uint16_t*>(&mem[*imm16]); // TODO Is this ok? Endian issues?
          break;
       default:
          ASSERT(false, "Invalid 16-bit operand: %hhu", operand);

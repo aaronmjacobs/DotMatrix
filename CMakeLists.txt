@@ -193,6 +193,14 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 # Link
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 
+include(TestBigEndian)
+TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
+if (IS_BIG_ENDIAN)
+   target_compile_definitions(${PROJECT_NAME} PRIVATE "GBC_BIG_ENDIAN")
+else (IS_BIG_ENDIAN)
+   target_compile_definitions(${PROJECT_NAME} PRIVATE "GBC_LITTLE_ENDIAN")
+endif (IS_BIG_ENDIAN)
+
 ### Post-Build ###
 
 # Copy DLLs
