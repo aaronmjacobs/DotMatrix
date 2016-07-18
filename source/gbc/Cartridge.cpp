@@ -1,6 +1,7 @@
-#include "Cartridge.h"
 #include "Log.h"
-#include "Memory.h"
+
+#include "gbc/Cartridge.h"
+#include "gbc/Memory.h"
 
 #include <cstring>
 #include <memory>

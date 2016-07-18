@@ -1,4 +1,5 @@
-#include "Device.h"
+#include "gbc/Cartridge.h"
+#include "gbc/Device.h"
 
 namespace GBC {
 

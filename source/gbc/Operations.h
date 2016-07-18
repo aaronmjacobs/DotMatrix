@@ -1,7 +1,7 @@
-#ifndef OPERATIONS_H
-#define OPERATIONS_H
+#ifndef GBC_OPERATIONS_H
+#define GBC_OPERATIONS_H
 
-#include "CPU.h"
+#include "gbc/CPU.h"
 
 #include <array>
 

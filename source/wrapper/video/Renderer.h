@@ -4,6 +4,7 @@
 #include "GLIncludes.h"
 #include "Model.h"
 #include "Texture.h"
+
 #include "gbc/Video.h"
 
 #include <array>

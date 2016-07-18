@@ -1,5 +1,5 @@
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef POINTERS_H
+#define POINTERS_H
 
 #include <memory>
 

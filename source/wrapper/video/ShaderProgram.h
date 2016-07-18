@@ -3,7 +3,7 @@
 
 #include "GLIncludes.h"
 #include "Log.h"
-#include "Types.h"
+#include "Pointers.h"
 
 #include <array>
 #include <cstring>

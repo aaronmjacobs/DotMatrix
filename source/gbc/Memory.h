@@ -1,5 +1,5 @@
-#ifndef MEMORY_H
-#define MEMORY_H
+#ifndef GBC_MEMORY_H
+#define GBC_MEMORY_H
 
 #include "FancyAssert.h"
 

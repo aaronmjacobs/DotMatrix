@@ -1,5 +1,5 @@
-#ifndef AUDIO_H
-#define AUDIO_H
+#ifndef GBC_AUDIO_H
+#define GBC_AUDIO_H
 
 namespace GBC {
 

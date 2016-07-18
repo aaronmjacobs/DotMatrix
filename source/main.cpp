@@ -1,15 +1,17 @@
 #include "Constants.h"
 #include "GLIncludes.h"
 #include "Log.h"
-#include "wrapper/platform/IOUtils.h"
-#include "wrapper/platform/OSUtils.h"
-#include "wrapper/video/Renderer.h"
 
 #include "gbc/Cartridge.h"
 #include "gbc/Device.h"
+
 #if defined(RUN_TESTS)
 #  include "test/CPUTester.h"
 #endif // defined(RUN_TESTS)
+
+#include "wrapper/platform/IOUtils.h"
+#include "wrapper/platform/OSUtils.h"
+#include "wrapper/video/Renderer.h"
 
 #include <cstdlib>
 #include <functional>

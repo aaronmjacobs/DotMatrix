@@ -1,6 +1,7 @@
-#include "CPU.h"
 #include "Log.h"
-#include "Operations.h"
+
+#include "gbc/CPU.h"
+#include "gbc/Operations.h"
 
 namespace GBC {
 
@@ -813,7 +814,6 @@ void CPU::execute16(Operation operation) {
          if (operation.param1 == Opr::kDrefImm16) {
             ASSERT(operation.param2 == Opr::kSP);
 
-            // TODO Make sure this is right (should be? gameboy is little endian)
             mem[imm16] = *param2 & 0xFF;
             mem[imm16 + 1] = (*param2 >> 8) & 0xFF;
          } else {

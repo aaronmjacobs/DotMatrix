@@ -1,12 +1,14 @@
 #ifndef GBC_DEVICE_H
 #define GBC_DEVICE_H
 
-#include "Cartridge.h"
-#include "CPU.h"
-#include "Memory.h"
-#include "Types.h"
+#include "Pointers.h"
+
+#include "gbc/CPU.h"
+#include "gbc/Memory.h"
 
 namespace GBC {
+
+class Cartridge;
 
 class Device {
 public:

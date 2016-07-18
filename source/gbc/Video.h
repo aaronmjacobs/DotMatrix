@@ -1,5 +1,5 @@
-#ifndef VIDEO_H
-#define VIDEO_H
+#ifndef GBC_VIDEO_H
+#define GBC_VIDEO_H
 
 #include <cstddef>
 #include <cstdint>

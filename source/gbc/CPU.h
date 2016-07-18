@@ -1,8 +1,9 @@
-#ifndef CPU_H
-#define CPU_H
+#ifndef GBC_CPU_H
+#define GBC_CPU_H
 
 #include "FancyAssert.h"
-#include "Memory.h"
+
+#include "gbc/Memory.h"
 
 #include <cstdint>
 
@@ -211,15 +212,23 @@ private:
    }
 
    uint16_t readPC16() {
-      // TODO Endianness
-      uint8_t first = readPC();
-      uint8_t second = readPC();
-      uint16_t res = second << 8 | first;
-      return res;
+      uint8_t low = readPC();
+      uint8_t high = readPC();
+      return high << 8 | low;
    }
 
    void setFlag(Flag flag, bool val) {
       ASSERT(flag == kZero || flag == kSub || flag == kHalfCarry || flag == kCarry, "Invalid flag value: %hhu", flag);
+
+      /*
+       * This function is equivalent to the following:
+       *
+       * if (val) {
+       *    reg.f |= flag;
+       * } else {
+       *    reg.f &= ~flag;
+       * }
+      */
 
       uint8_t mask = ~(static_cast<uint8_t>(val) - 1); // 0xFF if true, 0x00 if false
       ASSERT((val && mask == 0xFF) || (!val && mask == 0x00));
@@ -228,13 +237,7 @@ private:
       uint8_t clearVal = reg.f & ~(flag | mask); // Clears the flag if val is false, otherwise results in 0x00
       ASSERT((setVal >= 0x00 && clearVal == 0x00) || (clearVal >= 0x00 && setVal == 0x00));
 
-      reg.f = setVal | clearVal; // TODO Test!
-
-      /*if (val) {
-         reg.f |= flag;
-      } else {
-         reg.f &= ~flag;
-      }*/
+      reg.f = setVal | clearVal;
    }
 
    bool getFlag(Flag flag) {

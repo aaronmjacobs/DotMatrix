@@ -80,7 +80,7 @@ set(HEADERS
    ${SRC_DIR}/FancyAssert.h
    ${SRC_DIR}/GLIncludes.h
    ${SRC_DIR}/Log.h
-   ${SRC_DIR}/Types.h
+   ${SRC_DIR}/Pointers.h
    ${SRC_DIR}/gbc/Cartridge.h
    ${SRC_DIR}/gbc/CPU.h
    ${SRC_DIR}/gbc/Device.h

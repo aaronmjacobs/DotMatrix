@@ -1,7 +1,7 @@
 #ifndef GBC_CARTRIDGE_H
 #define GBC_CARTRIDGE_H
 
-#include "Types.h"
+#include "Pointers.h"
 
 #include <array>
 #include <cstdint>

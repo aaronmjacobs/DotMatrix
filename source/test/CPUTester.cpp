@@ -2,13 +2,14 @@
 
 #if defined(RUN_TESTS)
 
-#include "CPUTester.h"
 #include "FancyAssert.h"
 #include "Log.h"
 
 #include "gbc/CPU.h"
 #include "gbc/Memory.h"
 #include "gbc/Operations.h"
+
+#include "test/CPUTester.h"
 
 #include <cstring>
 #include <random>
