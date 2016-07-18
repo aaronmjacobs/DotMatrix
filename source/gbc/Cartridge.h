@@ -3,6 +3,7 @@
 
 #include "Types.h"
 
+#include <array>
 #include <cstdint>
 
 namespace GBC {
@@ -13,12 +14,16 @@ public:
 
    virtual ~Cartridge() = default;
 
+   const char* getTitle() const {
+      return title.data();
+   }
+
    virtual void tick(uint64_t cycles) = 0;
 
    virtual void load(union Memory& memory) = 0;
 
 protected:
-   Cartridge(UPtr<uint8_t[]>&& data, size_t numBytes);
+   Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes);
 
    enum Type : uint8_t {
       kROMOnly = 0x00,
@@ -94,6 +99,7 @@ protected:
 
    UPtr<uint8_t[]> data;
    size_t numBytes;
+   std::array<char, 16> title;
 };
 
 } // namespace GBC

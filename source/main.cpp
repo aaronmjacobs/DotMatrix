@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
          UPtr<GBC::Cartridge> cartridge = GBC::Cartridge::fromData(std::move(cartData), numBytes);
 
          if (cartridge) {
+            glfwSetWindowTitle(window, cartridge->getTitle());
             device.setCartridge(std::move(cartridge));
          }
       }

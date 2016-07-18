@@ -2,6 +2,7 @@
 #include "Log.h"
 #include "Memory.h"
 
+#include <cstring>
 #include <memory>
 
 namespace GBC {
@@ -14,11 +15,11 @@ public:
 
 private:
    friend class Cartridge;
-   SimpleCartridge(UPtr<uint8_t[]>&& data, size_t numBytes);
+   SimpleCartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes);
 };
 
-SimpleCartridge::SimpleCartridge(UPtr<uint8_t[]>&& data, size_t numBytes)
-   : Cartridge(std::move(data), numBytes) {
+SimpleCartridge::SimpleCartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes)
+   : Cartridge(std::move(cartData), cartNumBytes) {
 }
 
 void SimpleCartridge::tick(uint64_t cycles) {
@@ -44,8 +45,11 @@ UPtr<Cartridge> Cartridge::fromData(UPtr<uint8_t[]>&& data, size_t numBytes) {
    }
 }
 
-Cartridge::Cartridge(UPtr<uint8_t[]>&& data, size_t numBytes)
-   : data(std::move(data)), numBytes(numBytes) {
+Cartridge::Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes)
+   : data(std::move(cartData)), numBytes(cartNumBytes), title({ 0 }) {
+   ASSERT(data && numBytes > 0x014F);
+
+   strncpy(title.data(), reinterpret_cast<char*>(&data[0x0134]), title.size());
 }
 
 } // namespace GBC
