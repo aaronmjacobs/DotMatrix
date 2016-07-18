@@ -1,6 +1,8 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#include "FancyAssert.h"
+
 #include <cstdint>
 
 namespace GBC {
