@@ -1,6 +1,7 @@
 #include "Constants.h"
 #include "GLIncludes.h"
 #include "Log.h"
+#include "wrapper/platform/OSUtils.h"
 #include "wrapper/video/Renderer.h"
 
 #include "gbc/Device.h"
@@ -70,6 +71,10 @@ uint8_t dist(float x1, float y1, float x2, float y2) {
 int main(int argc, char *argv[]) {
    LOG_INFO(kProjectName << " " << kVersionType << " " << kVersionMajor << "." << kVersionMinor << "."
       << kVersionMicro << " (" << kVersionBuild << ")");
+
+   if (!OSUtils::fixWorkingDirectory()) {
+      LOG_ERROR_MSG_BOX("Unable to set working directory to executable directory");
+   }
 
    GLFWwindow *window = init();
    if (!window) {
