@@ -304,7 +304,7 @@ void CPUTester::runTestGroup(const CPUTestGroup& testGroup, bool randomizeData, 
 void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
    test.testSetupFunction(cpu, finalCPU);
 
-   cpu.tickOnce();
+   cpu.tick();
 
    bool fieldsMatch = miscFieldsMatch(finalCPU, cpu);
    bool registersMatch = memcmp(&finalCPU.reg, &cpu.reg, sizeof(CPU::Registers)) == 0;
