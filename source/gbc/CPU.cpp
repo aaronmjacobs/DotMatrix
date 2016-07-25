@@ -755,7 +755,7 @@ void CPU::execute(Operation operation) {
       {
          uint8_t mask = bitOprMask(operation.param1);
 
-         setFlag(kZero, (*param2 & mask) == 1);
+         setFlag(kZero, (*param2 & mask) == 0);
          setFlag(kSub, false);
          setFlag(kHalfCarry, true);
          break;
