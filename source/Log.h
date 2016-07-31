@@ -1,6 +1,8 @@
 #ifndef LOG_H
 #define LOG_H
 
+#include "Constants.h"
+
 #include <boxer/boxer.h>
 #include <templog/logging.h>
 
