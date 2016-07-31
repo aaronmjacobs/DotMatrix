@@ -60,16 +60,6 @@ GLFWwindow* init() {
    return window;
 }
 
-uint8_t dist(float x1, float y1, float x2, float y2) {
-   const float MAX_DIST = 80.0f;
-
-   float xDiff = x2 - x1;
-   float yDiff = y2 - y1;
-   float dist = sqrt(yDiff * yDiff + xDiff * xDiff);
-   float relativeDist = fmin(dist / MAX_DIST, 1.0f);
-   return 0x1F - (uint8_t)(relativeDist * 0x1F);
-}
-
 } // namespace
 
 int main(int argc, char *argv[]) {
@@ -86,15 +76,6 @@ int main(int argc, char *argv[]) {
    }
 
    Renderer renderer;
-   std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> pixels;
-   for (int i = 0; i < pixels.size(); ++i) {
-      int x = i % GBC::kScreenWidth;
-      int y = i / GBC::kScreenWidth;
-      pixels[i] = { dist(x, y, GBC::kScreenWidth * 0.25f, GBC::kScreenHeight * 0.35f),
-                    dist(x, y, GBC::kScreenWidth * 0.50f, GBC::kScreenHeight * 0.75f),
-                    dist(x, y, GBC::kScreenWidth * 0.75f, GBC::kScreenHeight * 0.35f) };
-   }
-
    framebufferCallback = [&renderer](int width, int height) {
       renderer.onFramebufferSizeChange(width, height);
    };
@@ -141,7 +122,7 @@ int main(int argc, char *argv[]) {
          accumulator -= kDt;
       }
 
-      renderer.draw(pixels);
+      renderer.draw(device.getLCDController().getFramebuffer());
 
       glfwSwapBuffers(window);
       glfwPollEvents();

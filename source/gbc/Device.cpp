@@ -28,7 +28,7 @@ static constexpr std::array<uint64_t, 4> kFrequencies = {
 } // namespace
 
 Device::Device()
-   : cpu(memory), cart(nullptr), divCycles(0), timaCycles(0) {
+   : cpu(memory), lcdController(memory), cart(nullptr), divCycles(0), timaCycles(0) {
 }
 
 void Device::tick(float dt) {
@@ -41,6 +41,7 @@ void Device::tick(float dt) {
 
       tickDiv(cyclesTicked);
       tickTima(cyclesTicked);
+      lcdController.tick(cpu.getCycles());
 
       previousCycles = cpu.getCycles();
    }

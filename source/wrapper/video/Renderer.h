@@ -2,10 +2,10 @@
 #define RENDERER_H
 
 #include "GLIncludes.h"
-#include "Model.h"
-#include "Texture.h"
+#include "wrapper/video/Model.h"
+#include "wrapper/video/Texture.h"
 
-#include "gbc/Video.h"
+#include "gbc/LCDController.h"
 
 #include <array>
 

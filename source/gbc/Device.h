@@ -4,6 +4,7 @@
 #include "Pointers.h"
 
 #include "gbc/CPU.h"
+#include "gbc/LCDController.h"
 #include "gbc/Memory.h"
 
 namespace GBC {
@@ -16,6 +17,10 @@ public:
 
    void setCartridge(UPtr<class Cartridge>&& cartridge);
 
+   const LCDController& getLCDController() const {
+      return lcdController;
+   }
+
 private:
    void tickDiv(uint64_t cycles);
 
@@ -23,6 +28,7 @@ private:
 
    Memory memory;
    CPU cpu;
+   LCDController lcdController;
 
    UPtr<class Cartridge> cart;
 

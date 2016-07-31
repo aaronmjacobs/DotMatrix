@@ -62,6 +62,7 @@ set(SOURCES
    ${SRC_DIR}/gbc/Cartridge.cpp
    ${SRC_DIR}/gbc/CPU.cpp
    ${SRC_DIR}/gbc/Device.cpp
+   ${SRC_DIR}/gbc/LCDController.cpp
    ${SRC_DIR}/gbc/Memory.cpp
    ${SRC_DIR}/test/CPUTester.cpp
    ${SRC_DIR}/wrapper/audio/AudioManager.cpp
@@ -86,8 +87,8 @@ set(HEADERS
    ${SRC_DIR}/gbc/Cartridge.h
    ${SRC_DIR}/gbc/CPU.h
    ${SRC_DIR}/gbc/Device.h
+   ${SRC_DIR}/gbc/LCDController.h
    ${SRC_DIR}/gbc/Memory.h
-   ${SRC_DIR}/gbc/Video.h
    ${SRC_DIR}/test/CPUTester.h
    ${SRC_DIR}/wrapper/audio/AudioManager.h
    ${SRC_DIR}/wrapper/input/InputDevice.h
