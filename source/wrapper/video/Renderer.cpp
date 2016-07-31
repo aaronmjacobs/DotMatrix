@@ -71,7 +71,7 @@ void checkGLError() {
 void fiveToEightBit(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> &pixels,
                     std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> &eightBitPixels) {
    // Transform pixels from 5-bit to 8-bit format
-   for (int i = 0; i < pixels.size(); ++i) {
+   for (size_t i = 0; i < pixels.size(); ++i) {
       eightBitPixels[i].r = (pixels[i].r * 255) / 31;
       eightBitPixels[i].g = (pixels[i].g * 255) / 31;
       eightBitPixels[i].b = (pixels[i].b * 255) / 31;

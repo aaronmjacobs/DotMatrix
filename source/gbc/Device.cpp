@@ -9,7 +9,7 @@ Device::Device()
 
 void Device::tick(float dt) {
    uint64_t initialCycles = cpu.getCycles();
-   uint64_t targetCycles = initialCycles + CPU::kClockSpeed * dt;
+   uint64_t targetCycles = initialCycles + static_cast<uint16_t>(CPU::kClockSpeed * dt);
 
    while (cpu.getCycles() < targetCycles) {
       cpu.tick();

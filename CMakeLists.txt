@@ -201,6 +201,10 @@ else (IS_BIG_ENDIAN)
    target_compile_definitions(${PROJECT_NAME} PRIVATE "GBC_LITTLE_ENDIAN")
 endif (IS_BIG_ENDIAN)
 
+if (WIN32)
+   target_compile_definitions(${PROJECT_NAME} PRIVATE "NOMINMAX")
+endif (WIN32)
+
 ### Post-Build ###
 
 # Copy DLLs
