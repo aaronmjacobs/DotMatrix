@@ -59,7 +59,7 @@ void Device::tickDiv(uint64_t cycles) {
 
    // TODO divider register - writing any value sets it to $00
    divCycles += cycles;
-   uint8_t divTicks = divCycles / kCyclesPerDiv;
+   uint8_t divTicks = static_cast<uint8_t>(divCycles / kCyclesPerDiv);
 
    divCycles %= kCyclesPerDiv;
    memory.div += divTicks;
