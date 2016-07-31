@@ -678,7 +678,7 @@ void CPU::execute(Operation operation) {
          setFlag(kZero, *param1 == 0);
          setFlag(kSub, false);
          setFlag(kHalfCarry, false);
-         setFlag(kCarry, (*param1 & 0x01) == 1);
+         setFlag(kCarry, (*param1 & 0x01) != 0);
          break;
       }
       case Ins::kRL:
@@ -690,7 +690,7 @@ void CPU::execute(Operation operation) {
          setFlag(kZero, *param1 == 0);
          setFlag(kSub, false);
          setFlag(kHalfCarry, false);
-         setFlag(kCarry, newCarryVal == 1);
+         setFlag(kCarry, newCarryVal != 0);
          break;
       }
       case Ins::kRRC:
@@ -700,7 +700,7 @@ void CPU::execute(Operation operation) {
          setFlag(kZero, *param1 == 0);
          setFlag(kSub, false);
          setFlag(kHalfCarry, false);
-         setFlag(kCarry, (*param1 & 0x80) == 1);
+         setFlag(kCarry, (*param1 & 0x80) != 0);
          break;
       }
       case Ins::kRR:
@@ -712,7 +712,7 @@ void CPU::execute(Operation operation) {
          setFlag(kZero, *param1 == 0);
          setFlag(kSub, false);
          setFlag(kHalfCarry, false);
-         setFlag(kCarry, newCarryVal == 1);
+         setFlag(kCarry, newCarryVal != 0);
          break;
       }
       case Ins::kSLA:
@@ -723,7 +723,7 @@ void CPU::execute(Operation operation) {
          setFlag(kZero, *param1 == 0);
          setFlag(kSub, false);
          setFlag(kHalfCarry, false);
-         setFlag(kCarry, newCarryVal == 1);
+         setFlag(kCarry, newCarryVal != 0);
          break;
       }
       case Ins::kSRA:
@@ -734,7 +734,7 @@ void CPU::execute(Operation operation) {
          setFlag(kZero, *param1 == 0);
          setFlag(kSub, false);
          setFlag(kHalfCarry, false);
-         setFlag(kCarry, newCarryVal == 1);
+         setFlag(kCarry, newCarryVal != 0);
          break;
       }
       case Ins::kSRL:
@@ -745,7 +745,7 @@ void CPU::execute(Operation operation) {
          setFlag(kZero, *param1 == 0);
          setFlag(kSub, false);
          setFlag(kHalfCarry, false);
-         setFlag(kCarry, newCarryVal == 1);
+         setFlag(kCarry, newCarryVal != 0);
          break;
       }
 
