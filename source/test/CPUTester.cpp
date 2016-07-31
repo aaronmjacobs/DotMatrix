@@ -288,8 +288,8 @@ void CPUTester::runTests(bool randomizeData) {
 }
 
 void CPUTester::runTestGroup(const CPUTestGroup& testGroup, bool randomizeData, uint16_t seed) {
-   Memory memory { 0 };
-   Memory finalMemory { 0 };
+   Memory memory;
+   Memory finalMemory;
    CPU cpu(memory);
    CPU finalCPU(finalMemory);
 

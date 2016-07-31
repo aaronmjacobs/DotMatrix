@@ -62,6 +62,7 @@ set(SOURCES
    ${SRC_DIR}/gbc/Cartridge.cpp
    ${SRC_DIR}/gbc/CPU.cpp
    ${SRC_DIR}/gbc/Device.cpp
+   ${SRC_DIR}/gbc/Memory.cpp
    ${SRC_DIR}/test/CPUTester.cpp
    ${SRC_DIR}/wrapper/audio/AudioManager.cpp
    ${SRC_DIR}/wrapper/input/KeyboardInputDevice.cpp

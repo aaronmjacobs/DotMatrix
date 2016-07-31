@@ -232,10 +232,8 @@ bool evalJumpCondition(Opr operand, bool zero, bool carry) {
 } // namespace
 
 CPU::CPU(Memory& memory)
-   : reg({0}), mem(memory), ime(false), cycles(0), halted(false), stopped(false), executedPrefixCB(false),
+   : reg({}), mem(memory), ime(false), cycles(0), halted(false), stopped(false), executedPrefixCB(false),
      interruptEnableRequested(false), interruptDisableRequested(false) {
-   reg.sp = 0xFFFE;
-   reg.pc = 0x0100;
 }
 
 void CPU::tick() {
@@ -264,6 +262,7 @@ void CPU::tick() {
    executedPrefixCB = false;
 
    /*LOG_DEBUG("");
+   LOG_DEBUG("PC: " << hex((uint16_t)(reg.pc - 0x0001)));
    LOG_DEBUG("Opcode: " << hex(opcode));
    LOG_DEBUG(insName(operation.ins) << " " << oprName(operation.param1) << " " << oprName(operation.param2));*/
 
@@ -283,20 +282,20 @@ void CPU::handleInterrupts() {
       return;
    }
 
-   if ((mem.ie & kVBlank) && (mem.ifr & kVBlank)) {
-      handleInterrupt(kVBlank);
-   } else if ((mem.ie & kLCDState) && (mem.ifr & kLCDState)) {
-      handleInterrupt(kLCDState);
-   } else if ((mem.ie & kTimer) && (mem.ifr & kTimer)) {
-      handleInterrupt(kTimer);
-   } else if ((mem.ie & kSerial) && (mem.ifr & kSerial)) {
-      handleInterrupt(kSerial);
-   } else if ((mem.ie & kJoypad) && (mem.ifr & kJoypad)) {
-      handleInterrupt(kJoypad);
+   if ((mem.ie & Interrupt::kVBlank) && (mem.ifr & Interrupt::kVBlank)) {
+      handleInterrupt(Interrupt::kVBlank);
+   } else if ((mem.ie & Interrupt::kLCDState) && (mem.ifr & Interrupt::kLCDState)) {
+      handleInterrupt(Interrupt::kLCDState);
+   } else if ((mem.ie & Interrupt::kTimer) && (mem.ifr & Interrupt::kTimer)) {
+      handleInterrupt(Interrupt::kTimer);
+   } else if ((mem.ie & Interrupt::kSerial) && (mem.ifr & Interrupt::kSerial)) {
+      handleInterrupt(Interrupt::kSerial);
+   } else if ((mem.ie & Interrupt::kJoypad) && (mem.ifr & Interrupt::kJoypad)) {
+      handleInterrupt(Interrupt::kJoypad);
    }
 }
 
-void CPU::handleInterrupt(Interrupt interrupt) {
+void CPU::handleInterrupt(Interrupt::Enum interrupt) {
    ASSERT(ime && (mem.ie & interrupt) && (mem.ifr & interrupt));
 
    ime = false;
@@ -312,19 +311,19 @@ void CPU::handleInterrupt(Interrupt interrupt) {
 
    // PC is set to the interrupt handler
    switch (interrupt) {
-      case kVBlank:
+      case Interrupt::kVBlank:
          reg.pc = 0x0040;
          break;
-      case kLCDState:
+      case Interrupt::kLCDState:
          reg.pc = 0x0048;
          break;
-      case kTimer:
+      case Interrupt::kTimer:
          reg.pc = 0x0050;
          break;
-      case kSerial:
+      case Interrupt::kSerial:
          reg.pc = 0x0058;
          break;
-      case kJoypad:
+      case Interrupt::kJoypad:
          reg.pc = 0x0060;
          break;
    }

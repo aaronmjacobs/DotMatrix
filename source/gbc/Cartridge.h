@@ -20,7 +20,7 @@ public:
 
    virtual void tick(uint64_t cycles) = 0;
 
-   virtual void load(union Memory& memory) = 0;
+   virtual void load(class Memory& memory) = 0;
 
 protected:
    Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes);

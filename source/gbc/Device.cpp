@@ -4,15 +4,17 @@
 namespace GBC {
 
 Device::Device()
-   : memory({0}), cpu(memory), cart(nullptr) {
+   : cpu(memory), cart(nullptr) {
 }
 
 void Device::tick(float dt) {
-   uint64_t initialCycles = cpu.getCycles();
-   uint64_t targetCycles = initialCycles + static_cast<uint16_t>(CPU::kClockSpeed * dt);
+   uint64_t previousCycles = cpu.getCycles();
+   uint64_t targetCycles = previousCycles + static_cast<uint64_t>(CPU::kClockSpeed * dt);
 
    while (cpu.getCycles() < targetCycles) {
       cpu.tick();
+
+      previousCycles = cpu.getCycles();
    }
 }
 

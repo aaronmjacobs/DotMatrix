@@ -166,7 +166,6 @@ private:
       struct {
          union {
             struct {
-
 #if GBC_BIG_ENDIAN
                uint8_t a;  // accumulator register
                uint8_t f;  // status register
@@ -213,14 +212,6 @@ private:
       kCarry = 1 << 4,     // Carry flag
    };
 
-   enum Interrupt : uint8_t {
-      kVBlank = 1 << 0,
-      kLCDState = 1 << 1,
-      kTimer = 1 << 2,
-      kSerial = 1 << 3,
-      kJoypad = 1 << 4,
-   };
-
    uint8_t readPC() {
       return mem[reg.pc++];
    }
@@ -262,7 +253,7 @@ private:
 
    void handleInterrupts();
 
-   void handleInterrupt(Interrupt interrupt);
+   void handleInterrupt(Interrupt::Enum interrupt);
 
    void execute(Operation operation);
 
