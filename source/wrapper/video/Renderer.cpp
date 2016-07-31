@@ -71,10 +71,16 @@ void checkGLError() {
 void fiveToEightBit(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> &pixels,
                     std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> &eightBitPixels) {
    // Transform pixels from 5-bit to 8-bit format
+   // Also flip the image vertically since (0, 0) is the lower left corner for OpenGL textures
    for (size_t i = 0; i < pixels.size(); ++i) {
-      eightBitPixels[i].r = (pixels[i].r * 255) / 31;
-      eightBitPixels[i].g = (pixels[i].g * 255) / 31;
-      eightBitPixels[i].b = (pixels[i].b * 255) / 31;
+      size_t x = i % GBC::kScreenWidth;
+      size_t y = i / GBC::kScreenWidth;
+      size_t newY = GBC::kScreenHeight - y - 1;
+      size_t newOffset = x + newY * GBC::kScreenWidth;
+
+      eightBitPixels[newOffset].r = (pixels[i].r * 255) / 31;
+      eightBitPixels[newOffset].g = (pixels[i].g * 255) / 31;
+      eightBitPixels[newOffset].b = (pixels[i].b * 255) / 31;
    }
 }
 
