@@ -88,6 +88,32 @@ uint8_t calcLY(uint64_t cycles) {
    return cyclesOnScreen / kCyclesPerLine;
 }
 
+std::array<Pixel, 4> extractPaletteColors(uint8_t bgp) {
+   // Shades of gray
+   /*static const std::array<Pixel, 4> kColorValues = {
+      Pixel(0x1F, 0x1F, 0x1F), // white
+      Pixel(0x14, 0x14, 0x14), // light gray
+      Pixel(0x0A, 0x0A, 0x0A), // dark gray
+      Pixel(0x00, 0x00, 0x00)  // black
+   };*/
+   // Green / blue (trying to approximate original Game Boy screen colors)
+   static const std::array<Pixel, 4> kColorValues = {
+      Pixel(0x15, 0x19, 0x09), // white
+      Pixel(0x0F, 0x15, 0x0D), // light gray
+      Pixel(0x04, 0x0D, 0x0C), // dark gray - middle try E?
+      Pixel(0x01, 0x05, 0x0A)  // black
+   };
+   static const uint8_t kMask = 0x03;
+
+   std::array<Pixel, 4> colors;
+   for (size_t i = 0; i < colors.size(); ++i) {
+      size_t shift = i * 2;
+      colors[i] = kColorValues[(bgp & (kMask << shift)) >> shift];
+   }
+
+   return colors;
+}
+
 } // namespace
 
 LCDController::LCDController(Memory& memory)
@@ -182,51 +208,50 @@ void LCDController::scan(Framebuffer& framebuffer, uint8_t line) {
 
 void LCDController::scanBackground(Framebuffer& framebuffer, uint8_t line) {
    size_t framebufferLineOffset = line * kScreenWidth;
+   std::array<Pixel, 4> colors = extractPaletteColors(mem.bgp);
 
-   uint8_t row = line - mem.scy;
-
+   uint8_t row = line + mem.scy;
    for (uint8_t x = 0; x < kScreenWidth; ++x) {
-      uint8_t col = x - mem.scx;
+      uint8_t col = x + mem.scx;
 
-      uint16_t tileMapIndex = (col / 32) + 8 * (row / 32);
-      uint16_t tileMapOffset = 0x1800 + tileMapIndex;
-      uint8_t tileNum = mem.vram[tileMapOffset];
-      uint16_t tileOffset = tileNum * 16; // 16 bytes per tile
+      // Fetch the tile number
+      uint16_t tileMapBase = (mem.lcdc & LCDC::kBGTileMapDisplaySelect) ? 0x1C00 : 0x1800;
+      uint16_t tileMapOffset = (col / 8) + 32 * (row / 8); // 32x32 tiles, 8x8 pixels each
+      uint8_t tileNum = mem.vram[tileMapBase + tileMapOffset];
 
-      uint8_t lineOffset = (row % 8) * 2; // 8 lines per tile, 2 bytes per line
+      // Fetch the tile data
+      static const uint16_t kBytesPerTile = 16;
+      uint16_t tileDataBase = (mem.lcdc & LCDC::kBGAndWindowTileDataSelect) ? 0x0000 : 0x0800;
+      uint8_t tileDataLineOffset = (row % 8) * 2; // 8 lines per tile, 2 bytes per line
+      uint8_t tileLineFirstByte;
+      uint8_t tileLineSecondByte;
+      if (tileDataBase > 0) {
+         // the tile number acts as a signed offset
+         int16_t tileDataTileOffset = *reinterpret_cast<int8_t*>(&tileNum) * kBytesPerTile;
+         tileLineFirstByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset];
+         tileLineSecondByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset + 1];
+      } else {
+         // the tile number acts as an unsigned offset
+         uint16_t tileDataTileOffset = tileNum * kBytesPerTile;
+         tileLineFirstByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset];
+         tileLineSecondByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset + 1];
+      }
 
-      uint8_t tileLineFirstHalf = mem.vram[tileOffset + lineOffset];
-      uint8_t tileLineSecondHalf = mem.vram[tileOffset + lineOffset + 1];
-
-      uint8_t bit = col % 8;
+      uint8_t bit = 7 - (col % 8); // bit 7 is the leftmost pixel, bit 0 is the rightmost pixel
       uint8_t mask = 1 << bit;
 
-      uint8_t pixelVal = 0;
-      if (tileLineFirstHalf & mask) {
-         ++pixelVal;
+      uint8_t paletteIndex = 0;
+      if (tileLineFirstByte & mask) {
+         ++paletteIndex;
       }
-      if (tileLineSecondHalf & mask) {
-         ++pixelVal;
+      if (tileLineSecondByte & mask) {
+         paletteIndex += 2;
       }
+      Pixel outColor = colors[paletteIndex];
 
-      uint8_t outColor = 0x00;
-      switch (pixelVal) {
-         case 0:
-            outColor = 0x1F;
-            break;
-         case 1:
-            outColor = 0x14;
-            break;
-         case 2:
-            outColor = 0x0A;
-            break;
-         case 3:
-            outColor = 0x00;
-            break;
-      }
-      framebuffer[framebufferLineOffset + x].r = outColor;
-      framebuffer[framebufferLineOffset + x].g = outColor;
-      framebuffer[framebufferLineOffset + x].b = outColor;
+      framebuffer[framebufferLineOffset + x].r = outColor.r;
+      framebuffer[framebufferLineOffset + x].g = outColor.g;
+      framebuffer[framebufferLineOffset + x].b = outColor.b;
    }
 }
 
