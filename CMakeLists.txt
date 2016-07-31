@@ -82,6 +82,7 @@ set(HEADERS
    ${SRC_DIR}/GLIncludes.h
    ${SRC_DIR}/Log.h
    ${SRC_DIR}/Pointers.h
+   ${SRC_DIR}/gbc/Bootstrap.h
    ${SRC_DIR}/gbc/Cartridge.h
    ${SRC_DIR}/gbc/CPU.h
    ${SRC_DIR}/gbc/Device.h

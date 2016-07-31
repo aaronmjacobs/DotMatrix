@@ -1,8 +1,7 @@
 #ifndef GBC_MEMORY_H
 #define GBC_MEMORY_H
 
-#include "FancyAssert.h"
-
+#include <array>
 #include <cstdint>
 
 namespace GBC {
@@ -112,23 +111,16 @@ public:
       };
    };
 
-   uint8_t& operator[](size_t index) {
-      ASSERT(index < 0x10000);
-
-      if (index >= 0xE000 && index < 0xFE00) {
-         // Mirror of working ram
-         index -= 0x2000;
-      }
-
-      return raw[index];
-   }
+   uint8_t& operator[](size_t index);
 
    const uint8_t& operator[](size_t index) const {
       return (*const_cast<Memory*>(this))[index];
    }
+
+private:
+   std::array<uint8_t, 256> bootstrap;
 };
 
 } // namespace GBC
 
 #endif
-
