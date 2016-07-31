@@ -8,21 +8,26 @@
 
 namespace GBC {
 
-class Cartridge;
-
 class Device {
 public:
    Device();
 
    void tick(float dt);
 
-   void setCartridge(UPtr<Cartridge>&& cartridge);
+   void setCartridge(UPtr<class Cartridge>&& cartridge);
 
 private:
+   void tickDiv(uint64_t cycles);
+
+   void tickTima(uint64_t cycles);
+
    Memory memory;
    CPU cpu;
 
-   UPtr<Cartridge> cart;
+   UPtr<class Cartridge> cart;
+
+   uint64_t divCycles;
+   uint64_t timaCycles;
 };
 
 } // namespace GBC

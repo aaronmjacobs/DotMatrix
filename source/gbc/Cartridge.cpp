@@ -1,3 +1,4 @@
+#include "FancyAssert.h"
 #include "Log.h"
 
 #include "gbc/Cartridge.h"
