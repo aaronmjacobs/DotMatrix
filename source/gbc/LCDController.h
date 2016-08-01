@@ -65,10 +65,10 @@ public:
    }
 
 private:
-   void scan(Framebuffer& framebuffer, uint8_t line);
-   void scanBackground(Framebuffer& framebuffer, uint8_t line);
-   void scanWindow(Framebuffer& framebuffer, uint8_t line);
-   void scanSprites(Framebuffer& framebuffer, uint8_t line);
+   void scan(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line);
+   void scanBackground(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line);
+   void scanWindow(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line);
+   void scanSprites(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line);
 
    class Memory& mem;
    DoubleBufferedFramebuffer framebuffers;

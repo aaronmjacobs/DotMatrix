@@ -49,6 +49,17 @@ enum Enum : uint8_t {
 
 } // namespace STAT
 
+namespace Color {
+
+enum Enum : uint8_t {
+   kWhite = 0,
+   kLightGray = 1,
+   kDarkGray = 2,
+   kBlack = 3
+};
+
+} // namespace Color
+
 static const uint32_t kSearchOAMCycles = 80;
 static const uint32_t kDataTransferCycles = 172;
 static const uint32_t kHBlankCycles = 204;
@@ -176,7 +187,8 @@ void LCDController::tick(uint64_t totalCycles) {
          ASSERT(lastMode == Mode::kDataTransfer || lastMode == Mode::kSearchOAM);
 
          if (lastMode != Mode::kDataTransfer) {
-            scan(framebuffers.writeBuffer(), mem.ly);
+            ASSERT(mem.ly < 144);
+            scan(framebuffers.writeBuffer(), extractPaletteColors(mem.bgp), mem.ly);
          }
          break;
       }
@@ -185,30 +197,29 @@ void LCDController::tick(uint64_t totalCycles) {
    }
 }
 
-void LCDController::scan(Framebuffer& framebuffer, uint8_t line) {
+void LCDController::scan(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line) {
    if (mem.lcdc & LCDC::kDisplayEnable) {
       if (mem.lcdc & LCDC::kBGDisplay) {
-         scanBackground(framebuffer, line);
+         scanBackground(framebuffer, colors, line);
       }
 
       if (mem.lcdc & LCDC::kWindowDisplayEnable) {
-         scanWindow(framebuffer, line);
+         scanWindow(framebuffer, colors, line);
       }
 
       if (mem.lcdc & LCDC::kObjSpriteDisplayEnable) {
-         scanSprites(framebuffer, line);
+         scanSprites(framebuffer, colors, line);
       }
    } else {
       size_t lineOffset = line * kScreenWidth;
       for (size_t x = 0; x < kScreenWidth; ++x) {
-         framebuffer[lineOffset + x] = {};
+         framebuffer[lineOffset + x] = colors[Color::kWhite];
       }
    }
 }
 
-void LCDController::scanBackground(Framebuffer& framebuffer, uint8_t line) {
+void LCDController::scanBackground(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line) {
    size_t framebufferLineOffset = line * kScreenWidth;
-   std::array<Pixel, 4> colors = extractPaletteColors(mem.bgp);
 
    uint8_t row = line + mem.scy;
    for (uint8_t x = 0; x < kScreenWidth; ++x) {
@@ -223,19 +234,16 @@ void LCDController::scanBackground(Framebuffer& framebuffer, uint8_t line) {
       static const uint16_t kBytesPerTile = 16;
       uint16_t tileDataBase = (mem.lcdc & LCDC::kBGAndWindowTileDataSelect) ? 0x0000 : 0x0800;
       uint8_t tileDataLineOffset = (row % 8) * 2; // 8 lines per tile, 2 bytes per line
-      uint8_t tileLineFirstByte;
-      uint8_t tileLineSecondByte;
+      uint16_t tileDataTileOffset;
       if (tileDataBase > 0) {
          // the tile number acts as a signed offset
-         int16_t tileDataTileOffset = *reinterpret_cast<int8_t*>(&tileNum) * kBytesPerTile;
-         tileLineFirstByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset];
-         tileLineSecondByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset + 1];
+         tileDataTileOffset = (*reinterpret_cast<int8_t*>(&tileNum) + 128) * kBytesPerTile;
       } else {
          // the tile number acts as an unsigned offset
-         uint16_t tileDataTileOffset = tileNum * kBytesPerTile;
-         tileLineFirstByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset];
-         tileLineSecondByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset + 1];
+         tileDataTileOffset = tileNum * kBytesPerTile;
       }
+      uint8_t tileLineFirstByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset];
+      uint8_t tileLineSecondByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset + 1];
 
       uint8_t bit = 7 - (col % 8); // bit 7 is the leftmost pixel, bit 0 is the rightmost pixel
       uint8_t mask = 1 << bit;
@@ -247,30 +255,27 @@ void LCDController::scanBackground(Framebuffer& framebuffer, uint8_t line) {
       if (tileLineSecondByte & mask) {
          paletteIndex += 2;
       }
-      Pixel outColor = colors[paletteIndex];
 
-      framebuffer[framebufferLineOffset + x].r = outColor.r;
-      framebuffer[framebufferLineOffset + x].g = outColor.g;
-      framebuffer[framebufferLineOffset + x].b = outColor.b;
+      framebuffer[framebufferLineOffset + x] = colors[paletteIndex];
    }
 }
 
-void LCDController::scanWindow(Framebuffer& framebuffer, uint8_t line) {
+void LCDController::scanWindow(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line) {
    // TODO properly implement
 
-   size_t lineOffset = line * kScreenWidth;
+   /*size_t lineOffset = line * kScreenWidth;
    for (size_t x = 0; x < kScreenWidth; ++x) {
-      framebuffer[lineOffset + x].g = 0x14;
-   }
+      framebuffer[lineOffset + x] = colors[Color::kLightGray];
+   }*/
 }
 
-void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line) {
+void LCDController::scanSprites(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line) {
    // TODO properly implement
-   
-   size_t lineOffset = line * kScreenWidth;
+
+   /*size_t lineOffset = line * kScreenWidth;
    for (size_t x = 0; x < kScreenWidth; ++x) {
-      framebuffer[lineOffset + x].b = 0x0A;
-   }
+      framebuffer[lineOffset + x] = colors[Color::kDarkGray];
+   }*/
 }
 
 } // namespace GBC
