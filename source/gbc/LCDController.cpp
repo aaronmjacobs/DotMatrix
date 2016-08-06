@@ -138,9 +138,11 @@ void LCDController::tick(uint64_t totalCycles) {
    mem.stat = (mem.stat & ~STAT::kModeFlag) | currentMode;
 
    mem.ly = calcLY(totalCycles);
-   if (mem.stat & STAT::kLycLyCoincidence) {
-      mem.stat = (mem.stat & !STAT::kCoincidenceFlag) | (mem.ly == mem.lyc ? STAT::kCoincidenceFlag : 0);
 
+   // ly compare
+   bool coincident = mem.ly == mem.lyc;
+   mem.stat = (mem.stat & ~STAT::kCoincidenceFlag) | (coincident ? STAT::kCoincidenceFlag : 0);
+   if ((mem.stat & STAT::kLycLyCoincidence) && coincident) {
       mem.ifr |= Interrupt::kLCDState;
    }
 
