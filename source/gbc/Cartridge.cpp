@@ -9,6 +9,23 @@
 
 namespace GBC {
 
+namespace {
+
+static const uint16_t kHeaderOffset = 0x0100;
+static const uint16_t kHeaderSize = 0x0050;
+
+Cartridge::Header parseHeader(const uint8_t* data, size_t numBytes) {
+   STATIC_ASSERT(sizeof(Cartridge::Header) == kHeaderSize);
+   ASSERT(numBytes >= kHeaderOffset + kHeaderSize);
+
+   Cartridge::Header header;
+   memcpy(&header, data + kHeaderOffset, kHeaderSize);
+
+   return header;
+}
+
+} // namespace
+
 class SimpleCartridge : public Cartridge {
 public:
    void tick(uint64_t cycles);
@@ -35,10 +52,12 @@ void SimpleCartridge::load(Memory& memory) {
 
 // static
 UPtr<Cartridge> Cartridge::fromData(UPtr<uint8_t[]>&& data, size_t numBytes) {
-   ASSERT(data && numBytes > 0x014F);
+   if (!data || numBytes < kHeaderOffset + kHeaderSize) {
+      return nullptr;
+   }
 
-   uint8_t type = data[0x0147];
-   switch (type) {
+   Header header = parseHeader(data.get(), numBytes);
+   switch (header.cartridgeType) {
       case kROMOnly:
          return UPtr<Cartridge>(new SimpleCartridge(std::move(data), numBytes));
       default:
@@ -48,10 +67,11 @@ UPtr<Cartridge> Cartridge::fromData(UPtr<uint8_t[]>&& data, size_t numBytes) {
 }
 
 Cartridge::Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes)
-   : data(std::move(cartData)), numBytes(cartNumBytes), title({ 0 }) {
-   ASSERT(data && numBytes > 0x014F);
+   : data(std::move(cartData)), numBytes(cartNumBytes), header(parseHeader(data.get(), numBytes)), title({}) {
+   ASSERT(data);
 
-   strncpy(title.data(), reinterpret_cast<char*>(&data[0x0134]), title.size());
+   // Copy title into separate array to ensure there is a null terminator
+   memcpy(title.data(), header.title.data(), header.title.size());
 }
 
 } // namespace GBC

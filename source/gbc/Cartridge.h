@@ -22,10 +22,17 @@ public:
 
    virtual void load(class Memory& memory) = 0;
 
-protected:
-   Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes);
+   enum CGBFlag : uint8_t {
+      kCBGSupported = 0x80,
+      kCGBRequired = 0xC0
+   };
 
-   enum Type : uint8_t {
+   enum SGBFlag : uint8_t {
+      kNoSGBFunctions = 0x00,
+      kSupportsSGBFunctions = 0x03
+   };
+
+   enum CartridgeType : uint8_t {
       kROMOnly = 0x00,
 
       kMBC1 = 0x01,
@@ -97,9 +104,31 @@ protected:
       kDestNonJapanese = 0x01
    };
 
+   struct Header {
+      std::array<uint8_t, 4> entryPoint;
+      std::array<uint8_t, 48> nintendoLogo;
+      std::array<uint8_t, 11> title;
+      std::array<uint8_t, 4> manufacturerCode;
+      CGBFlag cgbFlag;
+      std::array<uint8_t, 2> newLicenseeCode;
+      SGBFlag sgbFlag;
+      CartridgeType cartridgeType;
+      ROMSize romSize;
+      RAMSize ramSize;
+      DestinationCode destinationCode;
+      uint8_t oldLicenseeCode;
+      uint8_t maskRomVersionNumber;
+      uint8_t headerChecksum;
+      std::array<uint8_t, 2> globalChecksum;
+   };
+
+protected:
+   Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes);
+
    UPtr<uint8_t[]> data;
    size_t numBytes;
-   std::array<char, 16> title;
+   Header header;
+   std::array<char, 12> title;
 };
 
 } // namespace GBC
