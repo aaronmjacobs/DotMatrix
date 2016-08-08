@@ -49,7 +49,7 @@ void Device::tick(float dt) {
 
 void Device::setCartridge(UPtr<Cartridge>&& cartridge) {
    cart = std::move(cartridge);
-   cart->load(memory);
+   memory.setCartridge(cart.get());
 }
 
 void Device::tickDiv(uint64_t cycles) {

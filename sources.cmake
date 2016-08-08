@@ -32,6 +32,7 @@ set(HEADER_NAMES
    gbc/Bootstrap.h
    gbc/Cartridge.h
    gbc/CPU.h
+   gbc/Debug.h
    gbc/Device.h
    gbc/LCDController.h
    gbc/Memory.h

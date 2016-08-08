@@ -127,6 +127,13 @@ public:
    }
 
    void set(uint16_t address, uint8_t val);
+
+   void setCartridge(class Cartridge* cartridge) {
+      cart = cartridge;
+   }
+
+private:
+   class Cartridge* cart;
 };
 
 } // namespace GBC

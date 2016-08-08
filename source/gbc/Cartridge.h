@@ -18,9 +18,9 @@ public:
       return title.data();
    }
 
-   virtual void tick(uint64_t cycles) = 0;
+   virtual const uint8_t* get(uint16_t address) const = 0;
 
-   virtual void load(class Memory& memory) = 0;
+   virtual void set(uint16_t address, uint8_t val) = 0;
 
    enum CGBFlag : uint8_t {
       kCBGSupported = 0x80,
