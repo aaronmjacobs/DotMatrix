@@ -95,14 +95,12 @@ int main(int argc, char *argv[]) {
       size_t numBytes;
       UPtr<uint8_t[]> cartData = IOUtils::readBinaryFile(cartPath, &numBytes);
 
-      if (cartData && numBytes > 0 && numBytes <= 0x8000) {
-         LOG_INFO("Loading cartridge: " << cartPath);
-         UPtr<GBC::Cartridge> cartridge = GBC::Cartridge::fromData(std::move(cartData), numBytes);
+      LOG_INFO("Loading cartridge: " << cartPath);
+      UPtr<GBC::Cartridge> cartridge = GBC::Cartridge::fromData(std::move(cartData), numBytes);
 
-         if (cartridge) {
-            glfwSetWindowTitle(window, cartridge->getTitle());
-            device.setCartridge(std::move(cartridge));
-         }
+      if (cartridge) {
+         glfwSetWindowTitle(window, cartridge->getTitle());
+         device.setCartridge(std::move(cartridge));
       }
    }
 

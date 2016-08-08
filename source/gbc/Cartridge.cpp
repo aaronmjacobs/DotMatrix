@@ -62,31 +62,133 @@ bool performGlobalChecksum(const Cartridge::Header& header, const uint8_t* mem, 
 
 class SimpleCartridge : public Cartridge {
 public:
-   const uint8_t* get(uint16_t address) const override;
+   const uint8_t* get(uint16_t address) const override {
+      ASSERT(address < numBytes);
 
-   void set(uint16_t address, uint8_t val) override;
+      if (address < 0x8000) {
+         return &data[address];
+      }
+
+      LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
+      return nullptr;
+   }
+
+   void set(uint16_t address, uint8_t val) override {
+      ASSERT(address < numBytes);
+
+      // No writable memory
+      LOG_WARNING("Trying to write to read-only cartridge at location " << hex(address) << ": " << hex(val));
+   }
 
 private:
    friend class Cartridge;
-   SimpleCartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes);
+   SimpleCartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes)
+      : Cartridge(std::move(cartData), cartNumBytes) {
+   }
 };
 
-SimpleCartridge::SimpleCartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes)
-   : Cartridge(std::move(cartData), cartNumBytes) {
-}
+class MBC1Cartridge : public Cartridge {
+public:
+   const uint8_t* get(uint16_t address) const override {
+      ASSERT(address < numBytes);
 
-const uint8_t* SimpleCartridge::get(uint16_t address) const {
-   ASSERT(address < numBytes);
+      if (address < 0x4000) {
+         // Always contains the first 16Bytes of the ROM
+         return &data[address];
+      }
 
-   return &data[address];
-}
+      if (address < 0x8000) {
+         // Switchable ROM bank
+         return &data[(address - 0x4000) + (romBankNumber * 0x4000)];
+      }
 
-void SimpleCartridge::set(uint16_t address, uint8_t val) {
-   ASSERT(address < numBytes);
+      if (address >= 0xA000 && address < 0xC000) {
+         // Switchable RAM bank
+         if (ramEnabled) {
+            uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
+            return &ramBanks[ramBank][address - 0xA000];
+         } else {
+            LOG_WARNING("Trying to read from RAM when not enabled");
+            return nullptr;
+         }
+      }
 
-   // No writable memory
-   LOG_WARNING("Trying to write to read-only cartridge at location " << hex(address) << ": " << hex(val));
-}
+      LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
+      return nullptr;
+   }
+
+   void set(uint16_t address, uint8_t val) override {
+      ASSERT(address < numBytes);
+
+      if (address < 0x2000) {
+         // RAM enable
+         ramEnabled = (val & 0x0A) != 0x00;
+         return;
+      }
+
+      if (address < 0x4000) {
+         // ROM bank number
+         romBankNumber = val & 0x1F;
+         if (romBankNumber == 0x00 || romBankNumber == 0x20 || romBankNumber == 0x40 || romBankNumber == 0x60) {
+            // Handle banks 0x00, 0x20, 0x40, 0x60
+            romBankNumber += 0x01;
+         }
+         return;
+      }
+
+      if (address < 0x6000) {
+         // RAM bank number or upper bits of ROM bank number
+         uint8_t bankNumber = val & 0x03;
+         switch (bankingMode) {
+            case kROMBankingMode:
+               romBankNumber = (romBankNumber & 0x1F) | (bankNumber << 5);
+               break;
+            case kRAMBankingMode:
+               ramBankNumber = bankNumber;
+               break;
+            default:
+               ASSERT(false, "Invalid banking mode: %hhu", bankingMode);
+         }
+         return;
+      }
+
+      if (address < 0x8000) {
+         // ROM / RAM mode select
+         bankingMode = (val & 0x01) == 0x00 ? kROMBankingMode : kRAMBankingMode;
+         return;
+      }
+
+      if (address >= 0xA000 && address < 0xC000) {
+         // Switchable RAM bank
+         if (ramEnabled) {
+            uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
+            ramBanks[ramBank][address - 0xA000] = val;
+         }
+         return;
+      }
+
+      LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(val));
+   }
+
+private:
+   enum BankingMode : uint8_t {
+      kROMBankingMode = 0x00,
+      kRAMBankingMode = 0x01
+   };
+
+   friend class Cartridge;
+   MBC1Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes)
+      : Cartridge(std::move(cartData), cartNumBytes), ramEnabled(false), romBankNumber(0x00),
+        bankingMode(kROMBankingMode), ramBanks({}) {
+   }
+
+   bool ramEnabled;
+   uint8_t romBankNumber;
+   uint8_t ramBankNumber;
+   BankingMode bankingMode;
+
+   std::array<std::array<uint8_t, 0x2000>, 4> ramBanks;
+};
 
 // static
 UPtr<Cartridge> Cartridge::fromData(UPtr<uint8_t[]>&& data, size_t numBytes) {
@@ -101,15 +203,16 @@ UPtr<Cartridge> Cartridge::fromData(UPtr<uint8_t[]>&& data, size_t numBytes) {
       return nullptr;
    }
    if (!performGlobalChecksum(header, data.get(), numBytes)) {
-      LOG_ERROR("Cartridge data failed global checksum");
-      return nullptr;
+      LOG_WARNING("Cartridge data failed global checksum");
    }
 
    switch (header.cartridgeType) {
       case kROMOnly:
          return UPtr<Cartridge>(new SimpleCartridge(std::move(data), numBytes));
+      case kMBC1:
+         return UPtr<Cartridge>(new MBC1Cartridge(std::move(data), numBytes));
       default:
-         LOG_ERROR_MSG_BOX("Invalid cartridge type");
+         LOG_ERROR("Invalid cartridge type: " << hex(header.cartridgeType));
          return nullptr;
    }
 }
