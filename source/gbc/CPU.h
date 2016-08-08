@@ -160,6 +160,8 @@ public:
 #if !defined(RUN_TESTS) // Need direct access when running tests
 private:
 #endif
+   class Operand;
+
    union Registers {
       uint8_t raw[12];
 
@@ -213,13 +215,13 @@ private:
    };
 
    uint8_t readPC() {
-      return mem[reg.pc++];
+      return mem.get(reg.pc++);
    }
 
    uint16_t readPC16() {
       uint8_t low = readPC();
       uint8_t high = readPC();
-      return high << 8 | low;
+      return (high << 8) | low;
    }
 
    void setFlag(Flag flag, bool val) {
@@ -259,13 +261,19 @@ private:
 
    void execute16(Operation operation);
 
-   void push(uint16_t val);
+   void push(uint16_t val) {
+      reg.sp -= 2;
+      mem.set(reg.sp, val & 0x00FF);
+      mem.set(reg.sp + 1, (val & 0xFF00) >> 8);
+   }
 
-   uint16_t pop();
+   uint16_t pop() {
+      uint8_t low = mem.get(reg.sp);
+      uint8_t high = mem.get(reg.sp + 1);
+      reg.sp += 2;
 
-   uint8_t* addr8(Opr operand, uint8_t* imm8, uint16_t* imm16);
-
-   uint16_t* addr16(Opr operand, uint8_t* imm8, uint16_t* imm16);
+      return (high << 8) | low;
+   }
 
    Registers reg;
    Memory& mem;

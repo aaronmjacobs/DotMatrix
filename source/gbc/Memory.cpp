@@ -6,22 +6,33 @@
 namespace GBC {
 
 Memory::Memory()
-   : raw{}, bootstrap(kBootstrap) {
+   : raw{} {
 }
 
-uint8_t& Memory::operator[](size_t index) {
-   ASSERT(index < 0x10000);
-
-   if (boot == 0 && index <= 0x00FF) {
-      return bootstrap[index];
+const uint8_t* Memory::getAddr(uint16_t address) const {
+   if (boot == Boot::kBooting && address <= 0x00FF) {
+      return &kBootstrap[address];
    }
 
-   if (index >= 0xE000 && index < 0xFE00) {
+   if (address >= 0xE000 && address < 0xFE00) {
       // Mirror of working ram
-      index -= 0x2000;
+      address -= 0x2000;
    }
 
-   return raw[index];
+   return &raw[address];
+}
+
+void Memory::set(uint16_t address, uint8_t val) {
+   if (boot == Boot::kBooting && address <= 0x00FF) {
+      return; // Bootstrap is read only
+   }
+
+   if (address >= 0xE000 && address < 0xFE00) {
+      // Mirror of working ram
+      address -= 0x2000;
+   }
+
+   raw[address] = val;
 }
 
 } // namespace GBC

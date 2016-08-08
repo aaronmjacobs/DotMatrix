@@ -18,6 +18,15 @@ enum Enum : uint8_t {
 
 } // namespace Interrupt
 
+namespace Boot {
+
+enum Enum : uint8_t {
+   kBooting = 0,
+   kNotBooting = 1
+};
+
+};
+
 class Memory {
 public:
    Memory();
@@ -111,14 +120,13 @@ public:
       };
    };
 
-   uint8_t& operator[](size_t index);
+   const uint8_t* getAddr(uint16_t address) const;
 
-   const uint8_t& operator[](size_t index) const {
-      return (*const_cast<Memory*>(this))[index];
+   uint8_t get(uint16_t address) const {
+      return *getAddr(address);
    }
 
-private:
-   std::array<uint8_t, 256> bootstrap;
+   void set(uint16_t address, uint8_t val);
 };
 
 } // namespace GBC
