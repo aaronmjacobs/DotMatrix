@@ -1,15 +1,8 @@
 ### Project Info ###
 
 cmake_minimum_required(VERSION 3.1)
-project(Run-GBC)
+project(Run-GBC VERSION 0.0.0.1 LANGUAGES C CXX)
 set(PROJECT_DISPLAY_NAME "Run-G.B.C.")
-
-# Version info
-set(VERSION_TYPE "Pre-Alpha")
-set(VERSION_MAJOR 0)
-set(VERSION_MINOR 0)
-set(VERSION_MICRO 0)
-set(VERSION_BUILD 1)
 
 # Build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -22,17 +15,10 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Platform detection
+set(LINUX FALSE)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-   set(LINUX true)
-else(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-   set(LINUX false)
+   set(LINUX TRUE)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-   set(64_BIT true)
-else(CMAKE_SIZEOF_VOID_P EQUAL 8)
-   set(64_BIT false)
-endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 
 # rpath handling
 if(LINUX)
@@ -48,11 +34,10 @@ set(BIN_RES_DIR "${PROJECT_BINARY_DIR}/resources")
 
 # Options
 option(LOG_TO_FILE "Enable logging to a file" OFF)
-if (MSVC)
+set(LOG_MSVC_STYLE_DEFAULT, FALSE)
+if(MSVC)
 	set(LOG_MSVC_STYLE_DEFAULT, TRUE)
-else (MSVC)
-	set(LOG_MSVC_STYLE_DEFAULT, FALSE)
-endif (MSVC)
+endif(MSVC)
 option(LOG_MSVC_STYLE "Format logs for MSVC" ${LOG_MSVC_STYLE_DEFAULT})
 
 # Generated content
@@ -62,52 +47,23 @@ configure_file(
 )
 
 # Source content
-set(SOURCES
-   ${SRC_DIR}/main.cpp
-   ${SRC_DIR}/gbc/Cartridge.cpp
-   ${SRC_DIR}/gbc/CPU.cpp
-   ${SRC_DIR}/gbc/Device.cpp
-   ${SRC_DIR}/gbc/LCDController.cpp
-   ${SRC_DIR}/gbc/Memory.cpp
-   ${SRC_DIR}/test/CPUTester.cpp
-   ${SRC_DIR}/wrapper/audio/AudioManager.cpp
-   ${SRC_DIR}/wrapper/input/KeyboardInputDevice.cpp
-   ${SRC_DIR}/wrapper/platform/IOUtils.cpp
-   ${SRC_DIR}/wrapper/platform/OSUtils.cpp
-   ${SRC_DIR}/wrapper/video/Mesh.cpp
-   ${SRC_DIR}/wrapper/video/Model.cpp
-   ${SRC_DIR}/wrapper/video/Renderer.cpp
-   ${SRC_DIR}/wrapper/video/Shader.cpp
-   ${SRC_DIR}/wrapper/video/ShaderProgram.cpp
-   ${SRC_DIR}/wrapper/video/Texture.cpp
-)
+include(sources.cmake)
+source_group("Sources" "${SRC_DIR}/*")
+source_group("Sources\\Generated" "${BIN_INCLUDE_DIR}/*")
+source_group("Dependencies" "${DEP_DIR}/*")
 
-set(HEADERS
-   ${BIN_INCLUDE_DIR}/Constants.h
-   ${SRC_DIR}/FancyAssert.h
-   ${SRC_DIR}/GLIncludes.h
-   ${SRC_DIR}/Log.h
-   ${SRC_DIR}/Pointers.h
-   ${SRC_DIR}/gbc/Bootstrap.h
-   ${SRC_DIR}/gbc/Cartridge.h
-   ${SRC_DIR}/gbc/CPU.h
-   ${SRC_DIR}/gbc/Device.h
-   ${SRC_DIR}/gbc/LCDController.h
-   ${SRC_DIR}/gbc/Memory.h
-   ${SRC_DIR}/test/CPUTester.h
-   ${SRC_DIR}/wrapper/audio/AudioManager.h
-   ${SRC_DIR}/wrapper/input/InputDevice.h
-   ${SRC_DIR}/wrapper/input/KeyboardInputDevice.h
-   ${SRC_DIR}/wrapper/platform/IOUtils.h
-   ${SRC_DIR}/wrapper/platform/OSUtils.h
-   ${SRC_DIR}/wrapper/video/Mesh.h
-   ${SRC_DIR}/wrapper/video/Model.h
-   ${SRC_DIR}/wrapper/video/Renderer.h
-   ${SRC_DIR}/wrapper/video/Shader.h
-   ${SRC_DIR}/wrapper/video/ShaderProgram.h
-   ${SRC_DIR}/wrapper/video/Texture.h
-)
+set(SOURCES)
+foreach(SOURCE_NAME ${SOURCE_NAMES})
+   list(APPEND SOURCES "${SRC_DIR}/${SOURCE_NAME}")
+endforeach(SOURCE_NAME)
 
+set(HEADERS)
+foreach(HEADER_NAME ${HEADER_NAMES})
+   list(APPEND HEADERS "${SRC_DIR}/${HEADER_NAME}")
+endforeach(HEADER_NAME)
+list(APPEND HEADERS "${BIN_INCLUDE_DIR}/Constants.h")
+
+set(INCLUDES)
 list(APPEND INCLUDES
    ${SRC_DIR}
    ${BIN_INCLUDE_DIR}
@@ -142,14 +98,17 @@ endfunction(attach_lib)
 # glad
 set(GLAD_DIR "${DEP_DIR}/glad")
 attach_lib("${GLAD_DIR}/include" "${GLAD_DIR}/src/glad.c" "${CMAKE_DL_LIBS}")
+source_group("Dependencies\\glad" "${GLAD_DIR}/*")
 
 # Pempek Assert
 set(PEMPEK_DIR "${DEP_DIR}/PempekAssert")
 attach_lib("${PEMPEK_DIR}/include" "${PEMPEK_DIR}/lib/pempek_assert.cpp" "")
+source_group("Dependencies\\PempekAssert" "${PEMPEK_DIR}/*")
 
 # templog
 set(TEMPLOG_DIR "${DEP_DIR}/templog")
 attach_lib("${TEMPLOG_DIR}/include" "${TEMPLOG_DIR}/imp/logging.cpp" "")
+source_group("Dependencies\\Templog" "${TEMPLOG_DIR}/*")
 
 ## Static ##
 
@@ -192,26 +151,27 @@ attach_lib("${OPENAL_DIR}/include" "" "${OPENAL_LIBRARY}")
 
 ### Building ###
 
-# Includes
-include_directories(${INCLUDES})
-
 # Binary
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+
+# Includes
+target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDES})
 
 # Link
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 
+# Platform compile definitions
 include(TestBigEndian)
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
-if (IS_BIG_ENDIAN)
+if(IS_BIG_ENDIAN)
    target_compile_definitions(${PROJECT_NAME} PRIVATE "GBC_BIG_ENDIAN")
-else (IS_BIG_ENDIAN)
+else(IS_BIG_ENDIAN)
    target_compile_definitions(${PROJECT_NAME} PRIVATE "GBC_LITTLE_ENDIAN")
-endif (IS_BIG_ENDIAN)
+endif(IS_BIG_ENDIAN)
 
-if (WIN32)
+if(WIN32)
    target_compile_definitions(${PROJECT_NAME} PRIVATE "NOMINMAX")
-endif (WIN32)
+endif(WIN32)
 
 ### Post-Build ###
 

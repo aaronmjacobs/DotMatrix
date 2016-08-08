@@ -63,7 +63,7 @@ GLFWwindow* init() {
 } // namespace
 
 int main(int argc, char *argv[]) {
-   LOG_INFO(kProjectName << " " << kVersionType << " " << kVersionMajor << "." << kVersionMinor << "."
+   LOG_INFO(kProjectName << " " << kVersionMajor << "." << kVersionMinor << "."
       << kVersionMicro << " (" << kVersionBuild << ")");
 
    if (!OSUtils::fixWorkingDirectory()) {
