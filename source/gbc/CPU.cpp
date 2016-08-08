@@ -245,7 +245,7 @@ void CPU::Operand::set8(uint8_t val) {
          reg.a = val;
          break;
       case Opr::kF:
-         reg.f = val;
+         reg.f = val & 0xF0; // Don't allow any bits in the lower nibble
          break;
       case Opr::kB:
          reg.b = val;
@@ -291,7 +291,7 @@ void CPU::Operand::set8(uint8_t val) {
 void CPU::Operand::set16(uint16_t val) {
    switch (opr) {
       case Opr::kAF:
-         reg.af = val;
+         reg.af = val & 0xFFF0; // Don't allow any bits in the lower nibble
          break;
       case Opr::kBC:
          reg.bc = val;
@@ -932,10 +932,6 @@ void CPU::execute16(Operation operation) {
       case Ins::kPOP:
       {
          param1.set16(pop());
-
-         if (operation.param1 == Opr::kAF) {
-            reg.f &= 0xF0; // Don't allow any bits in the lower nibble
-         }
          break;
       }
 
