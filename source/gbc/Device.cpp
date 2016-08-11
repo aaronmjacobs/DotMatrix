@@ -57,12 +57,12 @@ void Device::tickDiv(uint64_t cycles) {
    static const uint64_t kCyclesPerDiv = CPU::kClockSpeed / kDivFrequency; // 256
    STATIC_ASSERT(CPU::kClockSpeed % kDivFrequency == 0); // Should divide evenly
 
-   // TODO divider register - writing any value sets it to $00
    divCycles += cycles;
-   uint8_t divTicks = static_cast<uint8_t>(divCycles / kCyclesPerDiv);
 
-   divCycles %= kCyclesPerDiv;
-   memory.div += divTicks;
+   while (divCycles >= kCyclesPerDiv) {
+      divCycles -= kCyclesPerDiv;
+      ++memory.div;
+   }
 }
 
 void Device::tickTima(uint64_t cycles) {
