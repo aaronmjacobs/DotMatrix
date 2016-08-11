@@ -315,13 +315,13 @@ void CPU::Operand::set16(uint16_t val) {
 
 CPU::CPU(Memory& memory)
    : reg({}), mem(memory), ime(false), cycles(0), halted(false), stopped(false), executedPrefixCB(false),
-     interruptEnableRequested(false), interruptDisableRequested(false) {
+     interruptEnableRequested(false), interruptDisableRequested(false), freezePC(false) {
 }
 
 void CPU::tick() {
    handleInterrupts();
 
-   if (halted && ime) {
+   if (halted) {
       cycles += 4;
       return;
    }
@@ -333,11 +333,10 @@ void CPU::tick() {
 
    uint8_t opcode = readPC();
 
-   if (halted && !ime) {
-      // Immediately leave the halted state, and prevent the PC from incrementing - since we already incremented the PC,
-      // put it back to where it was
-      halted = false;
-      --reg.pc; // TODO Don't do this for GBC?
+   // Caused by executing a HALT when the IME is disabled
+   if (freezePC) {
+      freezePC = false;
+      --reg.pc;
    }
 
    Operation operation = executedPrefixCB ? kCBOperations[opcode] : kOperations[opcode];
@@ -360,7 +359,7 @@ void CPU::tick() {
 }
 
 void CPU::handleInterrupts() {
-   if (!ime) {
+   if (!ime && !halted) {
       return;
    }
 
@@ -378,7 +377,16 @@ void CPU::handleInterrupts() {
 }
 
 void CPU::handleInterrupt(Interrupt::Enum interrupt) {
-   ASSERT(ime && (mem.ie & interrupt) && (mem.ifr & interrupt));
+   ASSERT((ime || halted) && (mem.ie & interrupt) && (mem.ifr & interrupt));
+
+   if (halted && !ime) {
+      // The HALT state is left when an enabled interrupt occurs, no matter if the IME is enabled or not.
+      // However, if the IME is disabled the program counter register is frozen for one incrementation process
+      // upon leaving the HALT state.
+      halted = false;
+      freezePC = true; // TODO Don't do this for GBC?
+      return;
+   }
 
    ime = false;
    mem.ifr &= ~interrupt;
@@ -418,11 +426,9 @@ void CPU::execute(Operation operation) {
 
    // Check if the operation deals with 16-bit values
    if (is16BitOperation(operation)) {
-      //LOG_DEBUG("16-bit");
       execute16(operation);
       return;
    }
-   //LOG_DEBUG("8-bit");
 
    // If this is a compound operation, execute each part
    if (operation.ins == Ins::kLDD) {

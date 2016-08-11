@@ -286,6 +286,7 @@ private:
    bool executedPrefixCB;
    bool interruptEnableRequested;
    bool interruptDisableRequested;
+   bool freezePC;
 };
 
 } // namespace GBC
