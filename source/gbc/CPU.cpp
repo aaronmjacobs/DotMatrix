@@ -43,14 +43,13 @@ int8_t toSigned(uint8_t val) {
    return signedVal;
 }
 
-bool checkBitOperand(Opr operand, uint8_t val) {
+constexpr bool checkBitOperand(Opr operand, uint8_t val) {
    return static_cast<uint8_t>(operand) - val == static_cast<uint8_t>(Opr::k0);
 }
 
 // Determine the BIT value from the operand
 uint8_t bitOprMask(Opr operand) {
-   // TODO Make static assert
-   ASSERT(checkBitOperand(Opr::k1, 1) && checkBitOperand(Opr::k2, 2) && checkBitOperand(Opr::k3, 3)
+   STATIC_ASSERT(checkBitOperand(Opr::k1, 1) && checkBitOperand(Opr::k2, 2) && checkBitOperand(Opr::k3, 3)
        && checkBitOperand(Opr::k4, 4) && checkBitOperand(Opr::k5, 5) && checkBitOperand(Opr::k6, 6)
        && checkBitOperand(Opr::k7, 7), "Number operands are in an incorrect order");
    ASSERT(operand >= Opr::k0 && operand <= Opr::k7, "Bad bitOprMask() operand: %hhu", operand);
@@ -717,7 +716,7 @@ void CPU::execute(Operation operation) {
       }
 
       // Rotates and shifts
-      case Ins::kRLCA: // TODO Handle as special case above?
+      case Ins::kRLCA:
       {
          reg.a = (reg.a << 1) | (reg.a >> 7);
 
@@ -727,7 +726,7 @@ void CPU::execute(Operation operation) {
          setFlag(kCarry, (reg.a & 0x01) != 0);
          break;
       }
-      case Ins::kRLA: // TODO Handle as special case above?
+      case Ins::kRLA:
       {
          uint8_t carryVal = getFlag(kCarry) ? 1 : 0;
          uint8_t newCarryVal = reg.a & 0x80;
@@ -739,7 +738,7 @@ void CPU::execute(Operation operation) {
          setFlag(kCarry, newCarryVal != 0);
          break;
       }
-      case Ins::kRRCA: // TODO Handle as special case above?
+      case Ins::kRRCA:
       {
          reg.a = (reg.a >> 1) | (reg.a << 7);
 
@@ -749,7 +748,7 @@ void CPU::execute(Operation operation) {
          setFlag(kCarry, (reg.a & 0x80) != 0);
          break;
       }
-      case Ins::kRRA: // TODO Handle as special case above?
+      case Ins::kRRA:
       {
          uint8_t carryVal = getFlag(kCarry) ? 1 : 0;
          uint8_t newCarryVal = reg.a & 0x01;
@@ -988,7 +987,7 @@ void CPU::execute16(Operation operation) {
       case Ins::kJP:
       {
          if (operation.param2 == Opr::kNone) {
-            ASSERT(operation.param1 == Opr::kImm16 || operation.param1 == Opr::kHL); // TODO not DrefHL?
+            ASSERT(operation.param1 == Opr::kImm16 || operation.param1 == Opr::kHL);
 
             reg.pc = *param1Val;
          } else {
