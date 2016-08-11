@@ -641,7 +641,7 @@ void CPU::execute(Operation operation) {
             }
          }
 
-         bool carry = (temp & 0x0100) == 0x0100;
+         bool carry = getFlag(kCarry) || (temp & 0x0100) == 0x0100;
          reg.a = temp & 0x00FF;
 
          setFlag(kZero, reg.a == 0);
