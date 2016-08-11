@@ -51,7 +51,7 @@ public:
                // General
                uint8_t p1;       // Joy pad / system info        (0xFF00, 1)
                uint8_t sb;       // Serial transfer data         (0xFF01, 1)
-               uint8_t sc;       // IO control                   (0xFF02, 1)
+               uint8_t sc;       // Serial IO control            (0xFF02, 1)
                uint8_t pad0[1];  // Padding                      (0xFF03, 1)
                uint8_t div;      // Divider register             (0xFF04, 1)
                uint8_t tima;     // Timer counter                (0xFF05, 1)

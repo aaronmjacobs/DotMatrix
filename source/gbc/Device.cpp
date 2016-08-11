@@ -25,10 +25,21 @@ static constexpr std::array<uint64_t, 4> kFrequencies = {
 
 } // namespace TAC
 
+namespace SC {
+
+enum Enum {
+   kTransferStartFlag = 1 << 7,
+   kClockSpeed = 1 << 1, // CGB only
+   kShiftClock = 1 << 0
+};
+
+} // namespace SC
+
 } // namespace
 
 Device::Device()
-   : cpu(memory), lcdController(memory), cart(nullptr), divCycles(0), timaCycles(0) {
+   : cpu(memory), lcdController(memory), cart(nullptr), divCycles(0), timaCycles(0), serialCycles(0),
+     serialCallback(nullptr) {
 }
 
 void Device::tick(float dt) {
@@ -41,6 +52,7 @@ void Device::tick(float dt) {
 
       tickDiv(cyclesTicked);
       tickTima(cyclesTicked);
+      tickSerial(cyclesTicked);
       lcdController.tick(cpu.getCycles());
 
       previousCycles = cpu.getCycles();
@@ -86,6 +98,32 @@ void Device::tickTima(uint64_t cycles) {
             memory.tima = memory.tma;
             memory.ifr |= Interrupt::kTimer;
          }
+      }
+   }
+}
+
+void Device::tickSerial(uint64_t cycles) {
+   static const uint64_t kSerialFrequency = 8192; // 8192Hz
+   static const uint64_t kCyclesPerSerialBit = CPU::kClockSpeed / kSerialFrequency; // 512
+   static const uint64_t kCyclesPerSerialByte = kCyclesPerSerialBit * 8; // 4096
+   STATIC_ASSERT(CPU::kClockSpeed % kSerialFrequency == 0); // Should divide evenly
+
+   if (memory.sc & SC::kTransferStartFlag) {
+      serialCycles += cycles;
+
+      if (serialCycles >= kCyclesPerSerialByte) {
+         // Transfer done
+         serialCycles = 0;
+
+         uint8_t sentVal = memory.sb;
+         uint8_t receivedVal = 0xFF;
+         if (serialCallback) {
+            receivedVal = serialCallback(sentVal);
+         }
+
+         memory.sb = receivedVal;
+         memory.sc &= ~SC::kTransferStartFlag;
+         memory.ifr |= Interrupt::kSerial;
       }
    }
 }

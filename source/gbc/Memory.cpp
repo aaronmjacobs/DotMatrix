@@ -42,6 +42,11 @@ void Memory::set(uint16_t address, uint8_t val) {
       address -= 0x2000;
    }
 
+   if (address == 0xFF04) {
+      // Divider register - writing any value sets it to 0
+      val = 0;
+   }
+
    raw[address] = val;
 }
 
