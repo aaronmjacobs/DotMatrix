@@ -109,7 +109,7 @@ public:
          case 0x7000:
          {
             // Switchable ROM bank
-            pointer = &data[(address - 0x4000) + (romBankNumber * 0x4000)];
+            pointer = &data[address + (romBankNumber * 0x4000)];
             break;
          }
          case 0xA000:
