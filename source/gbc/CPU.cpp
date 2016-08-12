@@ -50,8 +50,8 @@ constexpr bool checkBitOperand(Opr operand, uint8_t val) {
 // Determine the BIT value from the operand
 uint8_t bitOprMask(Opr operand) {
    STATIC_ASSERT(checkBitOperand(Opr::k1, 1) && checkBitOperand(Opr::k2, 2) && checkBitOperand(Opr::k3, 3)
-       && checkBitOperand(Opr::k4, 4) && checkBitOperand(Opr::k5, 5) && checkBitOperand(Opr::k6, 6)
-       && checkBitOperand(Opr::k7, 7), "Number operands are in an incorrect order");
+              && checkBitOperand(Opr::k4, 4) && checkBitOperand(Opr::k5, 5) && checkBitOperand(Opr::k6, 6)
+              && checkBitOperand(Opr::k7, 7), "Number operands are in an incorrect order");
    ASSERT(operand >= Opr::k0 && operand <= Opr::k7, "Bad bitOprMask() operand: %hhu", operand);
 
    uint8_t val = static_cast<uint8_t>(operand) - static_cast<uint8_t>(Opr::k0);
@@ -967,8 +967,8 @@ void CPU::execute16(Operation operation) {
 
             setFlag(kZero, false);
             setFlag(kSub, false);
-            setFlag(kHalfCarry, (carryBits & kHalfCaryMask) != 0);
-            setFlag(kCarry, (carryBits & kCaryMask) != 0);
+            setFlag(kHalfCarry, (carryBits & 0x0010) != 0);
+            setFlag(kCarry, (carryBits & 0x0100) != 0);
          }
          break;
       }
