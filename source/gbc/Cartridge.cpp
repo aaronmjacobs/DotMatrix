@@ -208,7 +208,7 @@ private:
 
    friend class Cartridge;
    MBC1Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes)
-      : Cartridge(std::move(cartData), cartNumBytes), ramEnabled(false), romBankNumber(0x00),
+      : Cartridge(std::move(cartData), cartNumBytes), ramEnabled(false), romBankNumber(0x00), ramBankNumber(0x00),
         bankingMode(kROMBankingMode), ramBanks({}) {
    }
 
