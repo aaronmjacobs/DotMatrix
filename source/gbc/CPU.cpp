@@ -818,7 +818,7 @@ void CPU::execute(Operation operation) {
       case Ins::kSRA:
       {
          uint8_t newCarryVal = *param1Val & 0x01;
-         param1.set8((*param1Val >> 1) | (*param1Val & 0x08));
+         param1.set8((*param1Val >> 1) | (*param1Val & 0x80));
 
          setFlag(kZero, *param1Val == 0);
          setFlag(kSub, false);
