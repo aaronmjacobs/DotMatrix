@@ -19,6 +19,10 @@ const uint8_t* Memory::getAddr(uint16_t address) const {
       return cart->get(address);
    }
 
+   if (cart && address >= 0xA000 && address < 0xC000) {
+      return cart->get(address);
+   }
+
    if (address >= 0xE000 && address < 0xFE00) {
       // Mirror of working ram
       address -= 0x2000;
@@ -33,6 +37,11 @@ void Memory::set(uint16_t address, uint8_t val) {
    }
 
    if (cart && address < 0x8000) {
+      cart->set(address, val);
+      return;
+   }
+
+   if (cart && address >= 0xA000 && address < 0xC000) {
       cart->set(address, val);
       return;
    }
