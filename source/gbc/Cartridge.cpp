@@ -92,82 +92,112 @@ public:
    const uint8_t* get(uint16_t address) const override {
       ASSERT(address < numBytes);
 
-      if (address < 0x4000) {
-         // Always contains the first 16Bytes of the ROM
-         return &data[address];
-      }
-
-      if (address < 0x8000) {
-         // Switchable ROM bank
-         return &data[(address - 0x4000) + (romBankNumber * 0x4000)];
-      }
-
-      if (address >= 0xA000 && address < 0xC000) {
-         // Switchable RAM bank
-         if (ramEnabled) {
-            uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
-            return &ramBanks[ramBank][address - 0xA000];
-         } else {
-            LOG_WARNING("Trying to read from RAM when not enabled");
-            return nullptr;
+      const uint8_t* pointer = nullptr;
+      switch (address & 0xF000) {
+         case 0x0000:
+         case 0x1000:
+         case 0x2000:
+         case 0x3000:
+         {
+            // Always contains the first 16Bytes of the ROM
+            pointer = &data[address];
+            break;
+         }
+         case 0x4000:
+         case 0x5000:
+         case 0x6000:
+         case 0x7000:
+         {
+            // Switchable ROM bank
+            pointer = &data[(address - 0x4000) + (romBankNumber * 0x4000)];
+            break;
+         }
+         case 0xA000:
+         case 0xB000:
+         {
+            // Switchable RAM bank
+            if (ramEnabled) {
+               uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
+               pointer = &ramBanks[ramBank][address - 0xA000];
+            } else {
+               LOG_WARNING("Trying to read from RAM when not enabled");
+            }
+            break;
+         }
+         default:
+         {
+            LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
+            break;
          }
       }
 
-      LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
-      return nullptr;
+      return pointer;
    }
 
    void set(uint16_t address, uint8_t val) override {
       ASSERT(address < numBytes);
 
-      if (address < 0x2000) {
-         // RAM enable
-         ramEnabled = (val & 0x0A) != 0x00;
-         return;
-      }
-
-      if (address < 0x4000) {
-         // ROM bank number
-         romBankNumber = val & 0x1F;
-         if (romBankNumber == 0x00 || romBankNumber == 0x20 || romBankNumber == 0x40 || romBankNumber == 0x60) {
-            // Handle banks 0x00, 0x20, 0x40, 0x60
-            romBankNumber += 0x01;
+      switch (address & 0xF000) {
+         case 0x0000:
+         case 0x1000:
+         {
+            // RAM enable
+            ramEnabled = (val & 0x0A) != 0x00;
+            break;
          }
-         return;
-      }
-
-      if (address < 0x6000) {
-         // RAM bank number or upper bits of ROM bank number
-         uint8_t bankNumber = val & 0x03;
-         switch (bankingMode) {
-            case kROMBankingMode:
-               romBankNumber = (romBankNumber & 0x1F) | (bankNumber << 5);
-               break;
-            case kRAMBankingMode:
-               ramBankNumber = bankNumber;
-               break;
-            default:
-               ASSERT(false, "Invalid banking mode: %hhu", bankingMode);
+         case 0x2000:
+         case 0x3000:
+         {
+            // ROM bank number
+            romBankNumber = val & 0x1F;
+            if (romBankNumber == 0x00 || romBankNumber == 0x20 || romBankNumber == 0x40 || romBankNumber == 0x60) {
+               // Handle banks 0x00, 0x20, 0x40, 0x60
+               romBankNumber += 0x01;
+            }
+            break;
          }
-         return;
-      }
-
-      if (address < 0x8000) {
-         // ROM / RAM mode select
-         bankingMode = (val & 0x01) == 0x00 ? kROMBankingMode : kRAMBankingMode;
-         return;
-      }
-
-      if (address >= 0xA000 && address < 0xC000) {
-         // Switchable RAM bank
-         if (ramEnabled) {
-            uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
-            ramBanks[ramBank][address - 0xA000] = val;
+         case 0x4000:
+         case 0x5000:
+         {
+            // RAM bank number or upper bits of ROM bank number
+            uint8_t bankNumber = val & 0x03;
+            switch (bankingMode) {
+               case kROMBankingMode:
+                  romBankNumber = (romBankNumber & 0x1F) | (bankNumber << 5);
+                  break;
+               case kRAMBankingMode:
+                  ramBankNumber = bankNumber;
+                  break;
+               default:
+                  ASSERT(false, "Invalid banking mode: %hhu", bankingMode);
+            }
+            break;
          }
-         return;
-      }
-
-      LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(val));
+         case 0x6000:
+         case 0x7000:
+         {
+            // ROM / RAM mode select
+            bankingMode = (val & 0x01) == 0x00 ? kROMBankingMode : kRAMBankingMode;
+            break;
+         }
+         case 0xA000:
+         case 0xB000:
+         {
+            // Switchable RAM bank
+            if (ramEnabled) {
+               uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
+               ramBanks[ramBank][address - 0xA000] = val;
+            } else {
+               LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(val));
+            }
+            break;
+         }
+         default:
+         {
+            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(val));
+            break;
+         }
+      };
    }
 
 private:
@@ -208,8 +238,10 @@ UPtr<Cartridge> Cartridge::fromData(UPtr<uint8_t[]>&& data, size_t numBytes) {
 
    switch (header.cartridgeType) {
       case kROMOnly:
+         LOG_INFO("ROM only");
          return UPtr<Cartridge>(new SimpleCartridge(std::move(data), numBytes));
       case kMBC1:
+         LOG_INFO("MBC1");
          return UPtr<Cartridge>(new MBC1Cartridge(std::move(data), numBytes));
       default:
          LOG_ERROR("Invalid cartridge type: " << hex(header.cartridgeType));
