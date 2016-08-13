@@ -9,6 +9,17 @@
 
 namespace GBC {
 
+struct Joypad {
+   bool right;
+   bool left;
+   bool up;
+   bool down;
+   bool a;
+   bool b;
+   bool select;
+   bool start;
+};
+
 class Device {
 public:
    using SerialCallback = uint8_t (*)(uint8_t);
@@ -27,7 +38,13 @@ public:
       serialCallback = callback;
    }
 
+   void setJoypadState(Joypad joypadState) {
+      joypad = joypadState;
+   }
+
 private:
+   void tickJoypad();
+
    void tickDiv(uint64_t cycles);
 
    void tickTima(uint64_t cycles);
@@ -39,6 +56,8 @@ private:
    LCDController lcdController;
 
    UPtr<class Cartridge> cart;
+   Joypad joypad;
+   uint8_t lastInputVals;
 
    uint64_t divCycles;
    uint64_t timaCycles;

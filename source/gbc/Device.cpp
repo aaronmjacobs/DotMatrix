@@ -9,6 +9,22 @@ namespace GBC {
 
 namespace {
 
+namespace P1 {
+
+enum Enum {
+   kP10InPort = 0x01,
+   kP11InPort = 0x02,
+   kP12InPort = 0x04,
+   kP13InPort = 0x08,
+   kP14OutPort = 0x10,
+   kP15OutPort = 0x20,
+
+   kInMask = 0x0F,
+   kOutMask = 0x30
+};
+
+} // namespace P1
+
 namespace TAC {
 
 enum Enum {
@@ -38,8 +54,8 @@ enum Enum {
 } // namespace
 
 Device::Device()
-   : cpu(memory), lcdController(memory), cart(nullptr), divCycles(0), timaCycles(0), serialCycles(0),
-     serialCallback(nullptr) {
+   : cpu(memory), lcdController(memory), cart(nullptr), joypad({}), lastInputVals(P1::kInMask), divCycles(0),
+     timaCycles(0), serialCycles(0), serialCallback(nullptr) {
 }
 
 void Device::tick(float dt) {
@@ -50,6 +66,7 @@ void Device::tick(float dt) {
       cpu.tick();
       uint64_t cyclesTicked = cpu.getCycles() - previousCycles;
 
+      tickJoypad();
       tickDiv(cyclesTicked);
       tickTima(cyclesTicked);
       tickSerial(cyclesTicked);
@@ -62,6 +79,38 @@ void Device::tick(float dt) {
 void Device::setCartridge(UPtr<Cartridge>&& cartridge) {
    cart = std::move(cartridge);
    memory.setCartridge(cart.get());
+}
+
+void Device::tickJoypad() {
+   uint8_t dpadVals = P1::kInMask;
+   if ((memory.p1 & P1::kP14OutPort) == 0x00) {
+      uint8_t right = joypad.right ? 0x00 : P1::kP10InPort;
+      uint8_t left = joypad.left ? 0x00 : P1::kP11InPort;
+      uint8_t up = joypad.up ? 0x00 : P1::kP12InPort;
+      uint8_t down = joypad.down ? 0x00 : P1::kP13InPort;
+
+      dpadVals = (right | left | up | down);
+   }
+
+   uint8_t faceVals = P1::kInMask;
+   if ((memory.p1 & P1::kP15OutPort) == 0x00) {
+      uint8_t a = joypad.a ? 0x00 : P1::kP10InPort;
+      uint8_t b = joypad.b ? 0x00 : P1::kP11InPort;
+      uint8_t select = joypad.select ? 0x00 : P1::kP12InPort;
+      uint8_t start = joypad.start ? 0x00 : P1::kP13InPort;
+
+      faceVals = (a | b | select | start);
+   }
+
+   uint8_t inputVals = dpadVals & faceVals;
+   uint8_t inputChange = inputVals ^ lastInputVals;
+   if ((inputVals & inputChange) != inputChange) {
+      // At least one bit went from high to low
+      memory.ifr |= Interrupt::kJoypad;
+   }
+   lastInputVals = inputVals;
+
+   memory.p1 = (memory.p1 & P1::kOutMask) | (inputVals & P1::kInMask);
 }
 
 void Device::tickDiv(uint64_t cycles) {
