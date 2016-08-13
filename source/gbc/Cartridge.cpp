@@ -116,6 +116,8 @@ public:
          case 0xA000:
          case 0xB000:
          {
+            ASSERT(hasRAM, "Trying to read from MBC1 cartridge RAM when it doesn't have any!");
+
             // Switchable RAM bank
             if (ramEnabled) {
                uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
@@ -184,6 +186,8 @@ public:
          case 0xA000:
          case 0xB000:
          {
+            ASSERT(hasRAM, "Trying to write to MBC1 cartridge RAM when it doesn't have any!");
+
             // Switchable RAM bank
             if (ramEnabled) {
                uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
@@ -208,9 +212,9 @@ private:
    };
 
    friend class Cartridge;
-   MBC1Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes)
+   MBC1Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes, bool ram, bool battery)
       : Cartridge(std::move(cartData), cartNumBytes), ramEnabled(false), romBankNumber(0x01), ramBankNumber(0x00),
-        bankingMode(kROMBankingMode), ramBanks({}) {
+        bankingMode(kROMBankingMode), ramBanks({}), hasRAM(ram), hasBattery(battery) {
    }
 
    bool ramEnabled;
@@ -219,6 +223,9 @@ private:
    BankingMode bankingMode;
 
    std::array<std::array<uint8_t, 0x2000>, 4> ramBanks;
+
+   bool hasRAM;
+   bool hasBattery;
 };
 
 // static
@@ -237,13 +244,19 @@ UPtr<Cartridge> Cartridge::fromData(UPtr<uint8_t[]>&& data, size_t numBytes) {
       LOG_WARNING("Cartridge data failed global checksum");
    }
 
+   bool hasRAM = false;
+   bool hasBattery = false;
    switch (header.cartridgeType) {
       case kROMOnly:
          LOG_INFO("ROM only");
          return UPtr<Cartridge>(new SimpleCartridge(std::move(data), numBytes));
+      case kMBC1PlusRAMPlusBattery:
+         hasBattery = true;
+      case kMBC1PlusRAM:
+         hasRAM = true;
       case kMBC1:
          LOG_INFO("MBC1");
-         return UPtr<Cartridge>(new MBC1Cartridge(std::move(data), numBytes));
+         return UPtr<Cartridge>(new MBC1Cartridge(std::move(data), numBytes, hasRAM, hasBattery));
       default:
          LOG_ERROR("Invalid cartridge type: " << hex(header.cartridgeType));
          return nullptr;
