@@ -202,11 +202,11 @@ void LCDController::tick(uint64_t totalCycles) {
 void LCDController::scan(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line) {
    if (mem.lcdc & LCDC::kDisplayEnable) {
       if (mem.lcdc & LCDC::kBGDisplay) {
-         scanBackground(framebuffer, colors, line);
+         scanBackgroundOrWindow(framebuffer, colors, line, false);
       }
 
       if (mem.lcdc & LCDC::kWindowDisplayEnable) {
-         scanWindow(framebuffer, colors, line);
+         scanBackgroundOrWindow(framebuffer, colors, line, true);
       }
 
       if (mem.lcdc & LCDC::kObjSpriteDisplayEnable) {
@@ -220,15 +220,39 @@ void LCDController::scan(Framebuffer& framebuffer, const std::array<Pixel, 4>& c
    }
 }
 
-void LCDController::scanBackground(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line) {
+void LCDController::scanBackgroundOrWindow(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line,
+                                           bool isWindow) {
    size_t framebufferLineOffset = line * kScreenWidth;
 
-   uint8_t row = line + mem.scy;
+   if (isWindow && line < mem.wy) {
+      // Haven't reached the window yet
+      return;
+   }
+
+   uint8_t row;
+   if (isWindow) {
+      row = line - mem.wy;
+   } else {
+      row = line + mem.scy;
+   }
+
    for (uint8_t x = 0; x < kScreenWidth; ++x) {
-      uint8_t col = x + mem.scx;
+      static const uint8_t kWindowXOffset = 7;
+      if (isWindow && x < mem.wx - kWindowXOffset) {
+         // Haven't reached the window yet
+         continue;
+      }
+
+      uint8_t col;
+      if (isWindow) {
+         col = x - (mem.wx - kWindowXOffset);
+      } else {
+         col = x + mem.scx;
+      }
 
       // Fetch the tile number
-      uint16_t tileMapBase = (mem.lcdc & LCDC::kBGTileMapDisplaySelect) ? 0x1C00 : 0x1800;
+      uint8_t tileMapDisplaySelect = (isWindow ? LCDC::kWindowTileMapDisplaySelect : LCDC::kBGTileMapDisplaySelect);
+      uint16_t tileMapBase = (mem.lcdc & tileMapDisplaySelect) ? 0x1C00 : 0x1800;
       uint16_t tileMapOffset = (col / 8) + 32 * (row / 8); // 32x32 tiles, 8x8 pixels each
       uint8_t tileNum = mem.vram[tileMapBase + tileMapOffset];
 
@@ -260,15 +284,6 @@ void LCDController::scanBackground(Framebuffer& framebuffer, const std::array<Pi
 
       framebuffer[framebufferLineOffset + x] = colors[paletteIndex];
    }
-}
-
-void LCDController::scanWindow(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line) {
-   // TODO properly implement
-
-   /*size_t lineOffset = line * kScreenWidth;
-   for (size_t x = 0; x < kScreenWidth; ++x) {
-      framebuffer[lineOffset + x] = colors[Color::kLightGray];
-   }*/
 }
 
 void LCDController::scanSprites(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line) {

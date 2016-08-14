@@ -66,6 +66,7 @@ public:
 
 private:
    void scan(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line);
+   void scanBackgroundOrWindow(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line, bool isWindow);
    void scanBackground(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line);
    void scanWindow(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line);
    void scanSprites(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line);
