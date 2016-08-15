@@ -10,12 +10,13 @@
 namespace {
 
 const char *VERT_SHADER_SOURCE = GLSL(
+   uniform mat4 uProj;
    in vec2 aPosition;
 
    out vec2 vTexCoord;
 
    void main() {
-      gl_Position = vec4(aPosition, 0.0, 1.0);
+      gl_Position = uProj * vec4(aPosition, 0.0, 1.0);
       vTexCoord = (aPosition + 1.0) / 2.0;
    }
 );
@@ -84,9 +85,24 @@ void fiveToEightBit(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScree
    }
 }
 
+using Mat4 = std::array<float, 16>;
+
+Mat4 ortho(float left, float right, float bottom, float top) {
+   Mat4 result {};
+
+   result[0] = 2.0f / (right - left);
+   result[5] = 2.0f / (top - bottom);
+   result[10] = - 1.0f;
+   result[12] = - (right + left) / (right - left);
+   result[13] = - (top + bottom) / (top - bottom);
+   result[15] = 1.0f;
+
+   return result;
+}
+
 } // namespace
 
-Renderer::Renderer()
+Renderer::Renderer(int width, int height)
    : texture(GL_TEXTURE_2D),
      model(Mesh(vertices.data(), vertices.size(), indices.data(), indices.size(), 2), ShaderProgram()) {
    // Back face culling
@@ -122,19 +138,37 @@ Renderer::Renderer()
    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, GBC::kScreenWidth, GBC::kScreenHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
    model.getProgram().setUniformValue("uTexture", textureUnit);
+
+   onFramebufferSizeChange(width, height);
 }
 
 Renderer::~Renderer() {
 }
 
 void Renderer::onFramebufferSizeChange(int width, int height) {
-   ASSERT(width >= 0 && height >= 0, "Invalid framebuffer size: %d x %d", width, height);
+   ASSERT(width > 0 && height > 0, "Invalid framebuffer size: %d x %d", width, height);
 
    glViewport(0, 0, width, height);
+
+   static const float kInvGameBoyAspectRatio = static_cast<float>(GBC::kScreenHeight) / GBC::kScreenWidth;
+   float framebufferAspectRatio = static_cast<float>(width) / height;
+   float aspectRatio = framebufferAspectRatio * kInvGameBoyAspectRatio;
+   float invAspectRatio = 1.0f / aspectRatio;
+
+   Mat4 proj;
+   if (aspectRatio >= 1.0f) {
+      proj = ortho(-aspectRatio, aspectRatio, -1.0f, 1.0f);
+   } else {
+      proj = ortho(-1.0f, 1.0f, -invAspectRatio, invAspectRatio);
+   }
+
+   model.getProgram().setUniformValue("uProj", proj);
 }
 
 void Renderer::draw(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> &pixels) {
    RUN_DEBUG(checkGLError();)
+
+   glClear(GL_COLOR_BUFFER_BIT);
 
    std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> eightBitPixels;
    fiveToEightBit(pixels, eightBitPixels);

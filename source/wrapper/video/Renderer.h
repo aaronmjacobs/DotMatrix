@@ -15,7 +15,7 @@ private:
    Texture texture;
 
 public:
-   Renderer();
+   Renderer(int width, int height);
 
    virtual ~Renderer();
 

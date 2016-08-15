@@ -125,7 +125,10 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
    }
 
-   Renderer renderer;
+   int framebufferWidth = 0, framebufferHeight = 0;
+   glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
+
+   Renderer renderer(framebufferWidth, framebufferHeight);
    framebufferCallback = [&renderer](int width, int height) {
       renderer.onFramebufferSizeChange(width, height);
    };
