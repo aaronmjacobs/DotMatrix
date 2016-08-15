@@ -57,6 +57,18 @@ void Memory::set(uint16_t address, uint8_t val) {
    }
 
    raw[address] = val;
+
+   if (address == 0xFF46) {
+      executeDMATransfer();
+   }
+}
+
+void Memory::executeDMATransfer() {
+   ASSERT(dma <= 0xF1);
+
+   // Copy data into the sprite attribute table
+   uint16_t source = dma << 8;
+   memcpy(sat, &raw[source], 0x9F);
 }
 
 } // namespace GBC

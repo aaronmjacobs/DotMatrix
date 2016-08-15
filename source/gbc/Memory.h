@@ -110,6 +110,7 @@ public:
                uint8_t wx;       // Window x position            (0xFF4B, 1)
                uint8_t pad5[4];  // Padding                      (0xFF4C-0xFF4F, 4)
 
+               // Bootstrap
                uint8_t boot;     // Executing bootstrap          (0xFF50, 1)
                uint8_t pad6[47]; // Padding                      (0xFF51-0xFF7F, 47)
             };
@@ -133,6 +134,8 @@ public:
    }
 
 private:
+   void executeDMATransfer();
+
    class Cartridge* cart;
 };
 
