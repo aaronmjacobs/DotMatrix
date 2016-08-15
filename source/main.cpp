@@ -19,10 +19,46 @@
 namespace {
 
 std::function<void(int, int)> framebufferCallback;
+std::function<void(int, bool)> keyCallback;
 
 void onFramebufferSizeChange(GLFWwindow *window, int width, int height) {
    if (framebufferCallback) {
       framebufferCallback(width, height);
+   }
+}
+
+void onKeyChanged(GLFWwindow* window, int key, int scancode, int action, int mods) {
+   if (keyCallback) {
+      keyCallback(key, action != GLFW_RELEASE);
+   }
+}
+
+void updateJoypadState(GBC::Joypad& joypadState, int key, bool enabled) {
+   switch (key) {
+      case GLFW_KEY_LEFT:
+         joypadState.left = enabled;
+         break;
+      case GLFW_KEY_RIGHT:
+         joypadState.right = enabled;
+         break;
+      case GLFW_KEY_UP:
+         joypadState.up = enabled;
+         break;
+      case GLFW_KEY_DOWN:
+         joypadState.down = enabled;
+         break;
+      case GLFW_KEY_S:
+         joypadState.a = enabled;
+         break;
+      case GLFW_KEY_A:
+         joypadState.b = enabled;
+         break;
+      case GLFW_KEY_Z:
+         joypadState.select = enabled;
+         break;
+      case GLFW_KEY_X:
+         joypadState.start = enabled;
+         break;
    }
 }
 
@@ -46,6 +82,7 @@ GLFWwindow* init() {
    }
 
    glfwSetFramebufferSizeCallback(window, onFramebufferSizeChange);
+   glfwSetKeyCallback(window, onKeyChanged);
    glfwMakeContextCurrent(window);
    glfwSwapInterval(1); // VSYNC
 
@@ -78,6 +115,11 @@ int main(int argc, char *argv[]) {
    Renderer renderer;
    framebufferCallback = [&renderer](int width, int height) {
       renderer.onFramebufferSizeChange(width, height);
+   };
+
+   GBC::Joypad joypadState{};
+   keyCallback = [&joypadState](int key, bool enabled) {
+      updateJoypadState(joypadState, key, enabled);
    };
 
 #if defined(RUN_TESTS)
@@ -116,6 +158,7 @@ int main(int argc, char *argv[]) {
 
       accumulator += frameTime;
       while (accumulator >= kDt) {
+         device.setJoypadState(joypadState);
          device.tick(static_cast<float>(kDt));
          accumulator -= kDt;
       }
