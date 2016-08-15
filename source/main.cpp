@@ -15,6 +15,7 @@
 
 #include <cstdlib>
 #include <functional>
+#include <vector>
 
 namespace {
 
@@ -99,6 +100,18 @@ GLFWwindow* init() {
 
 } // namespace
 
+uint8_t onSerial(uint8_t receivedVal) {
+   static std::vector<char> vals;
+
+   vals.push_back((char)receivedVal);
+
+   vals.push_back('\0');
+   LOG_DEBUG("serial:\n" << vals.data());
+   vals.pop_back();
+
+   return 0xFF;
+}
+
 int main(int argc, char *argv[]) {
    LOG_INFO(kProjectName << " " << kVersionMajor << "." << kVersionMinor << "."
       << kVersionMicro << " (" << kVersionBuild << ")");
@@ -130,6 +143,7 @@ int main(int argc, char *argv[]) {
 #endif // defined(RUN_TESTS)
 
    GBC::Device device;
+   //device.setSerialCallback(onSerial);
 
    // Try to load a cartridge
    if (argc > 1) {
