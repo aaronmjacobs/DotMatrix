@@ -49,6 +49,19 @@ enum Enum : uint8_t {
 
 } // namespace STAT
 
+namespace Attrib {
+
+enum Enum : uint8_t {
+   kObjToBgPriority = 1 << 7,
+   kYFlip = 1 << 6,
+   kXFlip = 1 << 5,
+   kPaletteNumber = 1 << 4, // Non-CGB only
+   kTileVRAMBank = 1 << 3, // CGB only
+   kCGBPaletteNumber = (1 << 2) | (1 << 1) | (1 << 0) // CGB only
+};
+
+} // namespace Attrib
+
 namespace Color {
 
 enum Enum : uint8_t {
@@ -99,7 +112,7 @@ uint8_t calcLY(uint64_t cycles) {
    return cyclesOnScreen / kCyclesPerLine;
 }
 
-std::array<Pixel, 4> extractPaletteColors(uint8_t bgp) {
+std::array<Pixel, 4> extractPaletteColors(uint8_t palette) {
    // Shades of gray
    /*static const std::array<Pixel, 4> kColorValues = {
       Pixel(0x1F, 0x1F, 0x1F), // white
@@ -119,7 +132,7 @@ std::array<Pixel, 4> extractPaletteColors(uint8_t bgp) {
    std::array<Pixel, 4> colors;
    for (size_t i = 0; i < colors.size(); ++i) {
       size_t shift = i * 2;
-      colors[i] = kColorValues[(bgp & (kMask << shift)) >> shift];
+      colors[i] = kColorValues[(palette & (kMask << shift)) >> shift];
    }
 
    return colors;
@@ -190,7 +203,7 @@ void LCDController::tick(uint64_t totalCycles) {
 
          if (lastMode != Mode::kDataTransfer) {
             ASSERT(mem.ly < 144);
-            scan(framebuffers.writeBuffer(), extractPaletteColors(mem.bgp), mem.ly);
+            scan(framebuffers.writeBuffer(), mem.ly, extractPaletteColors(mem.bgp));
          }
          break;
       }
@@ -199,18 +212,18 @@ void LCDController::tick(uint64_t totalCycles) {
    }
 }
 
-void LCDController::scan(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line) {
+void LCDController::scan(Framebuffer& framebuffer, uint8_t line, const std::array<Pixel, 4>& colors) {
    if (mem.lcdc & LCDC::kDisplayEnable) {
       if (mem.lcdc & LCDC::kBGDisplay) {
-         scanBackgroundOrWindow(framebuffer, colors, line, false);
+         scanBackgroundOrWindow(framebuffer, line, colors, false);
       }
 
       if (mem.lcdc & LCDC::kWindowDisplayEnable) {
-         scanBackgroundOrWindow(framebuffer, colors, line, true);
+         scanBackgroundOrWindow(framebuffer, line, colors, true);
       }
 
       if (mem.lcdc & LCDC::kObjSpriteDisplayEnable) {
-         scanSprites(framebuffer, colors, line);
+         scanSprites(framebuffer, line);
       }
    } else {
       size_t lineOffset = line * kScreenWidth;
@@ -220,79 +233,141 @@ void LCDController::scan(Framebuffer& framebuffer, const std::array<Pixel, 4>& c
    }
 }
 
-void LCDController::scanBackgroundOrWindow(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line,
+void LCDController::scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t line, const std::array<Pixel, 4>& colors,
                                            bool isWindow) {
-   size_t framebufferLineOffset = line * kScreenWidth;
+   // 32x32 tiles, 8x8 pixels each
+   static const uint16_t kTileWidth = 8;
+   static const uint16_t kTileHeight = 8;
+   static const uint16_t kNumTilesPerLine = 32;
+   static const uint16_t kWindowXOffset = 7;
 
-   if (isWindow && line < mem.wy) {
+   uint8_t y = line;
+   if (isWindow && y < mem.wy) {
       // Haven't reached the window yet
       return;
    }
 
-   uint8_t row;
+   uint8_t adjustedY;
    if (isWindow) {
-      row = line - mem.wy;
+      adjustedY = y - mem.wy;
    } else {
-      row = line + mem.scy;
+      adjustedY = y + mem.scy;
    }
 
    for (uint8_t x = 0; x < kScreenWidth; ++x) {
-      static const uint8_t kWindowXOffset = 7;
       if (isWindow && x < mem.wx - kWindowXOffset) {
          // Haven't reached the window yet
          continue;
       }
 
-      uint8_t col;
+      uint8_t adjustedX;
       if (isWindow) {
-         col = x - (mem.wx - kWindowXOffset);
+         adjustedX = x - (mem.wx - kWindowXOffset);
       } else {
-         col = x + mem.scx;
+         adjustedX = x + mem.scx;
       }
 
       // Fetch the tile number
-      uint8_t tileMapDisplaySelect = (isWindow ? LCDC::kWindowTileMapDisplaySelect : LCDC::kBGTileMapDisplaySelect);
+      uint8_t tileMapDisplaySelect = isWindow ? LCDC::kWindowTileMapDisplaySelect : LCDC::kBGTileMapDisplaySelect;
       uint16_t tileMapBase = (mem.lcdc & tileMapDisplaySelect) ? 0x1C00 : 0x1800;
-      uint16_t tileMapOffset = (col / 8) + 32 * (row / 8); // 32x32 tiles, 8x8 pixels each
+      uint16_t tileMapOffset = (adjustedX / kTileWidth) + kNumTilesPerLine * (adjustedY / kTileHeight);
       uint8_t tileNum = mem.vram[tileMapBase + tileMapOffset];
 
-      // Fetch the tile data
-      static const uint16_t kBytesPerTile = 16;
-      uint16_t tileDataBase = (mem.lcdc & LCDC::kBGAndWindowTileDataSelect) ? 0x0000 : 0x0800;
-      uint8_t tileDataLineOffset = (row % 8) * 2; // 8 lines per tile, 2 bytes per line
-      uint16_t tileDataTileOffset;
-      if (tileDataBase > 0) {
-         // the tile number acts as a signed offset
-         tileDataTileOffset = (*reinterpret_cast<int8_t*>(&tileNum) + 128) * kBytesPerTile;
-      } else {
-         // the tile number acts as an unsigned offset
-         tileDataTileOffset = tileNum * kBytesPerTile;
-      }
-      uint8_t tileLineFirstByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset];
-      uint8_t tileLineSecondByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset + 1];
+      uint8_t row = adjustedY % kTileHeight;
+      uint8_t col = adjustedX % kTileWidth;
+      bool signedTileOffset = (mem.lcdc & LCDC::kBGAndWindowTileDataSelect) == 0x00;
+      uint8_t paletteIndex = fetchPaletteIndex(tileNum, row, col, signedTileOffset, false);
 
-      uint8_t bit = 7 - (col % 8); // bit 7 is the leftmost pixel, bit 0 is the rightmost pixel
-      uint8_t mask = 1 << bit;
-
-      uint8_t paletteIndex = 0;
-      if (tileLineFirstByte & mask) {
-         ++paletteIndex;
-      }
-      if (tileLineSecondByte & mask) {
-         paletteIndex += 2;
-      }
-
-      framebuffer[framebufferLineOffset + x] = colors[paletteIndex];
+      framebuffer[x + (kScreenWidth * y)] = colors[paletteIndex];
    }
 }
 
-void LCDController::scanSprites(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line) {
-   // TODO properly implement
+void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line) {
+   static const uint16_t kSpriteWidth = 8;
+   static const uint16_t kShortSpriteHeight = 8;
+   static const uint16_t kTallSpriteHeight = 16;
+   static const uint16_t kNumSprites = 40;
 
-   /*size_t lineOffset = line * kScreenWidth;
-   for (size_t x = 0; x < kScreenWidth; ++x) {
-      framebuffer[lineOffset + x] = colors[Color::kDarkGray];
-   }*/
+   struct SpriteAttributes {
+      uint8_t yPos;
+      uint8_t xPos;
+      uint8_t tileNum;
+      uint8_t flags;
+   };
+
+   uint8_t y = line;
+   uint8_t spriteHeight = (mem.lcdc & LCDC::kObjSpriteSize) ? kTallSpriteHeight : kShortSpriteHeight;
+
+   for (int8_t sprite = kNumSprites - 1; sprite >= 0; --sprite) {
+      SpriteAttributes attributes;
+      memcpy(&attributes, &mem.sat[sprite * sizeof(SpriteAttributes)], sizeof(SpriteAttributes));
+
+      int16_t spriteY = attributes.yPos - kTallSpriteHeight;
+      if (spriteY > y || spriteY + spriteHeight <= y
+         || attributes.xPos == 0 || attributes.xPos >= kScreenWidth + kSpriteWidth) {
+         continue;
+      }
+
+      bool useObp1 = (attributes.flags & Attrib::kPaletteNumber) != 0x00;
+      std::array<Pixel, 4> colors = extractPaletteColors(useObp1 ? mem.obp1 : mem.obp0);
+
+      uint8_t row = y - spriteY;
+      if (attributes.flags & Attrib::kYFlip) {
+         row = (kTallSpriteHeight - 1) - row;
+      }
+      row %= spriteHeight;
+
+      for (uint8_t col = 0; col < kSpriteWidth; ++col) {
+         int16_t x = attributes.xPos - kSpriteWidth + col;
+         if (x < 0 || x > kScreenWidth) {
+            continue;
+         }
+
+         bool flipX = (attributes.flags & Attrib::kXFlip) != 0x00;
+         uint8_t paletteIndex = fetchPaletteIndex(attributes.tileNum, row, col, false, flipX);
+
+         // TODO check OBJ-to-BG Priority (need to store bg palette number per pixel)
+         if (paletteIndex != 0) {
+            framebuffer[x + (kScreenWidth * y)] = colors[paletteIndex];
+         }
+      }
+   }
+}
+
+uint8_t LCDController::fetchPaletteIndex(uint8_t tileNum, uint8_t row, uint8_t col, bool signedTileOffset,
+                                         bool flipX) const {
+   static const uint16_t kBytesPerTile = 16;
+   static const uint8_t kBytesPerLine = 2;
+   static const uint16_t kSignedTileDataAddr = 0x0800;
+   static const uint16_t kUnsignedTileDataAddr = 0x0000;
+
+   uint16_t tileDataBase = signedTileOffset ? kSignedTileDataAddr : kUnsignedTileDataAddr;
+   uint16_t tileDataTileOffset;
+   if (signedTileOffset) {
+      // treat the tile number as a signed offset
+      tileDataTileOffset = (*reinterpret_cast<int8_t*>(&tileNum) + 128) * kBytesPerTile;
+   } else {
+      tileDataTileOffset = tileNum * kBytesPerTile;
+   }
+   uint8_t tileDataLineOffset = row * kBytesPerLine;
+   uint8_t tileLineFirstByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset];
+   uint8_t tileLineSecondByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset + 1];
+
+   uint8_t bit = col % 8;
+   if (!flipX) {
+      bit = 7 - bit; // bit 7 is the leftmost pixel, bit 0 is the rightmost pixel
+   }
+   uint8_t mask = 1 << bit;
+
+   uint8_t paletteIndex = 0;
+   if (tileLineFirstByte & mask) {
+      paletteIndex += 1;
+   }
+   if (tileLineSecondByte & mask) {
+      paletteIndex += 2;
+   }
+
+   return paletteIndex;
 }
 
 } // namespace GBC

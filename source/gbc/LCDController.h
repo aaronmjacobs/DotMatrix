@@ -65,11 +65,11 @@ public:
    }
 
 private:
-   void scan(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line);
-   void scanBackgroundOrWindow(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line, bool isWindow);
-   void scanBackground(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line);
-   void scanWindow(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line);
-   void scanSprites(Framebuffer& framebuffer, const std::array<Pixel, 4>& colors, uint8_t line);
+   void scan(Framebuffer& framebuffer, uint8_t line, const std::array<Pixel, 4>& colors);
+   void scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t line, const std::array<Pixel, 4>& colors,
+                               bool isWindow);
+   void scanSprites(Framebuffer& framebuffer, uint8_t line);
+   uint8_t fetchPaletteIndex(uint8_t tileNum, uint8_t row, uint8_t col, bool signedTileOffset, bool flipX) const;
 
    class Memory& mem;
    DoubleBufferedFramebuffer framebuffers;
