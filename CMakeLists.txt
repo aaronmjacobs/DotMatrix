@@ -34,9 +34,9 @@ set(BIN_RES_DIR "${PROJECT_BINARY_DIR}/resources")
 
 # Options
 option(LOG_TO_FILE "Enable logging to a file" OFF)
-set(LOG_MSVC_STYLE_DEFAULT, FALSE)
+set(LOG_MSVC_STYLE_DEFAULT OFF)
 if(MSVC)
-	set(LOG_MSVC_STYLE_DEFAULT, TRUE)
+   set(LOG_MSVC_STYLE_DEFAULT ON)
 endif(MSVC)
 option(LOG_MSVC_STYLE "Format logs for MSVC" ${LOG_MSVC_STYLE_DEFAULT})
 
