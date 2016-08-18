@@ -8,6 +8,10 @@ namespace GBC {
 
 Memory::Memory()
    : raw{}, cart(nullptr) {
+   // If no cartridge is available, all cartridge reads return 0xFF
+   romb.fill(0xFF);
+   roms.fill(0xFF);
+   eram.fill(0xFF);
 }
 
 const uint8_t* Memory::getAddr(uint16_t address) const {
