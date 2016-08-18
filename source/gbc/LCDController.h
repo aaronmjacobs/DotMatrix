@@ -73,6 +73,7 @@ private:
 
    class Memory& mem;
    DoubleBufferedFramebuffer framebuffers;
+   std::array<uint8_t, kScreenWidth * kScreenHeight> bgPaletteIndices;
 };
 
 } // namespace GBC

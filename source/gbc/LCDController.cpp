@@ -141,7 +141,7 @@ std::array<Pixel, 4> extractPaletteColors(uint8_t palette) {
 } // namespace
 
 LCDController::LCDController(Memory& memory)
-   : mem(memory) {
+   : mem(memory), bgPaletteIndices({}) {
 }
 
 void LCDController::tick(uint64_t totalCycles) {
@@ -183,6 +183,7 @@ void LCDController::tick(uint64_t totalCycles) {
             }
 
             framebuffers.flip();
+            bgPaletteIndices.fill(0);
          }
          break;
       }
@@ -279,6 +280,9 @@ void LCDController::scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t lin
       uint8_t paletteIndex = fetchPaletteIndex(tileNum, row, col, signedTileOffset, false);
 
       framebuffer[x + (kScreenWidth * y)] = colors[paletteIndex];
+      if (!isWindow) {
+         bgPaletteIndices[x + (kScreenWidth * y)] = paletteIndex;
+      }
    }
 }
 
@@ -326,8 +330,16 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line) {
          bool flipX = (attributes.flags & Attrib::kXFlip) != 0x00;
          uint8_t paletteIndex = fetchPaletteIndex(attributes.tileNum, row, col, false, flipX);
 
-         // TODO check OBJ-to-BG Priority (need to store bg palette number per pixel)
-         if (paletteIndex != 0) {
+         // Sprite palette index 0 is transparent
+         bool aboveBackground = paletteIndex != 0;
+
+         // If the OBJ-to-BG priority bit is set, the sprite is behind background palette colors 1-3
+         if (attributes.flags & Attrib::kObjToBgPriority) {
+            ASSERT(bgPaletteIndices[x + (kScreenWidth * y)] <= 3);
+            aboveBackground = aboveBackground && bgPaletteIndices[x + (kScreenWidth * y)] == 0;
+         }
+
+         if (aboveBackground) {
             framebuffer[x + (kScreenWidth * y)] = colors[paletteIndex];
          }
       }
