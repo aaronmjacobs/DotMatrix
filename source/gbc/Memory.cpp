@@ -68,7 +68,7 @@ void Memory::executeDMATransfer() {
 
    // Copy data into the sprite attribute table
    uint16_t source = dma << 8;
-   memcpy(sat, &raw[source], 0x9F);
+   memcpy(sat.data(), &raw[source], 0x009F);
 }
 
 } // namespace GBC
