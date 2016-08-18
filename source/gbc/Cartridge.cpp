@@ -258,7 +258,7 @@ UPtr<Cartridge> Cartridge::fromData(UPtr<uint8_t[]>&& data, size_t numBytes) {
          LOG_INFO("MBC1");
          return UPtr<Cartridge>(new MBC1Cartridge(std::move(data), numBytes, hasRAM, hasBattery));
       default:
-         LOG_ERROR("Invalid cartridge type: " << hex(header.cartridgeType));
+         LOG_ERROR("Invalid cartridge type: " << hex(static_cast<uint8_t>(header.cartridgeType)));
          return nullptr;
    }
 }
