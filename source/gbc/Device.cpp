@@ -157,7 +157,7 @@ void Device::tickSerial(uint64_t cycles) {
    static const uint64_t kCyclesPerSerialByte = kCyclesPerSerialBit * 8; // 4096
    STATIC_ASSERT(CPU::kClockSpeed % kSerialFrequency == 0); // Should divide evenly
 
-   if (memory.sc & SC::kTransferStartFlag) {
+   if ((memory.sc & SC::kTransferStartFlag) && (memory.sc & SC::kShiftClock)) {
       serialCycles += cycles;
 
       if (serialCycles >= kCyclesPerSerialByte) {
