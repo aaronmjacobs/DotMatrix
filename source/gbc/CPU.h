@@ -157,6 +157,14 @@ public:
       return cycles;
    }
 
+   bool isStopped() const {
+      return stopped;
+   }
+
+   void resume() {
+      stopped = false;
+   }
+
 #if !defined(RUN_TESTS) // Need direct access when running tests
 private:
 #endif

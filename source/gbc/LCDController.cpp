@@ -62,7 +62,7 @@ enum Enum : uint8_t {
 
 } // namespace Attrib
 
-namespace Color {
+namespace ColorIndex {
 
 enum Enum : uint8_t {
    kWhite = 0,
@@ -70,6 +70,16 @@ enum Enum : uint8_t {
    kDarkGray = 2,
    kBlack = 3
 };
+
+} // namespace ColorIndex
+
+namespace Color {
+
+// Green / blue (trying to approximate original Game Boy screen colors)
+const Pixel kWhite(0x15, 0x19, 0x09);
+const Pixel kLightGray(0x0F, 0x15, 0x0D);
+const Pixel kDarkGray(0x04, 0x0D, 0x0C);
+const Pixel kBlack(0x01, 0x05, 0x0A);
 
 } // namespace Color
 
@@ -113,19 +123,11 @@ uint8_t calcLY(uint64_t cycles) {
 }
 
 std::array<Pixel, 4> extractPaletteColors(uint8_t palette) {
-   // Shades of gray
-   /*static const std::array<Pixel, 4> kColorValues = {
-      Pixel(0x1F, 0x1F, 0x1F), // white
-      Pixel(0x14, 0x14, 0x14), // light gray
-      Pixel(0x0A, 0x0A, 0x0A), // dark gray
-      Pixel(0x00, 0x00, 0x00)  // black
-   };*/
-   // Green / blue (trying to approximate original Game Boy screen colors)
    static const std::array<Pixel, 4> kColorValues = {
-      Pixel(0x15, 0x19, 0x09), // white
-      Pixel(0x0F, 0x15, 0x0D), // light gray
-      Pixel(0x04, 0x0D, 0x0C), // dark gray - middle try E?
-      Pixel(0x01, 0x05, 0x0A)  // black
+      Color::kWhite,
+      Color::kLightGray,
+      Color::kDarkGray,
+      Color::kBlack,
    };
    static const uint8_t kMask = 0x03;
 
@@ -144,7 +146,7 @@ LCDController::LCDController(Memory& memory)
    : mem(memory), bgPaletteIndices({}) {
 }
 
-void LCDController::tick(uint64_t totalCycles) {
+void LCDController::tick(uint64_t totalCycles, bool cpuStopped) {
    Mode::Enum lastMode = static_cast<Mode::Enum>(mem.stat & STAT::kModeFlag);
    Mode::Enum currentMode = getCurrentMode(totalCycles);
    // Update the mode
@@ -211,6 +213,12 @@ void LCDController::tick(uint64_t totalCycles) {
       default:
          ASSERT(false);
    }
+
+   // When stopped, fill the screen with white
+   if (cpuStopped) {
+      framebuffers.writeBuffer().fill(Color::kWhite);
+      framebuffers.flip();
+   }
 }
 
 void LCDController::scan(Framebuffer& framebuffer, uint8_t line, const std::array<Pixel, 4>& colors) {
@@ -229,7 +237,7 @@ void LCDController::scan(Framebuffer& framebuffer, uint8_t line, const std::arra
    } else {
       size_t lineOffset = line * kScreenWidth;
       for (size_t x = 0; x < kScreenWidth; ++x) {
-         framebuffer[lineOffset + x] = colors[Color::kWhite];
+         framebuffer[lineOffset + x] = colors[ColorIndex::kWhite];
       }
    }
 }

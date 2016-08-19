@@ -701,9 +701,7 @@ void CPU::execute(Operation operation) {
          // STOP should be followed by 0x00 (treated here as an immediate)
          ASSERT(*param1Val == 0x00);
 
-         // TODO
          stopped = true;
-
          break;
       }
       case Ins::kDI:

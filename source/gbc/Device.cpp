@@ -63,16 +63,23 @@ void Device::tick(float dt) {
    uint64_t targetCycles = previousCycles + static_cast<uint64_t>(CPU::kClockSpeed * dt);
 
    while (cpu.getCycles() < targetCycles) {
-      cpu.tick();
+      if (!cpu.isStopped()) {
+         cpu.tick();
+      }
       uint64_t cyclesTicked = cpu.getCycles() - previousCycles;
 
       tickJoypad();
       tickDiv(cyclesTicked);
       tickTima(cyclesTicked);
       tickSerial(cyclesTicked);
-      lcdController.tick(cpu.getCycles());
+      lcdController.tick(cpu.getCycles(), cpu.isStopped());
 
       previousCycles = cpu.getCycles();
+
+      if (cpu.isStopped()) {
+         // Not going to tick any cycles, so break to avoid an infinite loop
+         break;
+      }
    }
 }
 
@@ -82,6 +89,13 @@ void Device::setCartridge(UPtr<Cartridge>&& cartridge) {
 }
 
 void Device::tickJoypad() {
+   // The STOP state is exited when any button is pressed
+   if (cpu.isStopped()
+      && (joypad.right || joypad.left || joypad.up || joypad.down
+      || joypad.a || joypad.b || joypad.select || joypad.start)) {
+      cpu.resume();
+   }
+
    uint8_t dpadVals = P1::kInMask;
    if ((memory.p1 & P1::kP14OutPort) == 0x00) {
       uint8_t right = joypad.right ? 0x00 : P1::kP10InPort;

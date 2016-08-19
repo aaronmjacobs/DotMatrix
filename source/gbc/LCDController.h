@@ -58,7 +58,7 @@ class LCDController {
 public:
    LCDController(class Memory& memory);
 
-   void tick(uint64_t cycles);
+   void tick(uint64_t cycles, bool cpuStopped);
 
    const Framebuffer& getFramebuffer() const {
       return framebuffers.readBuffer();
