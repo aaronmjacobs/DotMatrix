@@ -36,6 +36,7 @@ set(HEADER_NAMES
    gbc/Device.h
    gbc/LCDController.h
    gbc/Memory.h
+   gbc/Operations.h
 
    test/CPUTester.h
 
