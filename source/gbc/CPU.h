@@ -283,7 +283,6 @@ private:
 
    bool halted;
    bool stopped;
-   bool executedPrefixCB;
    bool interruptEnableRequested;
    bool interruptDisableRequested;
    bool freezePC;

@@ -313,7 +313,7 @@ void CPU::Operand::set16(uint16_t val) {
 }
 
 CPU::CPU(Memory& memory)
-   : reg({}), mem(memory), ime(false), cycles(0), halted(false), stopped(false), executedPrefixCB(false),
+   : reg({}), mem(memory), ime(false), cycles(0), halted(false), stopped(false),
      interruptEnableRequested(false), interruptDisableRequested(false), freezePC(false) {
 }
 
@@ -338,8 +338,14 @@ void CPU::tick() {
       --reg.pc;
    }
 
-   Operation operation = executedPrefixCB ? kCBOperations[opcode] : kOperations[opcode];
-   executedPrefixCB = false;
+   Operation operation = kOperations[opcode];
+
+   // Handle PREFIX CB
+   if (operation.ins == Ins::kPREFIX) {
+      cycles += operation.cycles;
+      opcode = readPC();
+      operation = kCBOperations[opcode];
+   }
 
    /*LOG_DEBUG("");
    LOG_DEBUG("PC: " << hex((uint16_t)(reg.pc - 0x0001)));
@@ -860,13 +866,6 @@ void CPU::execute(Operation operation) {
          uint8_t mask = bitOprMask(operation.param1);
 
          param2.set8(*param2Val & ~mask);
-         break;
-      }
-
-      // Prefix CB
-      case Ins::kPREFIX:
-      {
-         executedPrefixCB = true;
          break;
       }
 
