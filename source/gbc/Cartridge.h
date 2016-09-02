@@ -1,26 +1,68 @@
 #ifndef GBC_CARTRIDGE_H
 #define GBC_CARTRIDGE_H
 
+#include "FancyAssert.h"
 #include "Pointers.h"
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 namespace GBC {
 
-class Cartridge {
+class MemoryBankController {
 public:
-   static UPtr<Cartridge> fromData(UPtr<uint8_t[]>&& data, size_t numBytes);
-
-   virtual ~Cartridge() = default;
-
-   const char* getTitle() const {
-      return title.data();
+   MemoryBankController(const class Cartridge& cartridge)
+      : cart(cartridge) {
    }
+
+   virtual ~MemoryBankController() = default;
 
    virtual const uint8_t* get(uint16_t address) const = 0;
 
    virtual void set(uint16_t address, uint8_t val) = 0;
+
+protected:
+   const class Cartridge& cart;
+};
+
+class Cartridge {
+public:
+   static UPtr<Cartridge> fromData(std::vector<uint8_t>&& data);
+
+   const char* title() const {
+      return cartTitle.data();
+   }
+
+   const std::vector<uint8_t>& data() const {
+      return cartData;
+   }
+
+   const uint8_t* get(uint16_t address) const {
+      ASSERT(controller);
+      return controller->get(address);
+   }
+
+   void set(uint16_t address, uint8_t val) {
+      ASSERT(controller);
+      controller->set(address, val);
+   }
+
+   bool hasRAM() const {
+      return ram;
+   }
+
+   bool hasBattery() const {
+      return battery;
+   }
+
+   bool hasTimer() const {
+      return timer;
+   }
+
+   bool hasRumble() const {
+      return rumble;
+   }
 
    enum CGBFlag : uint8_t {
       kCBGSupported = 0x80,
@@ -112,7 +154,7 @@ public:
       CGBFlag cgbFlag;
       std::array<uint8_t, 2> newLicenseeCode;
       SGBFlag sgbFlag;
-      CartridgeType cartridgeType;
+      CartridgeType type;
       ROMSize romSize;
       RAMSize ramSize;
       DestinationCode destinationCode;
@@ -122,13 +164,23 @@ public:
       std::array<uint8_t, 2> globalChecksum;
    };
 
-protected:
-   Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes);
+private:
+   Cartridge(std::vector<uint8_t>&& data, const Header& headerData);
 
-   UPtr<uint8_t[]> data;
-   size_t numBytes;
+   void setController(UPtr<MemoryBankController> mbc) {
+      controller = std::move(mbc);
+   }
+
+   std::vector<uint8_t> cartData;
    Header header;
-   std::array<char, 12> title;
+   std::array<char, 12> cartTitle;
+
+   bool ram;
+   bool battery;
+   bool timer;
+   bool rumble;
+
+   UPtr<MemoryBankController> controller;
 };
 
 } // namespace GBC

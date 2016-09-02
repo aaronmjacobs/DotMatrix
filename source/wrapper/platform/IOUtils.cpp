@@ -22,15 +22,12 @@ bool readTextFile(const std::string& fileName, std::string& data) {
    return true;
 }
 
-UPtr<uint8_t[]> readBinaryFile(const std::string& fileName, size_t* numBytes) {
+std::vector<uint8_t> readBinaryFile(const std::string& fileName) {
    ASSERT(!fileName.empty(), "Trying to read from empty file name");
-   if (numBytes) {
-      *numBytes = 0;
-   }
 
    std::ifstream in(fileName, std::ifstream::binary);
    if (!in) {
-      return nullptr;
+      return std::vector<uint8_t>();
    }
 
    std::streampos start = in.tellg();
@@ -39,12 +36,8 @@ UPtr<uint8_t[]> readBinaryFile(const std::string& fileName, size_t* numBytes) {
    ASSERT(size >= 0, "Invalid file size");
    in.seekg(0, std::ios_base::beg);
 
-   UPtr<uint8_t[]> data(new uint8_t[static_cast<size_t>(size)]);
-   in.read(reinterpret_cast<char*>(data.get()), size);
-
-   if (numBytes) {
-      *numBytes = static_cast<size_t>(size);
-   }
+   std::vector<uint8_t> data(size);
+   in.read(reinterpret_cast<char*>(data.data()), size);
 
    return data;
 }

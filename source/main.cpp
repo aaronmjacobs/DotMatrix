@@ -151,14 +151,13 @@ int main(int argc, char *argv[]) {
    // Try to load a cartridge
    if (argc > 1) {
       const char* cartPath = argv[1];
-      size_t numBytes;
-      UPtr<uint8_t[]> cartData = IOUtils::readBinaryFile(cartPath, &numBytes);
+      std::vector<uint8_t> cartData = IOUtils::readBinaryFile(cartPath);
 
       LOG_INFO("Loading cartridge: " << cartPath);
-      UPtr<GBC::Cartridge> cartridge = GBC::Cartridge::fromData(std::move(cartData), numBytes);
+      UPtr<GBC::Cartridge> cartridge(GBC::Cartridge::fromData(std::move(cartData)));
 
       if (cartridge) {
-         glfwSetWindowTitle(window, cartridge->getTitle());
+         glfwSetWindowTitle(window, cartridge->title());
          device.setCartridge(std::move(cartridge));
       }
    }

@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace IOUtils {
 
@@ -21,7 +22,7 @@ bool readTextFile(const std::string& fileName, std::string& data);
 /**
  * Reads the entire contents of the binary file with the given name, storing the number of bytes in numBytes if set
  */
-UPtr<uint8_t[]> readBinaryFile(const std::string& fileName, size_t* numBytes = nullptr);
+std::vector<uint8_t> readBinaryFile(const std::string& fileName);
 
 /**
  * Writes the contents of the given text to the file with the given name, returning true on success

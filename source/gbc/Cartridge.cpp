@@ -18,19 +18,20 @@ namespace {
 static const uint16_t kHeaderOffset = 0x0100;
 static const uint16_t kHeaderSize = 0x0050;
 
-Cartridge::Header parseHeader(const uint8_t* data, size_t numBytes) {
+Cartridge::Header parseHeader(const std::vector<uint8_t>& data) {
    STATIC_ASSERT(sizeof(Cartridge::Header) == kHeaderSize);
-   ASSERT(numBytes >= kHeaderOffset + kHeaderSize);
+   ASSERT(data.size() >= kHeaderOffset + kHeaderSize);
 
    Cartridge::Header header;
-   memcpy(&header, data + kHeaderOffset, kHeaderSize);
+   memcpy(&header, &data.data()[kHeaderOffset], kHeaderSize);
 
    return header;
 }
 
-bool performHeaderChecksum(const Cartridge::Header& header, const uint8_t* mem) {
+bool performHeaderChecksum(const Cartridge::Header& header, const std::vector<uint8_t>& data) {
    // Complement check, program will not run if incorrect
    // x=0:FOR i=0134h TO 014Ch:x=x-MEM[i]-1:NEXT
+   const uint8_t* mem = data.data();
 
    uint8_t x = 0;
    for (uint16_t i = 0x0134; i <= 0x014C; ++i) {
@@ -40,12 +41,13 @@ bool performHeaderChecksum(const Cartridge::Header& header, const uint8_t* mem) 
    return x == header.headerChecksum;
 }
 
-bool performGlobalChecksum(const Cartridge::Header& header, const uint8_t* mem, size_t numBytes) {
+bool performGlobalChecksum(const Cartridge::Header& header, const std::vector<uint8_t>& data) {
    // Checksum (higher byte first) produced by adding all bytes of a cartridge except for two checksum bytes and taking
    // two lower bytes of the result. (GameBoy ignores this value.)
+   const uint8_t* mem = data.data();
 
    uint16_t x = 0;
-   for (size_t i = 0; i < numBytes; ++i) {
+   for (size_t i = 0; i < data.size(); ++i) {
       x += mem[i];
    }
 
@@ -58,15 +60,86 @@ bool performGlobalChecksum(const Cartridge::Header& header, const uint8_t* mem, 
    return header.globalChecksum[0] == high && header.globalChecksum[1] == low;
 }
 
+bool cartHasRAM(Cartridge::CartridgeType type) {
+   switch (type) {
+      case Cartridge::kMBC1PlusRAM:
+      case Cartridge::kMBC1PlusRAMPlusBattery:
+      case Cartridge::kROMPlusRAM:
+      case Cartridge::kROMPlusRAMPlusBattery:
+      case Cartridge::kMMM01PlusRAM:
+      case Cartridge::kMMM01PlusRAMPlusBattery:
+      case Cartridge::kMBC3PlusTimerPlusRAMPlusBattery:
+      case Cartridge::kMBC3PlusRAM:
+      case Cartridge::kMBC3PlusRAMPlusBattery:
+      case Cartridge::kMBC4PlusRAM:
+      case Cartridge::kMBC4PlusRAMPlusBattery:
+      case Cartridge::kMBC5PlusRAM:
+      case Cartridge::kMBC5PlusRAMPlusBattery:
+      case Cartridge::kMBC5PlusRumblePlusRAM:
+      case Cartridge::kMBC5PlusRumblePlusRAMPlusBattery:
+      case Cartridge::kMBC7PlusSensorPlusRumblePlusRAMPlusBattery:
+      case Cartridge::kHuC1PlusRAMPlusBattery:
+         return true;
+      default:
+         return false;
+   }
+}
+
+bool cartHasBattery(Cartridge::CartridgeType type) {
+   switch (type) {
+      case Cartridge::kMBC1PlusRAMPlusBattery:
+      case Cartridge::kMBC2PlusBattery:
+      case Cartridge::kROMPlusRAMPlusBattery:
+      case Cartridge::kMMM01PlusRAMPlusBattery:
+      case Cartridge::kMBC3PlusTimerPlusBattery:
+      case Cartridge::kMBC3PlusTimerPlusRAMPlusBattery:
+      case Cartridge::kMBC3PlusRAMPlusBattery:
+      case Cartridge::kMBC4PlusRAMPlusBattery:
+      case Cartridge::kMBC5PlusRAMPlusBattery:
+      case Cartridge::kMBC5PlusRumblePlusRAMPlusBattery:
+      case Cartridge::kMBC7PlusSensorPlusRumblePlusRAMPlusBattery:
+      case Cartridge::kHuC1PlusRAMPlusBattery:
+         return true;
+      default:
+         return false;
+   }
+}
+
+bool cartHasTimer(Cartridge::CartridgeType type) {
+   switch (type) {
+      case Cartridge::kMBC3PlusTimerPlusBattery:
+      case Cartridge::kMBC3PlusTimerPlusRAMPlusBattery:
+         return true;
+      default:
+         return false;
+   }
+}
+
+bool cartHasRumble(Cartridge::CartridgeType type) {
+   switch (type) {
+      case Cartridge::kMBC5PlusRumble:
+      case Cartridge::kMBC5PlusRumblePlusRAM:
+      case Cartridge::kMBC5PlusRumblePlusRAMPlusBattery:
+      case Cartridge::kMBC7PlusSensorPlusRumblePlusRAMPlusBattery:
+         return true;
+      default:
+         return false;
+   }
+}
+
 } // namespace
 
-class SimpleCartridge : public Cartridge {
+class NoneController : public MemoryBankController {
 public:
+   NoneController(const Cartridge& cartridge)
+      : MemoryBankController(cartridge) {
+   }
+
    const uint8_t* get(uint16_t address) const override {
-      ASSERT(address < numBytes);
+      ASSERT(address < cart.data().size());
 
       if (address < 0x8000) {
-         return &data[address];
+         return &cart.data()[address];
       }
 
       LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
@@ -74,23 +147,22 @@ public:
    }
 
    void set(uint16_t address, uint8_t val) override {
-      ASSERT(address < numBytes);
+      ASSERT(address < cart.data().size());
 
       // No writable memory
       LOG_WARNING("Trying to write to read-only cartridge at location " << hex(address) << ": " << hex(val));
    }
-
-private:
-   friend class Cartridge;
-   SimpleCartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes)
-      : Cartridge(std::move(cartData), cartNumBytes) {
-   }
 };
 
-class MBC1Cartridge : public Cartridge {
+class MBC1 : public MemoryBankController {
 public:
+   MBC1(const Cartridge& cartridge)
+      : MemoryBankController(cartridge), ramEnabled(false), romBankNumber(0x01), ramBankNumber(0x00),
+        bankingMode(kROMBankingMode), ramBanks({}) {
+   }
+
    const uint8_t* get(uint16_t address) const override {
-      ASSERT(address < numBytes);
+      ASSERT(address < cart.data().size());
 
       const uint8_t* pointer = nullptr;
       switch (address & 0xF000) {
@@ -100,7 +172,7 @@ public:
          case 0x3000:
          {
             // Always contains the first 16Bytes of the ROM
-            pointer = &data[address];
+            pointer = &cart.data()[address];
             break;
          }
          case 0x4000:
@@ -110,13 +182,13 @@ public:
          {
             // Switchable ROM bank
             ASSERT(romBankNumber > 0);
-            pointer = &data[address + ((romBankNumber - 1) * 0x4000)];
+            pointer = &cart.data()[address + ((romBankNumber - 1) * 0x4000)];
             break;
          }
          case 0xA000:
          case 0xB000:
          {
-            ASSERT(hasRAM, "Trying to read from MBC1 cartridge RAM when it doesn't have any!");
+            ASSERT(cart.hasRAM(), "Trying to read from MBC1 cartridge RAM when it doesn't have any!");
 
             // Switchable RAM bank
             if (ramEnabled) {
@@ -138,7 +210,7 @@ public:
    }
 
    void set(uint16_t address, uint8_t val) override {
-      ASSERT(address < numBytes);
+      ASSERT(address < cart.data().size());
 
       switch (address & 0xF000) {
          case 0x0000:
@@ -186,7 +258,7 @@ public:
          case 0xA000:
          case 0xB000:
          {
-            ASSERT(hasRAM, "Trying to write to MBC1 cartridge RAM when it doesn't have any!");
+            ASSERT(cart.hasRAM(), "Trying to write to MBC1 cartridge RAM when it doesn't have any!");
 
             // Switchable RAM bank
             if (ramEnabled) {
@@ -211,64 +283,59 @@ private:
       kRAMBankingMode = 0x01
    };
 
-   friend class Cartridge;
-   MBC1Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes, bool ram, bool battery)
-      : Cartridge(std::move(cartData), cartNumBytes), ramEnabled(false), romBankNumber(0x01), ramBankNumber(0x00),
-        bankingMode(kROMBankingMode), ramBanks({}), hasRAM(ram), hasBattery(battery) {
-   }
-
    bool ramEnabled;
    uint8_t romBankNumber;
    uint8_t ramBankNumber;
    BankingMode bankingMode;
 
    std::array<std::array<uint8_t, 0x2000>, 4> ramBanks;
-
-   bool hasRAM;
-   bool hasBattery;
 };
 
 // static
-UPtr<Cartridge> Cartridge::fromData(UPtr<uint8_t[]>&& data, size_t numBytes) {
-   if (!data || numBytes < kHeaderOffset + kHeaderSize) {
+UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data) {
+   if (data.size() < kHeaderOffset + kHeaderSize) {
       LOG_ERROR("Cartridge provided insufficient data");
       return nullptr;
    }
 
-   Header header = parseHeader(data.get(), numBytes);
-   if (!performHeaderChecksum(header, data.get())) {
+   Header header = parseHeader(data);
+   if (!performHeaderChecksum(header, data)) {
       LOG_ERROR("Cartridge data failed header checksum");
       return nullptr;
    }
-   if (!performGlobalChecksum(header, data.get(), numBytes)) {
+   if (!performGlobalChecksum(header, data)) {
       LOG_WARNING("Cartridge data failed global checksum");
    }
 
-   bool hasRAM = false;
-   bool hasBattery = false;
-   switch (header.cartridgeType) {
+   UPtr<Cartridge> cart(new Cartridge(std::move(data), header));
+
+   UPtr<MemoryBankController> mbc;
+   switch (header.type) {
       case kROMOnly:
          LOG_INFO("ROM only");
-         return UPtr<Cartridge>(new SimpleCartridge(std::move(data), numBytes));
-      case kMBC1PlusRAMPlusBattery:
-         hasBattery = true;
-      case kMBC1PlusRAM:
-         hasRAM = true;
+         mbc = std::make_unique<NoneController>(*cart);
+         break;
       case kMBC1:
+      case kMBC1PlusRAM:
+      case kMBC1PlusRAMPlusBattery:
          LOG_INFO("MBC1");
-         return UPtr<Cartridge>(new MBC1Cartridge(std::move(data), numBytes, hasRAM, hasBattery));
+         mbc = std::make_unique<MBC1>(*cart);
+         break;
       default:
-         LOG_ERROR("Invalid cartridge type: " << hex(static_cast<uint8_t>(header.cartridgeType)));
+         LOG_ERROR("Invalid cartridge type: " << hex(static_cast<uint8_t>(header.type)));
          return nullptr;
    }
+
+   cart->setController(std::move(mbc));
+   return cart;
 }
 
-Cartridge::Cartridge(UPtr<uint8_t[]>&& cartData, size_t cartNumBytes)
-   : data(std::move(cartData)), numBytes(cartNumBytes), header(parseHeader(data.get(), numBytes)), title({}) {
-   ASSERT(data);
-
+Cartridge::Cartridge(std::vector<uint8_t>&& data, const Header& headerData)
+   : cartData(std::move(data)), header(headerData), cartTitle({}), ram(cartHasRAM(header.type)),
+     battery(cartHasBattery(header.type)), timer(cartHasTimer(header.type)), rumble(cartHasRumble(header.type)),
+     controller(nullptr) {
    // Copy title into separate array to ensure there is a null terminator
-   memcpy(title.data(), header.title.data(), header.title.size());
+   memcpy(cartTitle.data(), header.title.data(), header.title.size());
 }
 
 } // namespace GBC
