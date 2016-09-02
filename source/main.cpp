@@ -133,8 +133,22 @@ int main(int argc, char *argv[]) {
       renderer.onFramebufferSizeChange(width, height);
    };
 
+   float timeModifier = 1.0f;
    GBC::Joypad joypadState{};
-   keyCallback = [&joypadState](int key, bool enabled) {
+   keyCallback = [&joypadState, &timeModifier](int key, bool enabled) {
+   #if !NDEBUG
+      if (key == GLFW_KEY_1 && enabled) {
+         timeModifier = 1.0f;
+      } else if (key == GLFW_KEY_2 && enabled) {
+         timeModifier = 2.0f;
+      } else if (key == GLFW_KEY_3 && enabled) {
+         timeModifier = 5.0f;
+      } else if (key == GLFW_KEY_4 && enabled) {
+         timeModifier = 1.0f / 60.0f;
+      } else if (key == GLFW_KEY_5 && enabled) {
+         timeModifier = 0.0f;
+      }
+   #endif
       updateJoypadState(joypadState, key, enabled);
    };
 
@@ -172,7 +186,7 @@ int main(int argc, char *argv[]) {
       double frameTime = std::min(now - lastTime, kMaxFrameTime); // Cap the frame time to prevent spiraling
       lastTime = now;
 
-      accumulator += frameTime;
+      accumulator += frameTime * timeModifier;
       while (accumulator >= kDt) {
          device.setJoypadState(joypadState);
          device.tick(static_cast<float>(kDt));
