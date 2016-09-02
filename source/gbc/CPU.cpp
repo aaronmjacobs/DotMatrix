@@ -313,8 +313,8 @@ void CPU::Operand::set16(uint16_t val) {
 }
 
 CPU::CPU(Memory& memory)
-   : reg({}), mem(memory), ime(false), cycles(0), halted(false), stopped(false),
-     interruptEnableRequested(false), interruptDisableRequested(false), freezePC(false) {
+   : reg({}), mem(memory), ime(false), cycles(0), halted(false), stopped(false), interruptEnableRequested(false),
+     freezePC(false) {
 }
 
 void CPU::tick() {
@@ -326,9 +326,7 @@ void CPU::tick() {
    }
 
    bool goingToEnableInterrupts = interruptEnableRequested;
-   bool goingToDisableInterrupts = interruptDisableRequested;
-   interruptEnableRequested = interruptDisableRequested = false;
-   ASSERT(!(goingToEnableInterrupts && goingToDisableInterrupts));
+   interruptEnableRequested = false;
 
    uint8_t opcode = readPC();
 
@@ -358,8 +356,6 @@ void CPU::tick() {
 
    if (goingToEnableInterrupts) {
       ime = true;
-   } else if (goingToDisableInterrupts) {
-      ime = false;
    }
 }
 
@@ -447,6 +443,10 @@ void CPU::execute(Operation operation) {
    } else if (operation.ins == Ins::kRETI) {
       execute(Operation(Ins::kRET, Opr::kNone, Opr::kNone, 0));
       execute(Operation(Ins::kEI, Opr::kNone, Opr::kNone, 0));
+
+      // RETI doesn't delay enabling the IME like EI does
+      interruptEnableRequested = false;
+      ime = true;
       return;
    }
 
@@ -708,7 +708,7 @@ void CPU::execute(Operation operation) {
       {
          ASSERT(operation.param1 == Opr::kNone && operation.param2 == Opr::kNone);
 
-         interruptDisableRequested = true;
+         ime = false;
          break;
       }
       case Ins::kEI:

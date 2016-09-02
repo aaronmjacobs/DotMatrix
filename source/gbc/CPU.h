@@ -292,7 +292,6 @@ private:
    bool halted;
    bool stopped;
    bool interruptEnableRequested;
-   bool interruptDisableRequested;
    bool freezePC;
 };
 
