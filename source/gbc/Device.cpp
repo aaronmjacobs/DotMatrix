@@ -32,11 +32,11 @@ enum Enum {
    kInputClockSelect = (1 << 1) | (1 << 0)
 };
 
-static constexpr std::array<uint64_t, 4> kFrequencies = {
-   4096,
-   262144,
-   65536,
-   16384
+const std::array<uint16_t, 4> kCounterMasks = {
+   0x0200,  // 4096 Hz, increase every 1024 clocks
+   0x0008,  // 262144 Hz, increase every 16 clocks
+   0x0020,  // 65536 Hz, increase every 64 clocks
+   0x0080   // 16384 Hz, increase every 256 clocks
 };
 
 } // namespace TAC
@@ -54,8 +54,9 @@ enum Enum {
 } // namespace
 
 Device::Device()
-   : cpu(memory), lcdController(memory), cart(nullptr), joypad({}), lastInputVals(P1::kInMask), divCycles(0),
-     timaCycles(0), serialCycles(0), serialCallback(nullptr) {
+   : memory(*this), cpu(memory), lcdController(memory), cart(nullptr), joypad({}), lastInputVals(P1::kInMask),
+     counter(0), lastCounter(0), clocksUntilInterrupt(0), ifOverrideClocks(0), lastTimerBit(false),
+     serialCycles(0), serialCallback(nullptr) {
 }
 
 void Device::tick(float dt) {
@@ -128,40 +129,48 @@ void Device::tickJoypad() {
 }
 
 void Device::tickDiv(uint64_t cycles) {
-   static const uint64_t kDivFrequency = 16384; // 16384Hz
-   static const uint64_t kCyclesPerDiv = CPU::kClockSpeed / kDivFrequency; // 256
-   STATIC_ASSERT(CPU::kClockSpeed % kDivFrequency == 0); // Should divide evenly
+   lastCounter = counter;
+   counter += cycles;
 
-   divCycles += cycles;
-
-   while (divCycles >= kCyclesPerDiv) {
-      divCycles -= kCyclesPerDiv;
-      ++memory.div;
-   }
+   // DIV is just the upper 8 bits of the internal counter
+   memory.div = (cycles & 0xFF00) >> 8;
 }
 
 void Device::tickTima(uint64_t cycles) {
-   if (memory.tac & TAC::kTimerStartStop) {
-      timaCycles += cycles;
+   bool enabled = (memory.tac & TAC::kTimerStartStop) != 0;
+   uint16_t mask = TAC::kCounterMasks[memory.tac & TAC::kInputClockSelect];
 
-      // All frequencies should evenly divide the clock speed
-      STATIC_ASSERT(CPU::kClockSpeed % TAC::kFrequencies[0] == 0);
-      STATIC_ASSERT(CPU::kClockSpeed % TAC::kFrequencies[1] == 0);
-      STATIC_ASSERT(CPU::kClockSpeed % TAC::kFrequencies[2] == 0);
-      STATIC_ASSERT(CPU::kClockSpeed % TAC::kFrequencies[3] == 0);
+   for (uint16_t c = lastCounter; c != counter; ++c) {
+      // Handle interrupt / TMA copy delay
+      if (clocksUntilInterrupt > 0) {
+         --clocksUntilInterrupt;
+         if (clocksUntilInterrupt == 0) {
+            memory.tima = memory.tma;
 
-      uint64_t frequency = TAC::kFrequencies[memory.tac & TAC::kInputClockSelect];
-      uint64_t cyclesPerTimerUpdate = CPU::kClockSpeed / frequency;
+            // If the IF register was written to during the last cycle, in overrides the value set here
+            if (ifOverrideClocks == 0) {
+               memory.ifr |= Interrupt::kTimer;
+            }
+         }
+      }
 
-      while (timaCycles >= cyclesPerTimerUpdate) {
-         timaCycles -= cyclesPerTimerUpdate;
+      // Handle IF override
+      if (ifOverrideClocks > 0) {
+         --ifOverrideClocks;
+      }
+
+      // Increase TIMA on falling edge
+      // This can be caused by a counter increase, counter reset, TAC change, TIMA disable, etc.
+      bool timerBit = (c & mask) != 0 && enabled;
+      if (lastTimerBit && !timerBit) {
          ++memory.tima;
 
          if (memory.tima == 0) {
-            memory.tima = memory.tma;
-            memory.ifr |= Interrupt::kTimer;
+            // Interrupt is delayed by 4 clocks
+            clocksUntilInterrupt = 4;
          }
       }
+      lastTimerBit = timerBit;
    }
 }
 

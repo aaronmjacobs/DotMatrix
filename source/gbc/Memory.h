@@ -32,7 +32,7 @@ public:
    template<size_t size>
    using ByteArray = std::array<uint8_t, size>;
 
-   Memory();
+   Memory(class Device& dev);
 
    union {
       ByteArray<0x10000> raw;       // Direct access                 (0x0000-0xFFFF, 64k)
@@ -140,6 +140,7 @@ private:
    void executeDMATransfer();
 
    class Cartridge* cart;
+   class Device& device;
 };
 
 } // namespace GBC

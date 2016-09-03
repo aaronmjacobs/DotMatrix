@@ -42,6 +42,21 @@ public:
       joypad = joypadState;
    }
 
+   void onDivWrite() {
+      // Counter is reset when anything is written to DIV
+      counter = 0;
+   }
+
+   void onTimaWrite() {
+      // Writing to TIMA during the delay will prevent the TMA copy and the interrupt
+      clocksUntilInterrupt = 0;
+   }
+
+   void onIfWrite() {
+      // Writing to IF during the delay between TIMA overflow and interrupt request overrides the IF change
+      ifOverrideClocks = 4;
+   }
+
 private:
    void tickJoypad();
 
@@ -54,15 +69,18 @@ private:
    Memory memory;
    CPU cpu;
    LCDController lcdController;
-
    UPtr<class Cartridge> cart;
+
    Joypad joypad;
    uint8_t lastInputVals;
 
-   uint64_t divCycles;
-   uint64_t timaCycles;
-   uint64_t serialCycles;
+   uint16_t counter;
+   uint16_t lastCounter;
+   uint8_t clocksUntilInterrupt;
+   uint8_t ifOverrideClocks;
+   bool lastTimerBit;
 
+   uint64_t serialCycles;
    SerialCallback serialCallback;
 };
 

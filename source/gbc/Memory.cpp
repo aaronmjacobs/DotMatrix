@@ -2,12 +2,13 @@
 
 #include "gbc/Bootstrap.h"
 #include "gbc/Cartridge.h"
+#include "gbc/Device.h"
 #include "gbc/Memory.h"
 
 namespace GBC {
 
-Memory::Memory()
-   : raw{}, cart(nullptr) {
+Memory::Memory(Device& dev)
+   : raw{}, cart(nullptr), device(dev) {
    // If no cartridge is available, all cartridge reads return 0xFF
    romb.fill(0xFF);
    roms.fill(0xFF);
@@ -56,8 +57,18 @@ void Memory::set(uint16_t address, uint8_t val) {
    }
 
    if (address == 0xFF04) {
-      // Divider register - writing any value sets it to 0
-      val = 0;
+      // Divider register
+      device.onDivWrite();
+   }
+
+   if (address == 0xFF05) {
+      // TIMA
+      device.onTimaWrite();
+   }
+
+   if (address == 0xFF0F) {
+      // IF
+      device.onIfWrite();
    }
 
    raw[address] = val;
