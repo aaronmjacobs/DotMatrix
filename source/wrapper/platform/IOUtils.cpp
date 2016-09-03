@@ -44,6 +44,11 @@ std::vector<uint8_t> readBinaryFile(const std::string& fileName) {
 
 bool writeTextFile(const std::string& fileName, const std::string& data) {
    ASSERT(!fileName.empty(), "Trying to write to empty file name");
+
+   if (!ensurePathToFileExists(fileName)) {
+      return false;
+   }
+
    std::ofstream out(fileName);
    if (!out) {
       return false;
@@ -53,14 +58,19 @@ bool writeTextFile(const std::string& fileName, const std::string& data) {
    return true;
 }
 
-bool writeBinaryFile(const std::string& fileName, uint8_t* data, size_t numBytes) {
+bool writeBinaryFile(const std::string& fileName, const std::vector<uint8_t>& data) {
    ASSERT(!fileName.empty(), "Trying to write to empty file name");
+
+   if (!ensurePathToFileExists(fileName)) {
+      return false;
+   }
+
    std::ofstream out(fileName, std::ofstream::binary);
    if (!out) {
       return false;
    }
 
-   out.write(reinterpret_cast<char*>(data), numBytes);
+   out.write(reinterpret_cast<const char*>(data.data()), data.size());
    return true;
 }
 
@@ -72,6 +82,19 @@ bool appDataPath(const std::string& appName, const std::string& fileName, std::s
 
    path = appDataFolder + "/" + fileName;
    return true;
+}
+
+bool ensurePathToFileExists(const std::string& path) {
+   std::string directory;
+   if (!OSUtils::getDirectoryFromPath(path, directory)) {
+      return false;
+   }
+
+   if (OSUtils::directoryExists(directory)) {
+      return true;
+   }
+
+   return OSUtils::createDirectory(directory);
 }
 
 } // namespace IOUtils

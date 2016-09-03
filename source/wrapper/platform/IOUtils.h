@@ -20,7 +20,7 @@ bool canRead(const std::string& fileName);
 bool readTextFile(const std::string& fileName, std::string& data);
 
 /**
- * Reads the entire contents of the binary file with the given name, storing the number of bytes in numBytes if set
+ * Reads the entire contents of the binary file with the given name
  */
 std::vector<uint8_t> readBinaryFile(const std::string& fileName);
 
@@ -30,15 +30,20 @@ std::vector<uint8_t> readBinaryFile(const std::string& fileName);
 bool writeTextFile(const std::string& fileName, const std::string& data);
 
 /**
- * Writes the contents of the given array to the file with the given name, returning true on success
+ * Writes the contents of the given vector to the file with the given name, returning true on success
  */
-bool writeBinaryFile(const std::string& fileName, uint8_t* data, size_t numBytes);
+bool writeBinaryFile(const std::string& fileName, const std::vector<uint8_t>& data);
 
 /**
  * Gets the absolute path of a resource stored in the app data folder given a relative path and application name,
  * returning true on success
  */
 bool appDataPath(const std::string& appName, const std::string& fileName, std::string& path);
+
+/**
+ * Ensures the path to the given file exists, returning true on success
+ */
+bool ensurePathToFileExists(const std::string& path);
 
 } // namespace IOUtils
 
