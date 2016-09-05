@@ -277,6 +277,33 @@ public:
       };
    }
 
+   std::vector<uint8_t> saveRAM() const override {
+      std::vector<uint8_t> ram(ramBanks.size() * ramBanks[0].size());
+
+      size_t offset = 0;
+      for (const auto& bank : ramBanks) {
+         memcpy(&ram[offset], bank.data(), bank.size());
+         offset += bank.size();
+      }
+
+      return ram;
+   }
+
+   bool loadRAM(const std::vector<uint8_t>& ram) override {
+      size_t size = ramBanks.size() * ramBanks[0].size();
+      if (ram.size() != size) {
+         return false;
+      }
+
+      size_t offset = 0;
+      for (auto& bank : ramBanks) {
+         memcpy(bank.data(), &ram[offset], bank.size());
+         offset += bank.size();
+      }
+
+      return true;
+   }
+
 private:
    enum BankingMode : uint8_t {
       kROMBankingMode = 0x00,

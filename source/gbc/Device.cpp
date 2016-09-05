@@ -89,6 +89,30 @@ void Device::setCartridge(UPtr<Cartridge>&& cartridge) {
    memory.setCartridge(cart.get());
 }
 
+std::vector<uint8_t> Device::saveCartRAM() const {
+   if (!cart) {
+      return {};
+   }
+
+   return cart->saveRAM();
+}
+
+bool Device::loadCartRAM(const std::vector<uint8_t>& ram) {
+   if (!cart) {
+      return false;
+   }
+
+   return cart->loadRAM(ram);
+}
+
+const char* Device::title() const {
+   if (!cart) {
+      return "none";
+   }
+
+   return cart->title();
+}
+
 void Device::tickJoypad() {
    // The STOP state is exited when any button is pressed
    if (cpu.isStopped()

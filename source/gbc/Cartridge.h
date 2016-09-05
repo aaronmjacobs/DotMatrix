@@ -22,6 +22,14 @@ public:
 
    virtual void set(uint16_t address, uint8_t val) = 0;
 
+   virtual std::vector<uint8_t> saveRAM() const {
+      return {};
+   }
+
+   virtual bool loadRAM(const std::vector<uint8_t>& ram) {
+      return false;
+   }
+
 protected:
    const class Cartridge& cart;
 };
@@ -46,6 +54,16 @@ public:
    void set(uint16_t address, uint8_t val) {
       ASSERT(controller);
       controller->set(address, val);
+   }
+
+   std::vector<uint8_t> saveRAM() const {
+      ASSERT(controller);
+      return controller->saveRAM();
+   }
+
+   bool loadRAM(const std::vector<uint8_t>& ram) {
+      ASSERT(controller);
+      return controller->loadRAM(ram);
    }
 
    bool hasRAM() const {

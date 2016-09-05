@@ -30,6 +30,12 @@ public:
 
    void setCartridge(UPtr<class Cartridge>&& cartridge);
 
+   std::vector<uint8_t> saveCartRAM() const;
+
+   bool loadCartRAM(const std::vector<uint8_t>& ram);
+
+   const char* title() const;
+
    const LCDController& getLCDController() const {
       return lcdController;
    }

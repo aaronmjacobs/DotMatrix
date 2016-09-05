@@ -13,6 +13,8 @@
 #include "wrapper/platform/OSUtils.h"
 #include "wrapper/video/Renderer.h"
 
+#include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <functional>
 #include <vector>
@@ -60,6 +62,61 @@ void updateJoypadState(GBC::Joypad& joypadState, int key, bool enabled) {
       case GLFW_KEY_X:
          joypadState.start = enabled;
          break;
+
+      // Needed since many keyboards do not support 4 nearby buttons being pressed at the same time
+      // Used for certain game functions, e.g. reset, save, etc.
+      case GLFW_KEY_D:
+         joypadState.a = enabled;
+         joypadState.b = enabled;
+         joypadState.select = enabled;
+         joypadState.start = enabled;
+         break;
+   }
+}
+
+std::string getSaveName(const char* title) {
+   // Start with the cartridge title
+   std::string fileName = title;
+
+   // Remove all non-letters
+   fileName.erase(std::remove_if(fileName.begin(), fileName.end(), [](char c){ return !isalpha(c); }));
+
+   // Lower case
+   std::transform(fileName.begin(), fileName.end(), fileName.begin(), ::tolower);
+
+   // Extension
+   fileName += ".sav";
+
+   // Relative to the app data directory
+   std::string saveName;
+   if (!IOUtils::appDataPath(kProjectName, fileName, saveName)) {
+      return "";
+   }
+
+   return saveName;
+}
+
+void saveGame(const GBC::Device& device) {
+   std::vector<uint8_t> cartRam = device.saveCartRAM();
+
+   if (cartRam.size() > 0) {
+      std::string saveFileName = getSaveName(device.title());
+
+      if (saveFileName.size() > 0 && IOUtils::writeBinaryFile(saveFileName, cartRam)) {
+         LOG_INFO("Saved game to: " << saveFileName);
+      }
+   }
+}
+
+void loadGame(GBC::Device& device) {
+   std::string saveFileName = getSaveName(device.title());
+
+   if (saveFileName.size() > 0 && IOUtils::canRead(saveFileName)) {
+      std::vector<uint8_t> cartRam = IOUtils::readBinaryFile(saveFileName);
+
+      if (device.loadCartRAM(cartRam)) {
+         LOG_INFO("Loaded game from: " << saveFileName);
+      }
    }
 }
 
@@ -133,9 +190,10 @@ int main(int argc, char *argv[]) {
       renderer.onFramebufferSizeChange(width, height);
    };
 
-   float timeModifier = 1.0f;
    GBC::Joypad joypadState{};
-   keyCallback = [&joypadState, &timeModifier](int key, bool enabled) {
+   float timeModifier = 1.0f;
+   bool doSave = false;
+   keyCallback = [&joypadState, &timeModifier, &doSave](int key, bool enabled) {
    #if !NDEBUG
       if (key == GLFW_KEY_1 && enabled) {
          timeModifier = 1.0f;
@@ -149,6 +207,11 @@ int main(int argc, char *argv[]) {
          timeModifier = 0.0f;
       }
    #endif
+
+      if (key == GLFW_KEY_SPACE && enabled) {
+         doSave = true;
+      }
+
       updateJoypadState(joypadState, key, enabled);
    };
 
@@ -171,8 +234,11 @@ int main(int argc, char *argv[]) {
       UPtr<GBC::Cartridge> cartridge(GBC::Cartridge::fromData(std::move(cartData)));
 
       if (cartridge) {
-         glfwSetWindowTitle(window, cartridge->title());
          device.setCartridge(std::move(cartridge));
+         glfwSetWindowTitle(window, device.title());
+
+         // Try to load a save file
+         loadGame(device);
       }
    }
 
@@ -194,6 +260,12 @@ int main(int argc, char *argv[]) {
       }
 
       renderer.draw(device.getLCDController().getFramebuffer());
+
+      // Try to save the game
+      if (doSave) {
+         doSave = false;
+         saveGame(device);
+      }
 
       glfwSwapBuffers(window);
       glfwPollEvents();
