@@ -157,7 +157,7 @@ void Device::tickDiv(uint64_t cycles) {
    counter += cycles;
 
    // DIV is just the upper 8 bits of the internal counter
-   memory.div = (cycles & 0xFF00) >> 8;
+   memory.div = (counter & 0xFF00) >> 8;
 }
 
 void Device::tickTima(uint64_t cycles) {
