@@ -152,12 +152,13 @@ void LCDController::tick(uint64_t totalCycles, bool cpuStopped) {
    // Update the mode
    mem.stat = (mem.stat & ~STAT::kModeFlag) | currentMode;
 
+   uint8_t oldLY = mem.ly;
    mem.ly = calcLY(totalCycles);
 
    // ly compare
    bool coincident = mem.ly == mem.lyc;
    mem.stat = (mem.stat & ~STAT::kCoincidenceFlag) | (coincident ? STAT::kCoincidenceFlag : 0);
-   if ((mem.stat & STAT::kLycLyCoincidence) && coincident) {
+   if ((mem.stat & STAT::kLycLyCoincidence) && coincident && (mem.ly != oldLY)) {
       mem.ifr |= Interrupt::kLCDState;
    }
 
