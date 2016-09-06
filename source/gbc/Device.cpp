@@ -154,7 +154,7 @@ void Device::tickJoypad() {
 
 void Device::tickDiv(uint64_t cycles) {
    lastCounter = counter;
-   counter += cycles;
+   counter += static_cast<uint16_t>(cycles);
 
    // DIV is just the upper 8 bits of the internal counter
    memory.div = (counter & 0xFF00) >> 8;

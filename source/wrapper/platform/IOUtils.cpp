@@ -36,7 +36,7 @@ std::vector<uint8_t> readBinaryFile(const std::string& fileName) {
    ASSERT(size >= 0, "Invalid file size");
    in.seekg(0, std::ios_base::beg);
 
-   std::vector<uint8_t> data(size);
+   std::vector<uint8_t> data(static_cast<size_t>(size));
    in.read(reinterpret_cast<char*>(data.data()), size);
 
    return data;
