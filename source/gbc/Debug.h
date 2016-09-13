@@ -127,18 +127,6 @@ const char* oprName(Opr operand) {
 
 #undef OPR_NAME
 
-std::string hex(uint8_t val) {
-   std::ostringstream stream;
-   stream << "0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << static_cast<uint16_t>(val);
-   return stream.str();
-}
-
-std::string hex(uint16_t val) {
-   std::ostringstream stream;
-   stream << "0x" << std::uppercase << std::setfill('0') << std::setw(4) << std::hex << val;
-   return stream.str();
-}
-
 } // namespace
 
 } // namespace GBC
