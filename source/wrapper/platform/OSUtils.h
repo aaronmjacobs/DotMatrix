@@ -40,6 +40,11 @@ bool directoryExists(const std::string& dir);
  */
 bool createDirectory(const std::string& dir);
 
+/**
+ * Gets the system (unix) time (in seconds)
+ */
+long getTime();
+
 } // namespace OSUtils
 
 #endif

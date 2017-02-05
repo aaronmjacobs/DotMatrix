@@ -1,6 +1,7 @@
 #include "OSUtils.h"
 
 #include <cstdint>
+#include <ctime>
 
 #ifdef __APPLE__
 #include <CoreServices/CoreServices.h>
@@ -193,6 +194,10 @@ bool directoryExists(const std::string& dir) {
    }
 
    return (info.st_mode & S_IFDIR) != 0;
+}
+
+long getTime() {
+   return static_cast<long>(std::time(nullptr));
 }
 
 } // namespace OSUtils
