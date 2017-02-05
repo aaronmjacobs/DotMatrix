@@ -89,7 +89,7 @@ void Device::setCartridge(UPtr<Cartridge>&& cartridge) {
    memory.setCartridge(cart.get());
 }
 
-std::vector<uint8_t> Device::saveCartRAM() const {
+IOUtils::Archive Device::saveCartRAM() const {
    if (!cart) {
       return {};
    }
@@ -97,7 +97,7 @@ std::vector<uint8_t> Device::saveCartRAM() const {
    return cart->saveRAM();
 }
 
-bool Device::loadCartRAM(const std::vector<uint8_t>& ram) {
+bool Device::loadCartRAM(IOUtils::Archive& ram) {
    if (!cart) {
       return false;
    }

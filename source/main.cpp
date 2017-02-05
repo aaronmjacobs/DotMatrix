@@ -97,12 +97,13 @@ std::string getSaveName(const char* title) {
 }
 
 void saveGame(const GBC::Device& device) {
-   std::vector<uint8_t> cartRam = device.saveCartRAM();
+   IOUtils::Archive cartRam = device.saveCartRAM();
+   const std::vector<uint8_t>& cartRamData = cartRam.getData();
 
-   if (cartRam.size() > 0) {
+   if (cartRamData.size() > 0) {
       std::string saveFileName = getSaveName(device.title());
 
-      if (saveFileName.size() > 0 && IOUtils::writeBinaryFile(saveFileName, cartRam)) {
+      if (saveFileName.size() > 0 && IOUtils::writeBinaryFile(saveFileName, cartRamData)) {
          LOG_INFO("Saved game to: " << saveFileName);
       }
    }
@@ -112,7 +113,8 @@ void loadGame(GBC::Device& device) {
    std::string saveFileName = getSaveName(device.title());
 
    if (saveFileName.size() > 0 && IOUtils::canRead(saveFileName)) {
-      std::vector<uint8_t> cartRam = IOUtils::readBinaryFile(saveFileName);
+      std::vector<uint8_t> cartRamData = IOUtils::readBinaryFile(saveFileName);
+      IOUtils::Archive cartRam(cartRamData);
 
       if (device.loadCartRAM(cartRam)) {
          LOG_INFO("Loaded game from: " << saveFileName);

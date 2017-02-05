@@ -4,6 +4,9 @@
 #include "gbc/Cartridge.h"
 #include "gbc/Memory.h"
 
+#include "wrapper/platform/IOUtils.h"
+#include "wrapper/platform/OSUtils.h"
+
 #if !defined(NDEBUG)
 #  include "Debug.h"
 #endif // !defined(NDEBUG)
@@ -280,30 +283,21 @@ public:
       };
    }
 
-   std::vector<uint8_t> saveRAM() const override {
-      static constexpr size_t kBankSize = std::tuple_size<decltype(ramBanks)::value_type>::value;
-      std::vector<uint8_t> ramData(ramBanks.size() * kBankSize);
+   IOUtils::Archive saveRAM() const override {
+      IOUtils::Archive ramData;
 
-      size_t offset = 0;
       for (const auto& bank : ramBanks) {
-         memcpy(&ramData[offset], bank.data(), bank.size());
-         offset += bank.size();
+         ramData.write(bank);
       }
 
       return ramData;
    }
 
-   bool loadRAM(const std::vector<uint8_t>& ramData) override {
-      static constexpr size_t kBankSize = std::tuple_size<decltype(ramBanks)::value_type>::value;
-      size_t size = ramBanks.size() * kBankSize;
-      if (ramData.size() != size) {
-         return false;
-      }
-
-      size_t offset = 0;
+   bool loadRAM(IOUtils::Archive& ramData) override {
       for (auto& bank : ramBanks) {
-         memcpy(bank.data(), &ramData[offset], bank.size());
-         offset += bank.size();
+         if (!ramData.read(bank)) {
+            return false;
+         }
       }
 
       return true;
@@ -428,21 +422,16 @@ public:
       };
    }
 
-   std::vector<uint8_t> saveRAM() const override {
-      std::vector<uint8_t> ramData(ram.size());
-      memcpy(ramData.data(), ram.data(), ram.size());
+   IOUtils::Archive saveRAM() const override {
+      IOUtils::Archive ramData;
+
+      ramData.write(ram);
 
       return ramData;
    }
 
-   bool loadRAM(const std::vector<uint8_t>& ramData) override {
-      if (ramData.size() != ram.size()) {
-         return false;
-      }
-
-      memcpy(ram.data(), ramData.data(), ram.size());
-
-      return true;
+   bool loadRAM(IOUtils::Archive& ramData) override {
+      return ramData.read(ram);
    }
 
 private:

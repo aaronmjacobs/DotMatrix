@@ -4,6 +4,8 @@
 #include "FancyAssert.h"
 #include "Pointers.h"
 
+#include "wrapper/platform/IOUtils.h"
+
 #include <array>
 #include <cstdint>
 #include <vector>
@@ -22,11 +24,11 @@ public:
 
    virtual void set(uint16_t address, uint8_t val) = 0;
 
-   virtual std::vector<uint8_t> saveRAM() const {
+   virtual IOUtils::Archive saveRAM() const {
       return {};
    }
 
-   virtual bool loadRAM(const std::vector<uint8_t>& ramData) {
+   virtual bool loadRAM(IOUtils::Archive& ramData) {
       return false;
    }
 
@@ -56,12 +58,12 @@ public:
       controller->set(address, val);
    }
 
-   std::vector<uint8_t> saveRAM() const {
+   IOUtils::Archive saveRAM() const {
       ASSERT(controller);
       return controller->saveRAM();
    }
 
-   bool loadRAM(const std::vector<uint8_t>& ramData) {
+   bool loadRAM(IOUtils::Archive& ramData) {
       ASSERT(controller);
       return controller->loadRAM(ramData);
    }

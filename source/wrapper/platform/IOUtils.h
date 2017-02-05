@@ -45,6 +45,87 @@ bool appDataPath(const std::string& appName, const std::string& fileName, std::s
  */
 bool ensurePathToFileExists(const std::string& path);
 
+/**
+ * Helper class for reading data from / writing data to a byte array
+ */
+class Archive {
+public:
+   Archive() : offset(0) {
+   }
+
+   Archive(size_t numBytes) : data(numBytes), offset(0) {
+   }
+
+   Archive(const std::vector<uint8_t>& inData) : data(inData), offset(0) {
+   }
+
+   Archive(const Archive& other) : data(other.data), offset(other.offset) {
+   }
+
+   Archive(Archive&& other) : data(std::move(other.data)), offset(std::move(other.offset)) {
+      other.offset = 0;
+   }
+
+   ~Archive() {
+      ASSERT(isAtEnd());
+   }
+
+   Archive& operator=(const Archive& other) {
+      data = other.data;
+      offset = other.offset;
+
+      return *this;
+   }
+
+   Archive& operator=(Archive&& other) {
+      data = std::move(other.data);
+      offset = std::move(other.offset);
+      other.offset = 0;
+
+      return *this;
+   }
+
+   const std::vector<uint8_t>& getData() const {
+      return data;
+   }
+
+   bool isAtEnd() const {
+      return offset == data.size();
+   }
+
+   void reserve(size_t numBytes) {
+      data.resize(numBytes);
+   }
+
+   template<typename T>
+   bool read(T& outVal) {
+      size_t numBytes = sizeof(T);
+      if (offset + numBytes > data.size()) {
+         return false;
+      }
+
+      memcpy(&outVal, &data[offset], numBytes);
+      offset += numBytes;
+
+      return true;
+   }
+
+   template<typename T>
+   void write(const T& inVal) {
+      size_t numBytes = sizeof(T);
+      if (offset + numBytes > data.size()) {
+         data.resize(offset + numBytes);
+      }
+
+      memcpy(&data[offset], &inVal, numBytes);
+      offset += numBytes;
+   }
+
+private:
+   std::vector<uint8_t> data;
+   size_t offset;
+};
+
 } // namespace IOUtils
 
 #endif

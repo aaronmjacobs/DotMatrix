@@ -7,6 +7,8 @@
 #include "gbc/LCDController.h"
 #include "gbc/Memory.h"
 
+#include "wrapper/platform/IOUtils.h"
+
 namespace GBC {
 
 struct Joypad {
@@ -30,9 +32,9 @@ public:
 
    void setCartridge(UPtr<class Cartridge>&& cartridge);
 
-   std::vector<uint8_t> saveCartRAM() const;
+   IOUtils::Archive saveCartRAM() const;
 
-   bool loadCartRAM(const std::vector<uint8_t>& ram);
+   bool loadCartRAM(IOUtils::Archive& ram);
 
    const char* title() const;
 
