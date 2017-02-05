@@ -171,7 +171,7 @@ void Device::tickTima(uint64_t cycles) {
          if (clocksUntilInterrupt == 0) {
             memory.tima = memory.tma;
 
-            // If the IF register was written to during the last cycle, in overrides the value set here
+            // If the IF register was written to during the last cycle, it overrides the value set here
             if (ifOverrideClocks == 0) {
                memory.ifr |= Interrupt::kTimer;
             }

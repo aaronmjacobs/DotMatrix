@@ -26,7 +26,7 @@ public:
       return {};
    }
 
-   virtual bool loadRAM(const std::vector<uint8_t>& ram) {
+   virtual bool loadRAM(const std::vector<uint8_t>& ramData) {
       return false;
    }
 
@@ -61,25 +61,25 @@ public:
       return controller->saveRAM();
    }
 
-   bool loadRAM(const std::vector<uint8_t>& ram) {
+   bool loadRAM(const std::vector<uint8_t>& ramData) {
       ASSERT(controller);
-      return controller->loadRAM(ram);
+      return controller->loadRAM(ramData);
    }
 
    bool hasRAM() const {
-      return ram;
+      return ramPresent;
    }
 
    bool hasBattery() const {
-      return battery;
+      return batteryPresent;
    }
 
    bool hasTimer() const {
-      return timer;
+      return timerPresent;
    }
 
    bool hasRumble() const {
-      return rumble;
+      return rumblePresent;
    }
 
    enum CGBFlag : uint8_t {
@@ -193,10 +193,10 @@ private:
    Header header;
    std::array<char, 12> cartTitle;
 
-   bool ram;
-   bool battery;
-   bool timer;
-   bool rumble;
+   const bool ramPresent;
+   const bool batteryPresent;
+   const bool timerPresent;
+   const bool rumblePresent;
 
    UPtr<MemoryBankController> controller;
 };

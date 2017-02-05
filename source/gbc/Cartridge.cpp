@@ -15,8 +15,9 @@ namespace GBC {
 
 namespace {
 
-static const uint16_t kHeaderOffset = 0x0100;
-static const uint16_t kHeaderSize = 0x0050;
+const uint16_t kHeaderOffset = 0x0100;
+const uint16_t kHeaderSize = 0x0050;
+const uint8_t kInvalidAddressByte = 0xFF;
 
 Cartridge::Header parseHeader(const std::vector<uint8_t>& data) {
    STATIC_ASSERT(sizeof(Cartridge::Header) == kHeaderSize);
@@ -64,6 +65,8 @@ bool cartHasRAM(Cartridge::CartridgeType type) {
    switch (type) {
       case Cartridge::kMBC1PlusRAM:
       case Cartridge::kMBC1PlusRAMPlusBattery:
+      case Cartridge::kMBC2:
+      case Cartridge::kMBC2PlusBattery:
       case Cartridge::kROMPlusRAM:
       case Cartridge::kROMPlusRAMPlusBattery:
       case Cartridge::kMMM01PlusRAM:
@@ -143,7 +146,7 @@ public:
       }
 
       LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
-      return nullptr;
+      return &kInvalidAddressByte;
    }
 
    void set(uint16_t address, uint8_t val) override {
@@ -164,7 +167,7 @@ public:
    const uint8_t* get(uint16_t address) const override {
       ASSERT(address < cart.data().size());
 
-      const uint8_t* pointer = nullptr;
+      const uint8_t* pointer = &kInvalidAddressByte;
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -278,26 +281,28 @@ public:
    }
 
    std::vector<uint8_t> saveRAM() const override {
-      std::vector<uint8_t> ram(ramBanks.size() * ramBanks[0].size());
+      static constexpr size_t kBankSize = std::tuple_size<decltype(ramBanks)::value_type>::value;
+      std::vector<uint8_t> ramData(ramBanks.size() * kBankSize);
 
       size_t offset = 0;
       for (const auto& bank : ramBanks) {
-         memcpy(&ram[offset], bank.data(), bank.size());
+         memcpy(&ramData[offset], bank.data(), bank.size());
          offset += bank.size();
       }
 
-      return ram;
+      return ramData;
    }
 
-   bool loadRAM(const std::vector<uint8_t>& ram) override {
-      size_t size = ramBanks.size() * ramBanks[0].size();
-      if (ram.size() != size) {
+   bool loadRAM(const std::vector<uint8_t>& ramData) override {
+      static constexpr size_t kBankSize = std::tuple_size<decltype(ramBanks)::value_type>::value;
+      size_t size = ramBanks.size() * kBankSize;
+      if (ramData.size() != size) {
          return false;
       }
 
       size_t offset = 0;
       for (auto& bank : ramBanks) {
-         memcpy(bank.data(), &ram[offset], bank.size());
+         memcpy(bank.data(), &ramData[offset], bank.size());
          offset += bank.size();
       }
 
@@ -358,9 +363,9 @@ UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data) {
 }
 
 Cartridge::Cartridge(std::vector<uint8_t>&& data, const Header& headerData)
-   : cartData(std::move(data)), header(headerData), cartTitle({}), ram(cartHasRAM(header.type)),
-     battery(cartHasBattery(header.type)), timer(cartHasTimer(header.type)), rumble(cartHasRumble(header.type)),
-     controller(nullptr) {
+   : cartData(std::move(data)), header(headerData), cartTitle({}), ramPresent(cartHasRAM(header.type)),
+     batteryPresent(cartHasBattery(header.type)), timerPresent(cartHasTimer(header.type)),
+     rumblePresent(cartHasRumble(header.type)), controller(nullptr) {
    // Copy title into separate array to ensure there is a null terminator
    memcpy(cartTitle.data(), header.title.data(), header.title.size());
 }
