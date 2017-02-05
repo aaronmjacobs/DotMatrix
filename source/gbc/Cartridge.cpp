@@ -323,6 +323,135 @@ private:
    std::array<std::array<uint8_t, 0x2000>, 4> ramBanks;
 };
 
+class MBC2 : public MemoryBankController {
+public:
+   MBC2(const Cartridge& cartridge)
+      : MemoryBankController(cartridge), ramEnabled(false), romBankNumber(0x01) {
+      ram.fill(0xFF);
+   }
+
+   const uint8_t* get(uint16_t address) const override {
+      ASSERT(address < cart.data().size());
+
+      const uint8_t* pointer = &kInvalidAddressByte;
+      switch (address & 0xF000) {
+         case 0x0000:
+         case 0x1000:
+         case 0x2000:
+         case 0x3000:
+         {
+            // Always contains the first 16Bytes of the ROM
+            pointer = &cart.data()[address];
+            break;
+         }
+         case 0x4000:
+         case 0x5000:
+         case 0x6000:
+         case 0x7000:
+         {
+            // Switchable ROM bank
+            ASSERT(romBankNumber > 0);
+            pointer = &cart.data()[address + ((romBankNumber - 1) * 0x4000)];
+            break;
+         }
+         case 0xA000:
+         {
+            if (address > 0xA1FF) {
+               break;
+            }
+
+            // Switchable RAM bank
+            if (ramEnabled) {
+               pointer = &ram[address - 0xA000];
+            } else {
+               LOG_WARNING("Trying to read from RAM when not enabled");
+            }
+            break;
+         }
+         default:
+         {
+            LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
+            break;
+         }
+      }
+
+      return pointer;
+   }
+
+   void set(uint16_t address, uint8_t val) override {
+      ASSERT(address < cart.data().size());
+
+      switch (address & 0xF000) {
+         case 0x0000:
+         case 0x1000:
+         {
+            // RAM enable
+            // The least significant bit of the upper address byte must be zero to enable/disable cart RAM
+            if ((address & 0x0100) == 0x0000) {
+               ramEnabled = (val & 0x0A) != 0x00;
+            }
+            break;
+         }
+         case 0x2000:
+         case 0x3000:
+         {
+            // ROM bank number
+            // The least significant bit of the upper address byte must be one to select a ROM bank
+            if ((address & 0x0100) != 0x0000) {
+               romBankNumber = val & 0x0F;
+            }
+            break;
+         }
+         case 0xA000:
+         {
+            ASSERT(cart.hasRAM(), "Trying to write to MBC2 cartridge RAM when it doesn't have any!");
+            ASSERT(false);
+
+            if (address > 0xA1FF) {
+               break;
+            }
+
+            // Switchable RAM bank
+            if (ramEnabled) {
+               // only the lower 4 bits of the "bytes" in this memory area are used
+               ram[address - 0xA000] = 0xF0 | (val & 0x0F);
+            } else {
+               LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(val));
+            }
+            break;
+         }
+         default:
+         {
+            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(val));
+            break;
+         }
+      };
+   }
+
+   std::vector<uint8_t> saveRAM() const override {
+      std::vector<uint8_t> ramData(ram.size());
+      memcpy(ramData.data(), ram.data(), ram.size());
+
+      return ramData;
+   }
+
+   bool loadRAM(const std::vector<uint8_t>& ramData) override {
+      if (ramData.size() != ram.size()) {
+         return false;
+      }
+
+      memcpy(ram.data(), ramData.data(), ram.size());
+
+      return true;
+   }
+
+private:
+   bool ramEnabled;
+   uint8_t romBankNumber;
+
+   std::array<uint8_t, 0x0200> ram;
+};
+
 // static
 UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data) {
    if (data.size() < kHeaderOffset + kHeaderSize) {
@@ -352,6 +481,11 @@ UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data) {
       case kMBC1PlusRAMPlusBattery:
          LOG_INFO("MBC1");
          mbc = std::make_unique<MBC1>(*cart);
+         break;
+      case kMBC2:
+      case kMBC2PlusBattery:
+         LOG_INFO("MBC2");
+         mbc = std::make_unique<MBC2>(*cart);
          break;
       default:
          LOG_ERROR("Invalid cartridge type: " << hex(static_cast<uint8_t>(header.type)));
