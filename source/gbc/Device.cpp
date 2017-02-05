@@ -82,6 +82,10 @@ void Device::tick(float dt) {
          break;
       }
    }
+
+   if (cart) {
+      cart->tick(dt);
+   }
 }
 
 void Device::setCartridge(UPtr<Cartridge>&& cartridge) {

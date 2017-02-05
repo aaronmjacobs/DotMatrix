@@ -24,6 +24,9 @@ public:
 
    virtual void set(uint16_t address, uint8_t val) = 0;
 
+   virtual void tick(float dt) {
+   }
+
    virtual IOUtils::Archive saveRAM() const {
       return {};
    }
@@ -56,6 +59,13 @@ public:
    void set(uint16_t address, uint8_t val) {
       ASSERT(controller);
       controller->set(address, val);
+   }
+
+   void tick(float dt) {
+      ASSERT(controller);
+      if (hasTimer()) {
+         controller->tick(dt);
+      }
    }
 
    IOUtils::Archive saveRAM() const {

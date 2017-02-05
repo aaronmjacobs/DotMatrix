@@ -441,6 +441,298 @@ private:
    std::array<uint8_t, 0x0200> ram;
 };
 
+class MBC3 : public MemoryBankController {
+public:
+   MBC3(const Cartridge& cartridge)
+      : MemoryBankController(cartridge), ramRTCEnabled(false), rtcLatched(false), latchData(0xFF), romBankNumber(0x01),
+        bankRegisterMode(kBankZero), rtc({}), rtcLatchedCopy({}), tickTime(0.0f), ramBanks({}) {
+      STATIC_ASSERT(sizeof(RTC) == 5, "Invalid RTC size (check bitfields)");
+
+      initializeRTC(OSUtils::getTime());
+   }
+
+   void initializeRTC(long time) {
+      static const uint64_t kSecondsPerMinute = 60;
+      static const uint64_t kSecondsPerHour = 60 * kSecondsPerMinute;
+      static const uint64_t kSecondsPerDay = 24 * kSecondsPerHour;
+      static const uint16_t kMaxDays = 1 << 9;
+
+      uint64_t remainingSeconds = static_cast<uint64_t>(time);
+
+      uint64_t days = remainingSeconds / kSecondsPerDay;
+      remainingSeconds %= kSecondsPerDay;
+      if (days > kMaxDays) {
+         //rtc.dayCarry = 1; // TODO Should this be set? Pokemon Gold seems to not like it
+      }
+      rtc.dayMsb = static_cast<uint8_t>((days & 0x0100) >> 8);
+      rtc.dayLow = static_cast<uint8_t>(days & 0xFF);
+
+      rtc.hours = static_cast<uint8_t>(remainingSeconds / kSecondsPerHour);
+      remainingSeconds %= kSecondsPerHour;
+
+      rtc.minutes = static_cast<uint8_t>(remainingSeconds / kSecondsPerMinute);
+      remainingSeconds %= kSecondsPerMinute;
+
+      rtc.seconds = static_cast<uint8_t>(remainingSeconds);
+   }
+
+   const uint8_t* get(uint16_t address) const override {
+      ASSERT(address < cart.data().size());
+
+      const uint8_t* pointer = &kInvalidAddressByte;
+      switch (address & 0xF000) {
+         case 0x0000:
+         case 0x1000:
+         case 0x2000:
+         case 0x3000:
+         {
+            // Always contains the first 16Bytes of the ROM
+            pointer = &cart.data()[address];
+            break;
+         }
+         case 0x4000:
+         case 0x5000:
+         case 0x6000:
+         case 0x7000:
+         {
+            // Switchable ROM bank
+            ASSERT(romBankNumber > 0);
+            pointer = &cart.data()[address + ((romBankNumber - 1) * 0x4000)];
+            break;
+         }
+         case 0xA000:
+         case 0xB000:
+         {
+            ASSERT(cart.hasRAM(), "Trying to read from MBC3 cartridge RAM when it doesn't have any!");
+
+            const RTC& readRTC = rtcLatched ? rtcLatchedCopy : rtc;
+
+            // Switchable RAM bank / RTC
+            if (ramRTCEnabled) {
+               switch (bankRegisterMode) {
+                  case kBankZero:
+                  case kBankOne:
+                  case kBankTwo:
+                  case kBankThree:
+                     pointer = &ramBanks[bankRegisterMode][address - 0xA000];
+                     break;
+                  case kRTCSeconds:
+                     pointer = &readRTC.seconds;
+                     break;
+                  case kRTCMinutes:
+                     pointer = &readRTC.minutes;
+                     break;
+                  case kRTCHours:
+                     pointer = &readRTC.hours;
+                     break;
+                  case kRTCDayLow:
+                     pointer = &readRTC.dayLow;
+                     break;
+                  case kRTCDayHigh:
+                     pointer = &readRTC.dayHigh;
+                     break;
+                  default:
+                     ASSERT(false, "Invalid RAM bank / RTC selection value: %hhu", bankRegisterMode);
+                     break;
+               }
+            } else {
+               LOG_WARNING("Trying to read from RAM / RTC when not enabled");
+            }
+            break;
+         }
+         default:
+         {
+            LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
+            break;
+         }
+      }
+
+      return pointer;
+   }
+
+   void set(uint16_t address, uint8_t val) override {
+      ASSERT(address < cart.data().size());
+
+      switch (address & 0xF000) {
+         case 0x0000:
+         case 0x1000:
+         {
+            // RAM / RTC enable
+            ramRTCEnabled = (val & 0x0A) != 0x00;
+            break;
+         }
+         case 0x2000:
+         case 0x3000:
+         {
+            // ROM bank number
+            romBankNumber = val & 0x7F;
+            if (romBankNumber == 0x00) {
+               // Handle bank 0x00
+               romBankNumber += 0x01;
+            }
+            break;
+         }
+         case 0x4000:
+         case 0x5000:
+         {
+            // RAM bank number or RTC register select
+            ASSERT(val <= 0x03 || (val >= 0x08 && val <= 0x0C), "Invalid RAM bank / RTC selection value: %hhu", val);
+            bankRegisterMode = static_cast<BankRegisterMode>(val);
+            break;
+         }
+         case 0x6000:
+         case 0x7000:
+         {
+            // Latch clock data
+            if (latchData == 0x00 && val == 0x01) {
+               rtcLatched = !rtcLatched;
+
+               if (rtcLatched) {
+                  rtcLatchedCopy = rtc;
+               }
+            }
+            latchData = val;
+            break;
+         }
+         case 0xA000:
+         case 0xB000:
+         {
+            ASSERT(cart.hasRAM(), "Trying to write to MBC3 cartridge RAM when it doesn't have any!");
+
+            // Switchable RAM bank
+            if (ramRTCEnabled) {
+               switch (bankRegisterMode) {
+                  case kBankZero:
+                  case kBankOne:
+                  case kBankTwo:
+                  case kBankThree:
+                     ramBanks[bankRegisterMode][address - 0xA000] = val;
+                     break;
+                  case kRTCSeconds:
+                     rtc.seconds = val;
+                     break;
+                  case kRTCMinutes:
+                     rtc.minutes = val;
+                     break;
+                  case kRTCHours:
+                     rtc.hours = val;
+                     break;
+                  case kRTCDayLow:
+                     rtc.dayLow = val;
+                     break;
+                  case kRTCDayHigh:
+                     rtc.dayHigh = val;
+                     break;
+                  default:
+                     ASSERT(false, "Invalid RAM bank / RTC selection value: %hhu", val);
+                     break;
+               }
+            } else {
+               LOG_WARNING("Trying to write to disabled RAM / RTC " << hex(address) << ": " << hex(val));
+            }
+            break;
+         }
+         default:
+         {
+            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(val));
+            break;
+         }
+      };
+   }
+
+   void tick(float dt) override {
+      if (rtc.halt) {
+         return;
+      }
+
+      tickTime += dt;
+      uint8_t newSeconds = static_cast<uint8_t>(tickTime);
+
+      rtc.seconds += newSeconds;
+      tickTime -= newSeconds;
+
+      rtc.minutes += rtc.seconds / 60;
+      rtc.seconds %= 60;
+
+      rtc.hours += rtc.minutes / 60;
+      rtc.minutes %= 60;
+
+      uint8_t oldDayLow = rtc.dayLow;
+      rtc.dayLow += rtc.hours / 24;
+      rtc.hours %= 24;
+
+      if (oldDayLow > rtc.dayLow) { // Overflow
+         if (rtc.dayMsb > 0) {
+            rtc.dayMsb = 0;
+            rtc.dayCarry = 1; // Carry bit stays until the program resets it
+         } else {
+            rtc.dayMsb = 1;
+         }
+      }
+   }
+
+   IOUtils::Archive saveRAM() const override {
+      IOUtils::Archive ramData;
+
+      for (const auto& bank : ramBanks) {
+         ramData.write(bank);
+      }
+
+      return ramData;
+   }
+
+   bool loadRAM(IOUtils::Archive& ramData) override {
+      for (auto& bank : ramBanks) {
+         if (!ramData.read(bank)) {
+            return false;
+         }
+      }
+
+      return true;
+   }
+
+private:
+   enum BankRegisterMode : uint8_t {
+      kBankZero = 0x00,
+      kBankOne = 0x01,
+      kBankTwo = 0x02,
+      kBankThree = 0x03,
+      kRTCSeconds = 0x08,
+      kRTCMinutes = 0x09,
+      kRTCHours = 0x0A,
+      kRTCDayLow = 0x0B,
+      kRTCDayHigh = 0x0C
+   };
+
+   // Real time clock
+   struct RTC {
+      uint8_t seconds;
+      uint8_t minutes;
+      uint8_t hours;
+      uint8_t dayLow;
+      union {
+         uint8_t dayHigh;
+         struct {
+            uint8_t dayMsb : 1;
+            uint8_t pad : 5;
+            uint8_t halt : 1;
+            uint8_t dayCarry : 1;
+         };
+      };
+   };
+
+   bool ramRTCEnabled;
+   bool rtcLatched;
+   uint8_t latchData;
+   uint8_t romBankNumber;
+   BankRegisterMode bankRegisterMode;
+   RTC rtc;
+   RTC rtcLatchedCopy;
+   float tickTime;
+
+   std::array<std::array<uint8_t, 0x2000>, 4> ramBanks;
+};
+
 // static
 UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data) {
    if (data.size() < kHeaderOffset + kHeaderSize) {
@@ -475,6 +767,14 @@ UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data) {
       case kMBC2PlusBattery:
          LOG_INFO("MBC2");
          mbc = std::make_unique<MBC2>(*cart);
+         break;
+      case kMBC3PlusTimerPlusBattery:
+      case kMBC3PlusTimerPlusRAMPlusBattery:
+      case kMBC3:
+      case kMBC3PlusRAM:
+      case kMBC3PlusRAMPlusBattery:
+         LOG_INFO("MBC3");
+         mbc = std::make_unique<MBC3>(*cart);
          break;
       default:
          LOG_ERROR("Invalid cartridge type: " << hex(static_cast<uint8_t>(header.type)));
