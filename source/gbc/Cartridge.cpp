@@ -445,35 +445,8 @@ class MBC3 : public MemoryBankController {
 public:
    MBC3(const Cartridge& cartridge)
       : MemoryBankController(cartridge), ramRTCEnabled(false), rtcLatched(false), latchData(0xFF), romBankNumber(0x01),
-        bankRegisterMode(kBankZero), rtc({}), rtcLatchedCopy({}), tickTime(0.0f), ramBanks({}) {
+        bankRegisterMode(kBankZero), rtc({}), rtcLatchedCopy({}), tickTime(0.0), ramBanks({}) {
       STATIC_ASSERT(sizeof(RTC) == 5, "Invalid RTC size (check bitfields)");
-
-      initializeRTC(OSUtils::getTime());
-   }
-
-   void initializeRTC(long time) {
-      static const uint64_t kSecondsPerMinute = 60;
-      static const uint64_t kSecondsPerHour = 60 * kSecondsPerMinute;
-      static const uint64_t kSecondsPerDay = 24 * kSecondsPerHour;
-      static const uint16_t kMaxDays = 1 << 9;
-
-      uint64_t remainingSeconds = static_cast<uint64_t>(time);
-
-      uint64_t days = remainingSeconds / kSecondsPerDay;
-      remainingSeconds %= kSecondsPerDay;
-      if (days > kMaxDays) {
-         //rtc.dayCarry = 1; // TODO Should this be set? Pokemon Gold seems to not like it
-      }
-      rtc.dayMsb = static_cast<uint8_t>((days & 0x0100) >> 8);
-      rtc.dayLow = static_cast<uint8_t>(days & 0xFF);
-
-      rtc.hours = static_cast<uint8_t>(remainingSeconds / kSecondsPerHour);
-      remainingSeconds %= kSecondsPerHour;
-
-      rtc.minutes = static_cast<uint8_t>(remainingSeconds / kSecondsPerMinute);
-      remainingSeconds %= kSecondsPerMinute;
-
-      rtc.seconds = static_cast<uint8_t>(remainingSeconds);
    }
 
    const uint8_t* get(uint16_t address) const override {
@@ -525,11 +498,11 @@ public:
                   case kRTCHours:
                      pointer = &readRTC.hours;
                      break;
-                  case kRTCDayLow:
-                     pointer = &readRTC.dayLow;
+                  case kRTCDaysLow:
+                     pointer = &readRTC.daysLow;
                      break;
-                  case kRTCDayHigh:
-                     pointer = &readRTC.dayHigh;
+                  case kRTCDaysHigh:
+                     pointer = &readRTC.daysHigh;
                      break;
                   default:
                      ASSERT(false, "Invalid RAM bank / RTC selection value: %hhu", bankRegisterMode);
@@ -617,11 +590,11 @@ public:
                   case kRTCHours:
                      rtc.hours = val;
                      break;
-                  case kRTCDayLow:
-                     rtc.dayLow = val;
+                  case kRTCDaysLow:
+                     rtc.daysLow = val;
                      break;
-                  case kRTCDayHigh:
-                     rtc.dayHigh = val;
+                  case kRTCDaysHigh:
+                     rtc.daysHigh = val;
                      break;
                   default:
                      ASSERT(false, "Invalid RAM bank / RTC selection value: %hhu", val);
@@ -640,35 +613,34 @@ public:
       };
    }
 
-   void tick(float dt) override {
-      if (rtc.halt) {
+   void tick(double dt) override {
+      if (rtc.halt || dt < 0.0) {
          return;
       }
 
       tickTime += dt;
-      uint8_t newSeconds = static_cast<uint8_t>(tickTime);
+      uint32_t newTime = static_cast<uint32_t>(tickTime);
+      tickTime -= newTime;
 
-      rtc.seconds += newSeconds;
-      tickTime -= newSeconds;
+      uint32_t seconds = rtc.seconds + newTime;
 
-      rtc.minutes += rtc.seconds / 60;
-      rtc.seconds %= 60;
+      uint32_t minutes = rtc.minutes + seconds / 60;
+      seconds %= 60;
 
-      rtc.hours += rtc.minutes / 60;
-      rtc.minutes %= 60;
+      uint32_t hours = rtc.hours + minutes / 60;
+      minutes %= 60;
 
-      uint8_t oldDayLow = rtc.dayLow;
-      rtc.dayLow += rtc.hours / 24;
-      rtc.hours %= 24;
+      uint32_t days = rtc.daysLow + (rtc.daysMsb ? 0x0100 : 0) + hours / 24;
+      hours %= 24;
 
-      if (oldDayLow > rtc.dayLow) { // Overflow
-         if (rtc.dayMsb > 0) {
-            rtc.dayMsb = 0;
-            rtc.dayCarry = 1; // Carry bit stays until the program resets it
-         } else {
-            rtc.dayMsb = 1;
-         }
-      }
+      rtc.seconds = static_cast<uint8_t>(seconds);
+      rtc.minutes = static_cast<uint8_t>(minutes);
+      rtc.hours = static_cast<uint8_t>(hours);
+      rtc.daysLow = days % 0x0100;
+
+      uint32_t daysMsb = days / 0x0100;
+      rtc.daysMsb = daysMsb % 2; // Bit set first time we hit 0x0100 days, reset on next (overflow), etc.
+      rtc.daysCarry = daysMsb > 1; // Carry bit set on overflow, stays until the program resets it
    }
 
    IOUtils::Archive saveRAM() const override {
@@ -677,6 +649,9 @@ public:
       for (const auto& bank : ramBanks) {
          ramData.write(bank);
       }
+
+      ramData.write(rtc);
+      ramData.write(OSUtils::getTime());
 
       return ramData;
    }
@@ -687,6 +662,20 @@ public:
             return false;
          }
       }
+
+      if (!ramData.read(rtc)) {
+         return false;
+      }
+
+      long saveTime = 0;
+      if (!ramData.read(saveTime)) {
+         return false;
+      }
+
+      // Update the RTC with the time between the last save and now
+      long now = OSUtils::getTime();
+      double timeDiff = static_cast<double>(now - saveTime);
+      tick(timeDiff);
 
       return true;
    }
@@ -700,8 +689,8 @@ private:
       kRTCSeconds = 0x08,
       kRTCMinutes = 0x09,
       kRTCHours = 0x0A,
-      kRTCDayLow = 0x0B,
-      kRTCDayHigh = 0x0C
+      kRTCDaysLow = 0x0B,
+      kRTCDaysHigh = 0x0C
    };
 
    // Real time clock
@@ -709,14 +698,14 @@ private:
       uint8_t seconds;
       uint8_t minutes;
       uint8_t hours;
-      uint8_t dayLow;
+      uint8_t daysLow;
       union {
-         uint8_t dayHigh;
+         uint8_t daysHigh;
          struct {
-            uint8_t dayMsb : 1;
+            uint8_t daysMsb : 1;
             uint8_t pad : 5;
             uint8_t halt : 1;
-            uint8_t dayCarry : 1;
+            uint8_t daysCarry : 1;
          };
       };
    };
@@ -728,7 +717,7 @@ private:
    BankRegisterMode bankRegisterMode;
    RTC rtc;
    RTC rtcLatchedCopy;
-   float tickTime;
+   double tickTime;
 
    std::array<std::array<uint8_t, 0x2000>, 4> ramBanks;
 };

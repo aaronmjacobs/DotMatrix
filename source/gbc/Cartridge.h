@@ -24,7 +24,7 @@ public:
 
    virtual void set(uint16_t address, uint8_t val) = 0;
 
-   virtual void tick(float dt) {
+   virtual void tick(double dt) {
    }
 
    virtual IOUtils::Archive saveRAM() const {
@@ -61,7 +61,7 @@ public:
       controller->set(address, val);
    }
 
-   void tick(float dt) {
+   void tick(double dt) {
       ASSERT(controller);
       if (hasTimer()) {
          controller->tick(dt);

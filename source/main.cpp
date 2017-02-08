@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
       accumulator += frameTime * timeModifier;
       while (accumulator >= kDt) {
          device.setJoypadState(joypadState);
-         device.tick(static_cast<float>(kDt));
+         device.tick(kDt);
          accumulator -= kDt;
       }
 

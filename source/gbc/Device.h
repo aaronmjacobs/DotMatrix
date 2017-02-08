@@ -28,7 +28,7 @@ public:
 
    Device();
 
-   void tick(float dt);
+   void tick(double dt);
 
    void setCartridge(UPtr<class Cartridge>&& cartridge);
 
