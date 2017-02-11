@@ -2,7 +2,6 @@
 
 #include "FancyAssert.h"
 #include "Log.h"
-#include "gbc/Audio.h"
 
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -10,6 +9,7 @@
 namespace {
 
 const ALsizei kAudioFrequency = 44100;
+const size_t kBufferSize = 1470;
 
 void deleteDevice(ALCdevice *device) {
    if (device) {
@@ -47,6 +47,21 @@ void checkError(const char *location) {
    if (error != AL_NO_ERROR) {
       LOG_ERROR("OpenAL error while " << location << ": " << errorString(error));
    }
+}
+
+std::vector<uint8_t> mono4ToMono8(const std::vector<uint8_t>& mono4) {
+   std::vector<uint8_t> mono8(mono4.size() * 2);
+
+   for (size_t i = 0; i < mono4.size(); ++i) {
+      uint8_t val = mono4[i];
+      uint8_t first = (val & 0xF0) >> 4;
+      uint8_t second = (val & 0x0F);
+
+      mono8[2 * i + 0] = first << 4;
+      mono8[2 * i + 1] = second << 4;
+   }
+
+   return mono8;
 }
 
 } // namespace
@@ -87,7 +102,7 @@ AudioManager::AudioManager()
    alGenBuffers(buffers.size(), buffers.data());
    RUN_DEBUG(checkError("generating buffers");)
 
-   std::array<uint8_t, GBC::kAudioBufferSize> silence;
+   std::array<uint8_t, kBufferSize> silence;
    silence.fill(128);
    for (ALuint buffer : buffers) {
       alBufferData(buffer, AL_FORMAT_MONO8, silence.data(), silence.size(), kAudioFrequency);
@@ -114,7 +129,7 @@ AudioManager::~AudioManager() {
    device = nullptr;
 }
 
-void AudioManager::queue(const uint8_t *data, size_t size) {
+void AudioManager::queue(const std::vector<uint8_t>& audioData) {
    ALint numProcessed;
    alGetSourcei(source, AL_BUFFERS_PROCESSED, &numProcessed);
    RUN_DEBUG(checkError("querying number of buffers processed");)
@@ -128,7 +143,8 @@ void AudioManager::queue(const uint8_t *data, size_t size) {
    alSourceUnqueueBuffers(source, 1, &buffer);
    RUN_DEBUG(checkError("unqueueing buffer");)
 
-   alBufferData(buffer, AL_FORMAT_MONO8, data, size, kAudioFrequency);
+   std::vector<uint8_t> audioData8 = mono4ToMono8(audioData);
+   alBufferData(buffer, AL_FORMAT_MONO8, audioData8.data(), audioData8.size(), kAudioFrequency);
    RUN_DEBUG(checkError("setting buffer data");)
 
    alSourceQueueBuffers(source, 1, &buffer);

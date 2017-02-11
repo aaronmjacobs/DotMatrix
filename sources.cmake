@@ -6,6 +6,7 @@ set(SOURCE_NAMES
    gbc/Device.cpp
    gbc/LCDController.cpp
    gbc/Memory.cpp
+   gbc/SoundController.cpp
 
    test/CPUTester.cpp
 
@@ -37,6 +38,7 @@ set(HEADER_NAMES
    gbc/LCDController.h
    gbc/Memory.h
    gbc/Operations.h
+   gbc/SoundController.h
 
    test/CPUTester.h
 

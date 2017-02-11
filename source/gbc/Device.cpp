@@ -54,9 +54,9 @@ enum Enum {
 } // namespace
 
 Device::Device()
-   : memory(*this), cpu(memory), lcdController(memory), cart(nullptr), joypad({}), lastInputVals(P1::kInMask),
-     counter(0), lastCounter(0), clocksUntilInterrupt(0), ifOverrideClocks(0), lastTimerBit(false),
-     serialCycles(0), serialCallback(nullptr) {
+   : memory(*this), cpu(memory), lcdController(memory), soundController(memory),
+     cart(nullptr), joypad({}), lastInputVals(P1::kInMask), counter(0), lastCounter(0), clocksUntilInterrupt(0),
+     ifOverrideClocks(0), lastTimerBit(false), serialCycles(0), serialCallback(nullptr) {
 }
 
 void Device::tick(double dt) {
@@ -74,6 +74,7 @@ void Device::tick(double dt) {
       tickTima(cyclesTicked);
       tickSerial(cyclesTicked);
       lcdController.tick(cpu.getCycles(), cpu.isStopped());
+      soundController.tick(cyclesTicked);
 
       previousCycles = cpu.getCycles();
 

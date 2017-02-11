@@ -6,6 +6,7 @@
 #include "gbc/CPU.h"
 #include "gbc/LCDController.h"
 #include "gbc/Memory.h"
+#include "gbc/SoundController.h"
 
 #include "wrapper/platform/IOUtils.h"
 
@@ -40,6 +41,10 @@ public:
 
    const LCDController& getLCDController() const {
       return lcdController;
+   }
+
+   const SoundController& getSoundController() const {
+      return soundController;
    }
 
    void setSerialCallback(SerialCallback callback) {
@@ -77,6 +82,7 @@ private:
    Memory memory;
    CPU cpu;
    LCDController lcdController;
+   SoundController soundController;
    UPtr<class Cartridge> cart;
 
    Joypad joypad;

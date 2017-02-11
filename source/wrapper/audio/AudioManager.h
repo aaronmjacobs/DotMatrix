@@ -6,6 +6,7 @@
 #include <array>
 #include <cstdint>
 #include <functional>
+#include <vector>
 
 struct ALCcontext_struct;
 typedef struct ALCcontext_struct ALCcontext;
@@ -25,7 +26,7 @@ public:
 
    virtual ~AudioManager();
 
-   void queue(const uint8_t *data, size_t size);
+   void queue(const std::vector<uint8_t>& audioData);
 };
 
 #endif

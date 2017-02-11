@@ -9,6 +9,7 @@
 #  include "test/CPUTester.h"
 #endif // defined(RUN_TESTS)
 
+#include "wrapper/audio/AudioManager.h"
 #include "wrapper/platform/IOUtils.h"
 #include "wrapper/platform/OSUtils.h"
 #include "wrapper/video/Renderer.h"
@@ -192,6 +193,8 @@ int main(int argc, char *argv[]) {
       renderer.onFramebufferSizeChange(width, height);
    };
 
+   AudioManager audioManager;
+
    GBC::Joypad joypadState{};
    float timeModifier = 1.0f;
    bool doSave = false;
@@ -262,6 +265,9 @@ int main(int argc, char *argv[]) {
       }
 
       renderer.draw(device.getLCDController().getFramebuffer());
+
+      std::vector<uint8_t> audioData = device.getSoundController().getAudioData();
+      audioManager.queue(audioData);
 
       // Try to save the game
       if (doSave) {
