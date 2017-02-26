@@ -104,7 +104,7 @@ Mat4 ortho(float left, float right, float bottom, float top) {
 
 Renderer::Renderer(int width, int height)
    : texture(GL_TEXTURE_2D),
-     model(Mesh(vertices.data(), vertices.size(), indices.data(), indices.size(), 2), ShaderProgram()) {
+     model(Mesh(vertices.data(), static_cast<unsigned int>(vertices.size()), indices.data(), static_cast<unsigned int>(indices.size()), 2), ShaderProgram()) {
    // Back face culling
    glEnable(GL_CULL_FACE);
    glCullFace(GL_BACK);

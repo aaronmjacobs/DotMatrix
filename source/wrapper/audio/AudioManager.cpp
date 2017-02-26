@@ -99,17 +99,17 @@ AudioManager::AudioManager()
    alSourcei(source, AL_LOOPING, AL_FALSE);
    RUN_DEBUG(checkError("disabling source looping");)
 
-   alGenBuffers(buffers.size(), buffers.data());
+   alGenBuffers(static_cast<ALsizei>(buffers.size()), buffers.data());
    RUN_DEBUG(checkError("generating buffers");)
 
    std::array<uint8_t, kBufferSize> silence;
    silence.fill(128);
    for (ALuint buffer : buffers) {
-      alBufferData(buffer, AL_FORMAT_MONO8, silence.data(), silence.size(), kAudioFrequency);
+      alBufferData(buffer, AL_FORMAT_MONO8, silence.data(), static_cast<ALsizei>(silence.size()), kAudioFrequency);
       RUN_DEBUG(checkError("setting buffer data");)
    }
 
-   alSourceQueueBuffers(source, buffers.size(), buffers.data());
+   alSourceQueueBuffers(source, static_cast<ALsizei>(buffers.size()), buffers.data());
    RUN_DEBUG(checkError("queueing buffers");)
 
    alSourcePlay(source);
@@ -119,7 +119,7 @@ AudioManager::AudioManager()
 AudioManager::~AudioManager() {
    if (alIsSource(source)) {
       alDeleteSources(1, &source);
-      alDeleteBuffers(buffers.size(), buffers.data());
+      alDeleteBuffers(static_cast<ALsizei>(buffers.size()), buffers.data());
    }
 
    alcMakeContextCurrent(nullptr);
@@ -144,7 +144,7 @@ void AudioManager::queue(const std::vector<uint8_t>& audioData) {
    RUN_DEBUG(checkError("unqueueing buffer");)
 
    std::vector<uint8_t> audioData8 = mono4ToMono8(audioData);
-   alBufferData(buffer, AL_FORMAT_MONO8, audioData8.data(), audioData8.size(), kAudioFrequency);
+   alBufferData(buffer, AL_FORMAT_MONO8, audioData8.data(), static_cast<ALsizei>(audioData8.size()), kAudioFrequency);
    RUN_DEBUG(checkError("setting buffer data");)
 
    alSourceQueueBuffers(source, 1, &buffer);
