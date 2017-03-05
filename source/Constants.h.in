@@ -1,10 +1,8 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#cmakedefine LOG_TO_FILE
-#cmakedefine LOG_MSVC_STYLE
-
-#cmakedefine RUN_TESTS
+#cmakedefine GBC_LOG_MSVC_STYLE
+#cmakedefine GBC_RUN_TESTS
 
 namespace {
 

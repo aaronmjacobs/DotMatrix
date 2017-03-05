@@ -3,7 +3,7 @@
 
 #include "Constants.h"
 
-#if defined(RUN_TESTS)
+#if defined(GBC_RUN_TESTS)
 
 #include <cstdint>
 #include <vector>
@@ -39,6 +39,6 @@ private:
 
 } // namespace GBC
 
-#endif // defined(RUN_TESTS)
+#endif // defined(GBC_RUN_TESTS)
 
 #endif

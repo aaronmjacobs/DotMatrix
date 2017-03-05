@@ -33,13 +33,12 @@ set(RES_DIR "${PROJECT_SOURCE_DIR}/resources")
 set(BIN_RES_DIR "${PROJECT_BINARY_DIR}/resources")
 
 # Options
-option(LOG_TO_FILE "Enable logging to a file" OFF)
-set(LOG_MSVC_STYLE_DEFAULT OFF)
+set(GBC_LOG_MSVC_STYLE_DEFAULT OFF)
 if(MSVC)
-   set(LOG_MSVC_STYLE_DEFAULT ON)
+   set(GBC_LOG_MSVC_STYLE_DEFAULT ON)
 endif(MSVC)
-option(LOG_MSVC_STYLE "Format logs for MSVC" ${LOG_MSVC_STYLE_DEFAULT})
-option(RUN_TESTS "Run tests" OFF)
+option(GBC_LOG_MSVC_STYLE "Format logs for MSVC" ${GBC_LOG_MSVC_STYLE_DEFAULT})
+option(GBC_RUN_TESTS "Run emulator tests" OFF)
 
 # Generated content
 configure_file(

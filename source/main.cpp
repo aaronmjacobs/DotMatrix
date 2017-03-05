@@ -1,13 +1,12 @@
 #include "Constants.h"
+
+#if !defined(GBC_RUN_TESTS)
+
 #include "GLIncludes.h"
 #include "Log.h"
 
 #include "gbc/Cartridge.h"
 #include "gbc/Device.h"
-
-#if defined(RUN_TESTS)
-#  include "test/CPUTester.h"
-#endif // defined(RUN_TESTS)
 
 #include "wrapper/audio/AudioManager.h"
 #include "wrapper/platform/IOUtils.h"
@@ -220,15 +219,8 @@ int main(int argc, char *argv[]) {
       updateJoypadState(joypadState, key, enabled);
    };
 
-#if defined(RUN_TESTS)
-   GBC::CPUTester cpuTester;
-   for (int i = 0; i < 10; ++i) {
-      cpuTester.runTests(true);
-   }
-#endif // defined(RUN_TESTS)
-
-   GBC::Device device;
-   //device.setSerialCallback(onSerial);
+   UPtr<GBC::Device> device(std::make_unique<GBC::Device>());
+   //device->setSerialCallback(onSerial);
 
    // Try to load a cartridge
    if (argc > 1) {
@@ -239,11 +231,11 @@ int main(int argc, char *argv[]) {
       UPtr<GBC::Cartridge> cartridge(GBC::Cartridge::fromData(std::move(cartData)));
 
       if (cartridge) {
-         device.setCartridge(std::move(cartridge));
-         glfwSetWindowTitle(window, device.title());
+         device->setCartridge(std::move(cartridge));
+         glfwSetWindowTitle(window, device->title());
 
          // Try to load a save file
-         loadGame(device);
+         loadGame(*device);
       }
    }
 
@@ -259,20 +251,20 @@ int main(int argc, char *argv[]) {
 
       accumulator += frameTime * timeModifier;
       while (accumulator >= kDt) {
-         device.setJoypadState(joypadState);
-         device.tick(kDt);
+         device->setJoypadState(joypadState);
+         device->tick(kDt);
          accumulator -= kDt;
       }
 
-      renderer.draw(device.getLCDController().getFramebuffer());
+      renderer.draw(device->getLCDController().getFramebuffer());
 
-      std::vector<uint8_t> audioData = device.getSoundController().getAudioData();
+      std::vector<uint8_t> audioData = device->getSoundController().getAudioData();
       audioManager.queue(audioData);
 
       // Try to save the game
       if (doSave) {
          doSave = false;
-         saveGame(device);
+         saveGame(*device);
       }
 
       glfwSwapBuffers(window);
@@ -284,3 +276,5 @@ int main(int argc, char *argv[]) {
 
    return EXIT_SUCCESS;
 }
+
+#endif // !defined(GBC_RUN_TESTS)

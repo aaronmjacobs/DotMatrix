@@ -100,7 +100,7 @@ class text_formating_policy : public templog::formating_policy_base<text_formati
 public:
    template< class WritePolicy_, int Sev_, int Aud_, class WriteToken_, class ParamList_ >
    static void write(WriteToken_& token, TEMPLOG_SOURCE_SIGN, const ParamList_& parameters) {
-#if defined(LOG_MSVC_STYLE)
+#if defined(GBC_LOG_MSVC_STYLE)
       write_obj<WritePolicy_>(token, TEMPLOG_SOURCE_FILE);
       write_obj<WritePolicy_>(token, "(");
       write_obj<WritePolicy_>(token, TEMPLOG_SOURCE_LINE);
@@ -110,7 +110,7 @@ public:
       write_obj<WritePolicy_>(token, "] <");
       write_obj<WritePolicy_>(token, formatTime(getCurrentTime()));
       write_obj<WritePolicy_>(token, "> ");
-#else // defined(LOG_MSVC_STYLE)
+#else // defined(GBC_LOG_MSVC_STYLE)
       write_obj<WritePolicy_>(token, "[");
       write_obj<WritePolicy_>(token, center(get_name(static_cast<templog::severity>(Sev_)), kSevNameWidth));
       write_obj<WritePolicy_>(token, "] <");
@@ -120,7 +120,7 @@ public:
       write_obj<WritePolicy_>(token, "(");
       write_obj<WritePolicy_>(token, TEMPLOG_SOURCE_LINE);
       write_obj<WritePolicy_>(token, "): ");
-#endif // defined(LOG_MSVC_STYLE)
+#endif // defined(GBC_LOG_MSVC_STYLE)
 
       write_params<WritePolicy_>(token, parameters);
    }
