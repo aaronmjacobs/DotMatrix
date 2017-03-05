@@ -47,8 +47,14 @@ public:
       return cartTitle.data();
    }
 
-   const std::vector<uint8_t>& data() const {
-      return cartData;
+   const uint8_t* data(size_t address) const {
+      ASSERT(address < cartData.size());
+
+      if (address >= cartData.size()) {
+         return &kInvalidAddressByte;
+      }
+
+      return &cartData[address];
    }
 
    const uint8_t* get(uint16_t address) const {
@@ -193,6 +199,8 @@ public:
       uint8_t headerChecksum;
       std::array<uint8_t, 2> globalChecksum;
    };
+
+   static const uint8_t kInvalidAddressByte;
 
 private:
    Cartridge(std::vector<uint8_t>&& data, const Header& headerData);

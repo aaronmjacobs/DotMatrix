@@ -16,11 +16,12 @@
 
 namespace GBC {
 
+const uint8_t Cartridge::kInvalidAddressByte = 0xFF;
+
 namespace {
 
 const uint16_t kHeaderOffset = 0x0100;
 const uint16_t kHeaderSize = 0x0050;
-const uint8_t kInvalidAddressByte = 0xFF;
 
 Cartridge::Header parseHeader(const std::vector<uint8_t>& data) {
    STATIC_ASSERT(sizeof(Cartridge::Header) == kHeaderSize);
@@ -135,26 +136,22 @@ bool cartHasRumble(Cartridge::CartridgeType type) {
 
 } // namespace
 
-class NoneController : public MemoryBankController {
+class ROMOnly : public MemoryBankController {
 public:
-   NoneController(const Cartridge& cartridge)
+   ROMOnly(const Cartridge& cartridge)
       : MemoryBankController(cartridge) {
    }
 
    const uint8_t* get(uint16_t address) const override {
-      ASSERT(address < cart.data().size());
-
       if (address < 0x8000) {
-         return &cart.data()[address];
+         return cart.data(address);
       }
 
       LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
-      return &kInvalidAddressByte;
+      return &Cartridge::kInvalidAddressByte;
    }
 
    void set(uint16_t address, uint8_t val) override {
-      ASSERT(address < cart.data().size());
-
       // No writable memory
       LOG_WARNING("Trying to write to read-only cartridge at location " << hex(address) << ": " << hex(val));
    }
@@ -168,9 +165,7 @@ public:
    }
 
    const uint8_t* get(uint16_t address) const override {
-      ASSERT(address < cart.data().size());
-
-      const uint8_t* pointer = &kInvalidAddressByte;
+      const uint8_t* pointer = &Cartridge::kInvalidAddressByte;
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -178,7 +173,7 @@ public:
          case 0x3000:
          {
             // Always contains the first 16Bytes of the ROM
-            pointer = &cart.data()[address];
+            pointer = cart.data(address);
             break;
          }
          case 0x4000:
@@ -188,7 +183,7 @@ public:
          {
             // Switchable ROM bank
             ASSERT(romBankNumber > 0);
-            pointer = &cart.data()[address + ((romBankNumber - 1) * 0x4000)];
+            pointer = cart.data(address + ((romBankNumber - 1) * 0x4000));
             break;
          }
          case 0xA000:
@@ -216,8 +211,6 @@ public:
    }
 
    void set(uint16_t address, uint8_t val) override {
-      ASSERT(address < cart.data().size());
-
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -325,9 +318,7 @@ public:
    }
 
    const uint8_t* get(uint16_t address) const override {
-      ASSERT(address < cart.data().size());
-
-      const uint8_t* pointer = &kInvalidAddressByte;
+      const uint8_t* pointer = &Cartridge::kInvalidAddressByte;
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -335,7 +326,7 @@ public:
          case 0x3000:
          {
             // Always contains the first 16Bytes of the ROM
-            pointer = &cart.data()[address];
+            pointer = cart.data(address);
             break;
          }
          case 0x4000:
@@ -345,7 +336,7 @@ public:
          {
             // Switchable ROM bank
             ASSERT(romBankNumber > 0);
-            pointer = &cart.data()[address + ((romBankNumber - 1) * 0x4000)];
+            pointer = cart.data(address + ((romBankNumber - 1) * 0x4000));
             break;
          }
          case 0xA000:
@@ -373,8 +364,6 @@ public:
    }
 
    void set(uint16_t address, uint8_t val) override {
-      ASSERT(address < cart.data().size());
-
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -450,9 +439,7 @@ public:
    }
 
    const uint8_t* get(uint16_t address) const override {
-      ASSERT(address < cart.data().size());
-
-      const uint8_t* pointer = &kInvalidAddressByte;
+      const uint8_t* pointer = &Cartridge::kInvalidAddressByte;
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -460,7 +447,7 @@ public:
          case 0x3000:
          {
             // Always contains the first 16Bytes of the ROM
-            pointer = &cart.data()[address];
+            pointer = cart.data(address);
             break;
          }
          case 0x4000:
@@ -470,7 +457,7 @@ public:
          {
             // Switchable ROM bank
             ASSERT(romBankNumber > 0);
-            pointer = &cart.data()[address + ((romBankNumber - 1) * 0x4000)];
+            pointer = cart.data(address + ((romBankNumber - 1) * 0x4000));
             break;
          }
          case 0xA000:
@@ -524,8 +511,6 @@ public:
    }
 
    void set(uint16_t address, uint8_t val) override {
-      ASSERT(address < cart.data().size());
-
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -729,9 +714,7 @@ public:
    }
 
    const uint8_t* get(uint16_t address) const override {
-      ASSERT(address < cart.data().size());
-
-      const uint8_t* pointer = &kInvalidAddressByte;
+      const uint8_t* pointer = &Cartridge::kInvalidAddressByte;
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -739,7 +722,7 @@ public:
          case 0x3000:
          {
             // Always contains the first 16Bytes of the ROM
-            pointer = &cart.data()[address];
+            pointer = cart.data(address);
             break;
          }
          case 0x4000:
@@ -749,7 +732,7 @@ public:
          {
             // Switchable ROM bank
             ASSERT(romBankNumber <= 0x01E0);
-            pointer = &cart.data()[address + ((static_cast<int16_t>(romBankNumber) - 1) * 0x4000)];
+            pointer = cart.data(address + ((static_cast<int16_t>(romBankNumber) - 1) * 0x4000));
             break;
          }
          case 0xA000:
@@ -776,8 +759,6 @@ public:
    }
 
    void set(uint16_t address, uint8_t val) override {
-      ASSERT(address < cart.data().size());
-
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -876,7 +857,7 @@ UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data) {
    switch (header.type) {
       case kROMOnly:
          LOG_INFO("ROM only");
-         mbc = std::make_unique<NoneController>(*cart);
+         mbc = std::make_unique<ROMOnly>(*cart);
          break;
       case kMBC1:
       case kMBC1PlusRAM:
