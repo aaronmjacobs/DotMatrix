@@ -2,6 +2,7 @@
 #include "IOUtils.h"
 #include "OSUtils.h"
 
+#include <filesystem>
 #include <fstream>
 
 namespace IOUtils {
@@ -95,6 +96,21 @@ bool ensurePathToFileExists(const std::string& path) {
    }
 
    return OSUtils::createDirectory(directory);
+}
+
+std::vector<std::string> getAllFilePathsRecursive(const std::string& directory) {
+   std::vector<std::string> filePaths;
+
+   for (const std::tr2::sys::directory_entry& entry : std::tr2::sys::recursive_directory_iterator(directory)) {
+      const std::tr2::sys::path& path = entry.path();
+      std::string pathString = path.string();
+
+      if (canRead(pathString)) {
+         filePaths.push_back(pathString);
+      }
+   }
+
+   return filePaths;
 }
 
 } // namespace IOUtils

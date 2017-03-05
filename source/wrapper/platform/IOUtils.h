@@ -46,6 +46,11 @@ bool appDataPath(const std::string& appName, const std::string& fileName, std::s
 bool ensurePathToFileExists(const std::string& path);
 
 /**
+ * Recursively gets all file paths for the given directory
+ */
+std::vector<std::string> getAllFilePathsRecursive(const std::string& directory);
+
+/**
  * Helper class for reading data from / writing data to a byte array
  */
 class Archive {
