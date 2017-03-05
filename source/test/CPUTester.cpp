@@ -5,7 +5,12 @@
 #include "FancyAssert.h"
 #include "Log.h"
 
+// Hack to allow us access to private members of the CPU
+#define private public
 #include "gbc/CPU.h"
+#include "gbc/Device.h"
+#undef private
+
 #include "gbc/Memory.h"
 #include "gbc/Operations.h"
 
@@ -18,18 +23,6 @@
 namespace GBC {
 
 namespace {
-
-std::string hex(uint8_t val) {
-   std::ostringstream stream;
-   stream << "0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << static_cast<uint16_t>(val);
-   return stream.str();
-}
-
-std::string hex(uint16_t val) {
-   std::ostringstream stream;
-   stream << "0x" << std::uppercase << std::setfill('0') << std::setw(4) << std::hex << val;
-   return stream.str();
-}
 
 // Flag handling
 
@@ -142,9 +135,8 @@ bool usesImm16(Operation operation) {
 
 bool miscFieldsMatch(const CPU& first, const CPU& second) {
    return first.ime == second.ime && first.cycles == second.cycles && first.halted == second.halted
-      && first.stopped == second.stopped && first.executedPrefixCB == second.executedPrefixCB
-      && first.interruptEnableRequested == second.interruptEnableRequested
-      && first.interruptDisableRequested == second.interruptDisableRequested;
+      && first.stopped == second.stopped && first.interruptEnableRequested == second.interruptEnableRequested
+      && first.freezePC == second.freezePC;
 }
 
 void dumpFields(const CPU& cpu, const char* name = nullptr) {
@@ -157,9 +149,8 @@ void dumpFields(const CPU& cpu, const char* name = nullptr) {
       << "\ncycles: " << cpu.cycles
       << "\nhalted: " << cpu.halted
       << "\nstopped: " << cpu.stopped
-      << "\nexecutedPrefixCB: " << cpu.executedPrefixCB
       << "\ninterruptEnableRequested: " << cpu.interruptEnableRequested
-      << "\ninterruptDisableRequested: " << cpu.interruptDisableRequested << "\n";
+      << "\nfreezePC: " << cpu.freezePC << "\n";
    LOG_INFO(out.str());
 }
 
@@ -195,8 +186,12 @@ void dumpMem(const Memory& mem, uint16_t start, uint16_t end, const char* name =
 
 void prepareInitial(CPU& cpu, const CPUTestGroup& testGroup, bool randomizeData, uint16_t seed) {
    std::default_random_engine engine(seed);
-   std::uniform_int_distribution<uint8_t> distribution8;
    std::uniform_int_distribution<uint16_t> distribution16;
+
+   std::uniform_int_distribution<uint16_t> distribution8Hack; // Unfortunately, std::uniform_int_distribution<uint8_t> is not supported
+   auto distribution8 = [&distribution8Hack](std::default_random_engine& engine) {
+      return distribution8Hack(engine) & 0x00FF;
+   };
 
    const uint8_t kInitialA = randomizeData ? distribution8(engine) : 0x01;
    const uint8_t kInitialF = (randomizeData ? distribution8(engine) : 0x00) & 0xF0;
@@ -288,18 +283,15 @@ void CPUTester::runTests(bool randomizeData) {
 }
 
 void CPUTester::runTestGroup(const CPUTestGroup& testGroup, bool randomizeData, uint16_t seed) {
-   Memory memory;
-   Memory finalMemory;
-   memory.boot = finalMemory.boot = Boot::kNotBooting; // Don't run the bootstrap program
+   Device device;
+   Device finalDevice;
+   device.memory.boot = finalDevice.memory.boot = Boot::kNotBooting; // Don't run the bootstrap program
 
-   CPU cpu(memory);
-   CPU finalCPU(finalMemory);
-
-   prepareInitial(cpu, testGroup, randomizeData, seed);
+   prepareInitial(device.cpu, testGroup, randomizeData, seed);
 
    for (size_t i = 0; i < testGroup.size(); ++i) {
-      prepareFinal(finalCPU, testGroup, i, randomizeData, seed);
-      runTest(cpu, finalCPU, testGroup[i]);
+      prepareFinal(finalDevice.cpu, testGroup, i, randomizeData, seed);
+      runTest(device.cpu, finalDevice.cpu, testGroup[i]);
    }
 }
 
@@ -758,11 +750,12 @@ void CPUTester::init() {
                   }
                }
 
-               final.reg.a = val;
+               final.reg.a = static_cast<uint8_t>(val);
 
+               bool carryWasSet = initial.getFlag(CPU::kCarry);
                UPDATE_FLAGS(a, "Z-0C")
                // See DAA table
-               if ((val & 0x0100) == 0x0100) {
+               if (carryWasSet || (val & 0x0100) == 0x0100) {
                   final.reg.f |= CPU::kCarry;
                } else {
                   final.reg.f &= ~CPU::kCarry;
@@ -2439,14 +2432,13 @@ void CPUTester::init() {
             }
          }
       },
-      {
+      /*{
          {
             0xCB, // PREFIX CB
             [](CPU& initial, CPU& final) {
-               final.executedPrefixCB = true;
             }
          }
-      },
+      },*/
       {
          {
             0xCC, // CALL Z,a16
@@ -2602,7 +2594,9 @@ void CPUTester::init() {
             [](CPU& initial, CPU& final) {
                final.reg.pc = (initial.mem.get(initial.reg.sp) << 8) | (initial.mem.get(initial.reg.sp + 1));
                final.reg.sp += 2;
-               final.interruptEnableRequested = true;
+
+               // RETI doesn't delay enabling the IME like EI does
+               final.ime = true;
             }
          }
       },
@@ -2727,7 +2721,13 @@ void CPUTester::init() {
                int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
                final.reg.sp = initial.reg.sp + signedOffset;
 
-               UPDATE_FLAGS(sp, "00HC")
+               // sp is treated as an 8-bit register for the carry and half carry flags (special case)
+               // UPDATE_FLAGS(sp, "00HC")
+               uint8_t sp8 = static_cast<uint8_t>(initial.reg.sp);
+               uint8_t finalSp8 = static_cast<uint8_t>(final.reg.sp);
+               FlagOp halfCarry = didHalfCarryAdd(sp8, finalSp8) ? kSet : kClear;
+               FlagOp carry = didCarryAdd(sp8, finalSp8) ? kSet : kClear;
+               final.reg.f = updateFlagRegister(initial.reg.f, kClear, kClear, halfCarry, carry);
             }
          }
       },
@@ -2791,7 +2791,7 @@ void CPUTester::init() {
          {
             0xF2, // LD A,(C)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.get(initial.reg.c);
+               final.reg.a = initial.mem.get(0xFF00 + initial.reg.c);
             }
          }
       },
@@ -2799,7 +2799,7 @@ void CPUTester::init() {
          {
             0xF3, // DI
             [](CPU& initial, CPU& final) {
-               final.interruptDisableRequested = true;
+               final.ime = false;
             }
          }
       },

@@ -39,6 +39,7 @@ if(MSVC)
    set(LOG_MSVC_STYLE_DEFAULT ON)
 endif(MSVC)
 option(LOG_MSVC_STYLE "Format logs for MSVC" ${LOG_MSVC_STYLE_DEFAULT})
+option(RUN_TESTS "Run tests" OFF)
 
 # Generated content
 configure_file(

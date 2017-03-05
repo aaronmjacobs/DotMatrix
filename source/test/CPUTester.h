@@ -5,13 +5,12 @@
 
 #if defined(RUN_TESTS)
 
-#include "gbc/CPU.h"
-#include "gbc/Memory.h"
-
 #include <cstdint>
 #include <vector>
 
 namespace GBC {
+
+class CPU;
 
 using CPUTestSetupFunc = void (*)(CPU& initialState, CPU& finalState);
 

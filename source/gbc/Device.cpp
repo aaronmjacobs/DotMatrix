@@ -59,6 +59,10 @@ Device::Device()
      ifOverrideClocks(0), lastTimerBit(false), serialCycles(0), serialCallback(nullptr) {
 }
 
+// Need to define destructor in a location where the Cartridge class is defined, so a default deleter can be generated for it
+Device::~Device() {
+}
+
 void Device::tick(double dt) {
    uint64_t previousCycles = cpu.getCycles();
    uint64_t targetCycles = previousCycles + static_cast<uint64_t>(CPU::kClockSpeed * dt);

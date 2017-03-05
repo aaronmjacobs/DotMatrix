@@ -165,9 +165,7 @@ public:
       stopped = false;
    }
 
-#if !defined(RUN_TESTS) // Need direct access when running tests
 private:
-#endif
    class Operand;
 
    union Registers {

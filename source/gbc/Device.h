@@ -29,6 +29,8 @@ public:
 
    Device();
 
+   ~Device();
+
    void tick(double dt);
 
    void setCartridge(UPtr<class Cartridge>&& cartridge);
