@@ -9,6 +9,7 @@ set(SOURCE_NAMES
    gbc/SoundController.cpp
 
    test/CPUTester.cpp
+   test/TestMain.cpp
 
    wrapper/audio/AudioManager.cpp
    wrapper/input/KeyboardInputDevice.cpp

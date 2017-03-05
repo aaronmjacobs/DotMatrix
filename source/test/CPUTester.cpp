@@ -6,10 +6,12 @@
 #include "Log.h"
 
 // Hack to allow us access to private members of the CPU
+#define _ALLOW_KEYWORD_MACROS
 #define private public
 #include "gbc/CPU.h"
 #include "gbc/Device.h"
 #undef private
+#undef _ALLOW_KEYWORD_MACROS
 
 #include "gbc/Memory.h"
 #include "gbc/Operations.h"
