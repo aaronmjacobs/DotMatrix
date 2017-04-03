@@ -3,7 +3,7 @@
 
 #include "FancyAssert.h"
 
-#include "gbc/Memory.h"
+#include "GBC/Memory.h"
 
 #include <cstdint>
 

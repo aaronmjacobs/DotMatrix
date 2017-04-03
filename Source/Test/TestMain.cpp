@@ -5,14 +5,14 @@
 // Hack to allow us access to private members of the CPU
 #define _ALLOW_KEYWORD_MACROS
 #define private public
-#include "gbc/Cartridge.h"
-#include "gbc/Device.h"
+#include "GBC/Cartridge.h"
+#include "GBC/Device.h"
 #undef private
 #undef _ALLOW_KEYWORD_MACROS
 
-#include "test/CPUTester.h"
+#include "Test/CPUTester.h"
 
-#include "wrapper/platform/IOUtils.h"
+#include "Wrapper/Platform/IOUtils.h"
 
 #include <sstream>
 

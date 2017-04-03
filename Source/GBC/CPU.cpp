@@ -1,7 +1,7 @@
 #include "Log.h"
 
-#include "gbc/CPU.h"
-#include "gbc/Operations.h"
+#include "GBC/CPU.h"
+#include "GBC/Operations.h"
 
 #if !defined(NDEBUG)
 #  include "Debug.h"

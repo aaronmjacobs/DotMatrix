@@ -8,15 +8,15 @@
 // Hack to allow us access to private members of the CPU
 #define _ALLOW_KEYWORD_MACROS
 #define private public
-#include "gbc/CPU.h"
-#include "gbc/Device.h"
+#include "GBC/CPU.h"
+#include "GBC/Device.h"
 #undef private
 #undef _ALLOW_KEYWORD_MACROS
 
-#include "gbc/Memory.h"
-#include "gbc/Operations.h"
+#include "GBC/Memory.h"
+#include "GBC/Operations.h"
 
-#include "test/CPUTester.h"
+#include "Test/CPUTester.h"
 
 #include <cstring>
 #include <random>

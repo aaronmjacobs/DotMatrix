@@ -1,11 +1,11 @@
 #include "FancyAssert.h"
 #include "Log.h"
 
-#include "gbc/Cartridge.h"
-#include "gbc/Memory.h"
+#include "GBC/Cartridge.h"
+#include "GBC/Memory.h"
 
-#include "wrapper/platform/IOUtils.h"
-#include "wrapper/platform/OSUtils.h"
+#include "Wrapper/Platform/IOUtils.h"
+#include "Wrapper/Platform/OSUtils.h"
 
 #if !defined(NDEBUG)
 #  include "Debug.h"

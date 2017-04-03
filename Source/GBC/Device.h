@@ -3,12 +3,12 @@
 
 #include "Pointers.h"
 
-#include "gbc/CPU.h"
-#include "gbc/LCDController.h"
-#include "gbc/Memory.h"
-#include "gbc/SoundController.h"
+#include "GBC/CPU.h"
+#include "GBC/LCDController.h"
+#include "GBC/Memory.h"
+#include "GBC/SoundController.h"
 
-#include "wrapper/platform/IOUtils.h"
+#include "Wrapper/Platform/IOUtils.h"
 
 namespace GBC {
 

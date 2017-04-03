@@ -26,11 +26,11 @@ if(LINUX)
 endif(LINUX)
 
 # Directories
-set(SRC_DIR "${PROJECT_SOURCE_DIR}/source")
-set(DEP_DIR "${PROJECT_SOURCE_DIR}/dependencies")
-set(BIN_INCLUDE_DIR "${PROJECT_BINARY_DIR}/include")
-set(RES_DIR "${PROJECT_SOURCE_DIR}/resources")
-set(BIN_RES_DIR "${PROJECT_BINARY_DIR}/resources")
+set(SRC_DIR "${PROJECT_SOURCE_DIR}/Source")
+set(LIB_DIR "${PROJECT_SOURCE_DIR}/Libraries")
+set(BIN_INCLUDE_DIR "${PROJECT_BINARY_DIR}/Include")
+set(RES_DIR "${PROJECT_SOURCE_DIR}/Resources")
+set(BIN_RES_DIR "${PROJECT_BINARY_DIR}/Resources")
 
 # Options
 set(GBC_LOG_MSVC_STYLE_DEFAULT OFF)
@@ -47,10 +47,10 @@ configure_file(
 )
 
 # Source content
-include(sources.cmake)
+include(Sources.cmake)
 source_group("Sources" "${SRC_DIR}/*")
 source_group("Sources\\Generated" "${BIN_INCLUDE_DIR}/*")
-source_group("Dependencies" "${DEP_DIR}/*")
+source_group("Libraries" "${LIB_DIR}/*")
 
 set(SOURCES)
 foreach(SOURCE_NAME ${SOURCE_NAMES})
@@ -96,26 +96,26 @@ endfunction(attach_lib)
 ## Integrated ##
 
 # glad
-set(GLAD_DIR "${DEP_DIR}/glad")
+set(GLAD_DIR "${LIB_DIR}/glad")
 attach_lib("${GLAD_DIR}/include" "${GLAD_DIR}/src/glad.c" "${CMAKE_DL_LIBS}")
-source_group("Dependencies\\glad" "${GLAD_DIR}/*")
+source_group("Libraries\\glad" "${GLAD_DIR}/*")
 
 # Pempek Assert
-set(PEMPEK_DIR "${DEP_DIR}/PempekAssert")
+set(PEMPEK_DIR "${LIB_DIR}/PempekAssert")
 attach_lib("${PEMPEK_DIR}/include" "${PEMPEK_DIR}/lib/pempek_assert.cpp" "")
-source_group("Dependencies\\PempekAssert" "${PEMPEK_DIR}/*")
+source_group("Libraries\\PempekAssert" "${PEMPEK_DIR}/*")
 
 # templog
-set(TEMPLOG_DIR "${DEP_DIR}/templog")
+set(TEMPLOG_DIR "${LIB_DIR}/templog")
 attach_lib("${TEMPLOG_DIR}/include" "${TEMPLOG_DIR}/imp/logging.cpp" "")
-source_group("Dependencies\\Templog" "${TEMPLOG_DIR}/*")
+source_group("Libraries\\Templog" "${TEMPLOG_DIR}/*")
 
 ## Static ##
 
 set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "Build shared libraries")
 
 # Boxer
-set(BOXER_DIR "${DEP_DIR}/Boxer")
+set(BOXER_DIR "${LIB_DIR}/Boxer")
 add_subdirectory(${BOXER_DIR})
 attach_lib("${BOXER_DIR}/include" "" "Boxer")
 
@@ -124,7 +124,7 @@ attach_lib("${BOXER_DIR}/include" "" "Boxer")
 set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build shared libraries")
 
 # GLFW
-set(GLFW_DIR "${DEP_DIR}/glfw")
+set(GLFW_DIR "${LIB_DIR}/glfw")
 set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs")
 set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs")
 set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
@@ -134,7 +134,7 @@ add_subdirectory(${GLFW_DIR})
 attach_lib("${GLFW_DIR}/include" "" "glfw")
 
 # OpenAL
-set(OPENAL_DIR "${DEP_DIR}/openal-soft")
+set(OPENAL_DIR "${LIB_DIR}/openal-soft")
 set(ALSOFT_UTILS OFF CACHE INTERNAL "Build and install utility programs")
 set(ALSOFT_NO_CONFIG_UTIL ON CACHE INTERNAL "Disable building the alsoft-config utility")
 set(ALSOFT_EXAMPLES OFF CACHE INTERNAL "Build and install example programs")
@@ -201,7 +201,7 @@ if(APPLE)
 
    # Generate the Info.plist file (at build time, not install time)
    configure_file(
-     "${RES_DIR}/osx/Info.plist.in"
+     "${RES_DIR}/macOS/Info.plist.in"
      "${BIN_RES_DIR}/Info.plist"
    )
 
@@ -209,7 +209,7 @@ if(APPLE)
    install(FILES "${BIN_RES_DIR}/Info.plist" DESTINATION "${CONTENTS_DIR}")
 
    # Copy the icon
-   install(FILES "${RES_DIR}/osx/${PROJECT_NAME}.icns" DESTINATION "${RESOURCES_DIR}")
+   install(FILES "${RES_DIR}/macOS/${PROJECT_NAME}.icns" DESTINATION "${RESOURCES_DIR}")
 
    # Copy the executable (not install, so that the internal lib paths don't change)
    install(FILES "$<TARGET_FILE:${PROJECT_NAME}>" DESTINATION "${MACOS_DIR}"

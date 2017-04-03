@@ -5,7 +5,7 @@
 #  error "Trying to include Debug.h in a release build"
 #endif
 
-#include "gbc/CPU.h"
+#include "GBC/CPU.h"
 
 namespace GBC {
 

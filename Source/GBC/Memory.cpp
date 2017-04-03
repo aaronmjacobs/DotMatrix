@@ -1,9 +1,9 @@
 #include "FancyAssert.h"
 
-#include "gbc/Bootstrap.h"
-#include "gbc/Cartridge.h"
-#include "gbc/Device.h"
-#include "gbc/Memory.h"
+#include "GBC/Bootstrap.h"
+#include "GBC/Cartridge.h"
+#include "GBC/Device.h"
+#include "GBC/Memory.h"
 
 namespace GBC {
 

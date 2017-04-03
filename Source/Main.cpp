@@ -5,13 +5,13 @@
 #include "GLIncludes.h"
 #include "Log.h"
 
-#include "gbc/Cartridge.h"
-#include "gbc/Device.h"
+#include "GBC/Cartridge.h"
+#include "GBC/Device.h"
 
-#include "wrapper/audio/AudioManager.h"
-#include "wrapper/platform/IOUtils.h"
-#include "wrapper/platform/OSUtils.h"
-#include "wrapper/video/Renderer.h"
+#include "Wrapper/Audio/AudioManager.h"
+#include "Wrapper/Platform/IOUtils.h"
+#include "Wrapper/Platform/OSUtils.h"
+#include "Wrapper/Video/Renderer.h"
 
 #include <algorithm>
 #include <cctype>

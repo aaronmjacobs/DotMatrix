@@ -1,8 +1,8 @@
 #include "Log.h"
 
-#include "gbc/CPU.h"
-#include "gbc/LCDController.h"
-#include "gbc/Memory.h"
+#include "GBC/CPU.h"
+#include "GBC/LCDController.h"
+#include "GBC/Memory.h"
 
 #include <array>
 

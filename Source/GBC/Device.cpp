@@ -1,7 +1,7 @@
 #include "FancyAssert.h"
 
-#include "gbc/Cartridge.h"
-#include "gbc/Device.h"
+#include "GBC/Cartridge.h"
+#include "GBC/Device.h"
 
 #include <array>
 

@@ -1,7 +1,7 @@
 #include "Log.h"
 
-#include "gbc/Memory.h"
-#include "gbc/SoundController.h"
+#include "GBC/Memory.h"
+#include "GBC/SoundController.h"
 
 #include <cmath>
 
