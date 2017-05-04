@@ -196,8 +196,9 @@ bool directoryExists(const std::string& dir) {
    return (info.st_mode & S_IFDIR) != 0;
 }
 
-long getTime() {
-   return static_cast<long>(std::time(nullptr));
+int64_t getTime() {
+   static_assert(sizeof(std::time_t) <= sizeof(int64_t), "std::time_t will not fit in an int64_t");
+   return static_cast<int64_t>(std::time(nullptr));
 }
 
 } // namespace OSUtils

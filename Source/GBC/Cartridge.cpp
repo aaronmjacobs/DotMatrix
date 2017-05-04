@@ -652,13 +652,13 @@ public:
          return false;
       }
 
-      long saveTime = 0;
+      int64_t saveTime = 0;
       if (!ramData.read(saveTime)) {
          return false;
       }
 
       // Update the RTC with the time between the last save and now
-      long now = OSUtils::getTime();
+      int64_t now = OSUtils::getTime();
       double timeDiff = static_cast<double>(now - saveTime);
       tick(timeDiff);
 

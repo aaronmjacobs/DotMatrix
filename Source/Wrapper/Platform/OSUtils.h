@@ -43,7 +43,7 @@ bool createDirectory(const std::string& dir);
 /**
  * Gets the system (unix) time (in seconds)
  */
-long getTime();
+int64_t getTime();
 
 } // namespace OSUtils
 
