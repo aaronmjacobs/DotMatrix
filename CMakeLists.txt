@@ -50,6 +50,13 @@ configure_file(
 include(Sources.cmake)
 source_group("Sources" "${SRC_DIR}/*")
 source_group("Sources\\Generated" "${BIN_INCLUDE_DIR}/*")
+source_group("Sources\\GBC" "${SRC_DIR}/GBC/*")
+source_group("Sources\\Test" "${SRC_DIR}/Test/*")
+source_group("Sources\\Wrapper" "${SRC_DIR}/Wrapper/*")
+source_group("Sources\\Wrapper\\Audio" "${SRC_DIR}/Wrapper/Audio/*")
+source_group("Sources\\Wrapper\\Input" "${SRC_DIR}/Wrapper/Input/*")
+source_group("Sources\\Wrapper\\Platform" "${SRC_DIR}/Wrapper/Platform/*")
+source_group("Sources\\Wrapper\\Video" "${SRC_DIR}/Wrapper/Video/*")
 source_group("Libraries" "${LIB_DIR}/*")
 
 set(SOURCES)
