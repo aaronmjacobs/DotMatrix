@@ -1,28 +1,29 @@
 set(SOURCE_NAMES
-   main.cpp
+   Main.cpp
 
-   gbc/Cartridge.cpp
-   gbc/CPU.cpp
-   gbc/Device.cpp
-   gbc/LCDController.cpp
-   gbc/Memory.cpp
-   gbc/SoundController.cpp
+   GBC/Cartridge.cpp
+   GBC/CPU.cpp
+   GBC/Device.cpp
+   GBC/LCDController.cpp
+   GBC/Memory.cpp
+   GBC/SoundController.cpp
 
-   test/CPUTester.cpp
-   test/TestMain.cpp
+   Test/CPUTester.cpp
+   Test/TestMain.cpp
 
-   wrapper/audio/AudioManager.cpp
-   wrapper/input/KeyboardInputDevice.cpp
+   Wrapper/Audio/AudioManager.cpp
 
-   wrapper/platform/IOUtils.cpp
-   wrapper/platform/OSUtils.cpp
+   Wrapper/Input/KeyboardInputDevice.cpp
 
-   wrapper/video/Mesh.cpp
-   wrapper/video/Model.cpp
-   wrapper/video/Renderer.cpp
-   wrapper/video/Shader.cpp
-   wrapper/video/ShaderProgram.cpp
-   wrapper/video/Texture.cpp
+   Wrapper/Platform/IOUtils.cpp
+   Wrapper/Platform/OSUtils.cpp
+
+   Wrapper/Video/Mesh.cpp
+   Wrapper/Video/Model.cpp
+   Wrapper/Video/Renderer.cpp
+   Wrapper/Video/Shader.cpp
+   Wrapper/Video/ShaderProgram.cpp
+   Wrapper/Video/Texture.cpp
 )
 
 set(HEADER_NAMES
@@ -31,38 +32,30 @@ set(HEADER_NAMES
    Log.h
    Pointers.h
 
-   gbc/Bootstrap.h
-   gbc/Cartridge.h
-   gbc/CPU.h
-   gbc/Debug.h
-   gbc/Device.h
-   gbc/LCDController.h
-   gbc/Memory.h
-   gbc/Operations.h
-   gbc/SoundController.h
+   GBC/Bootstrap.h
+   GBC/Cartridge.h
+   GBC/CPU.h
+   GBC/Debug.h
+   GBC/Device.h
+   GBC/LCDController.h
+   GBC/Memory.h
+   GBC/Operations.h
+   GBC/SoundController.h
 
-   test/CPUTester.h
+   Test/CPUTester.h
 
-   wrapper/audio/AudioManager.h
+   Wrapper/Audio/AudioManager.h
 
-   wrapper/input/InputDevice.h
-   wrapper/input/KeyboardInputDevice.h
+   Wrapper/Input/InputDevice.h
+   Wrapper/Input/KeyboardInputDevice.h
 
-   wrapper/platform/IOUtils.h
-   wrapper/platform/OSUtils.h
+   Wrapper/Platform/IOUtils.h
+   Wrapper/Platform/OSUtils.h
 
-   wrapper/video/Mesh.h
-   wrapper/video/Model.h
-   wrapper/video/Renderer.h
-   wrapper/video/Shader.h
-   wrapper/video/ShaderProgram.h
-   wrapper/video/Texture.h
+   Wrapper/Video/Mesh.h
+   Wrapper/Video/Model.h
+   Wrapper/Video/Renderer.h
+   Wrapper/Video/Shader.h
+   Wrapper/Video/ShaderProgram.h
+   Wrapper/Video/Texture.h
 )
-
-source_group("Sources\\GBC" "${SRC_DIR}/gbc/*")
-source_group("Sources\\Test" "${SRC_DIR}/test/*")
-source_group("Sources\\Wrapper" "${SRC_DIR}/wrapper/*")
-source_group("Sources\\Wrapper\\Audio" "${SRC_DIR}/wrapper/audio/*")
-source_group("Sources\\Wrapper\\Input" "${SRC_DIR}/wrapper/input/*")
-source_group("Sources\\Wrapper\\Platform" "${SRC_DIR}/wrapper/platform/*")
-source_group("Sources\\Wrapper\\Video" "${SRC_DIR}/wrapper/video/*")

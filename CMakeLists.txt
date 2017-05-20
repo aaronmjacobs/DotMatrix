@@ -1,6 +1,6 @@
 ### Project Info ###
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.8)
 project(Run-GBC VERSION 0.0.0.1 LANGUAGES C CXX)
 set(PROJECT_DISPLAY_NAME "Run-G.B.C.")
 
@@ -48,16 +48,6 @@ configure_file(
 
 # Source content
 include(Sources.cmake)
-source_group("Sources" "${SRC_DIR}/*")
-source_group("Sources\\Generated" "${BIN_INCLUDE_DIR}/*")
-source_group("Sources\\GBC" "${SRC_DIR}/GBC/*")
-source_group("Sources\\Test" "${SRC_DIR}/Test/*")
-source_group("Sources\\Wrapper" "${SRC_DIR}/Wrapper/*")
-source_group("Sources\\Wrapper\\Audio" "${SRC_DIR}/Wrapper/Audio/*")
-source_group("Sources\\Wrapper\\Input" "${SRC_DIR}/Wrapper/Input/*")
-source_group("Sources\\Wrapper\\Platform" "${SRC_DIR}/Wrapper/Platform/*")
-source_group("Sources\\Wrapper\\Video" "${SRC_DIR}/Wrapper/Video/*")
-source_group("Libraries" "${LIB_DIR}/*")
 
 set(SOURCES)
 foreach(SOURCE_NAME ${SOURCE_NAMES})
@@ -68,6 +58,11 @@ set(HEADERS)
 foreach(HEADER_NAME ${HEADER_NAMES})
    list(APPEND HEADERS "${SRC_DIR}/${HEADER_NAME}")
 endforeach(HEADER_NAME)
+
+source_group(TREE ${SRC_DIR} PREFIX Sources FILES ${SOURCES} ${HEADERS})
+source_group("Sources\\Generated" "${BIN_INCLUDE_DIR}/*")
+source_group("Libraries" "${LIB_DIR}/*")
+
 list(APPEND HEADERS "${BIN_INCLUDE_DIR}/Constants.h")
 
 set(INCLUDES)
