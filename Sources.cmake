@@ -13,6 +13,7 @@ set(SOURCE_NAMES
 
    Wrapper/Audio/AudioManager.cpp
 
+   Wrapper/Input/ControllerInputDevice.cpp
    Wrapper/Input/KeyboardInputDevice.cpp
 
    Wrapper/Platform/IOUtils.cpp
@@ -47,6 +48,7 @@ set(HEADER_NAMES
    Wrapper/Audio/AudioManager.h
 
    Wrapper/Input/InputDevice.h
+   Wrapper/Input/ControllerInputDevice.h
    Wrapper/Input/KeyboardInputDevice.h
 
    Wrapper/Platform/IOUtils.h

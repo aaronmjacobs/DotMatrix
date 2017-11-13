@@ -6,17 +6,15 @@
 struct GLFWwindow;
 
 class KeyboardInputDevice : public InputDevice {
-private:
-   GLFWwindow* const window;
-
-   bool pressed(int key);
-
 public:
    KeyboardInputDevice(GLFWwindow* const window);
 
-   virtual ~KeyboardInputDevice();
+   virtual GBC::Joypad poll() override;
 
-   virtual InputValues poll();
+private:
+   bool pressed(int key);
+
+   GLFWwindow* const window;
 };
 
 #endif

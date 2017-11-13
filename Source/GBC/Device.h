@@ -13,14 +13,30 @@
 namespace GBC {
 
 struct Joypad {
-   bool right;
-   bool left;
-   bool up;
-   bool down;
-   bool a;
-   bool b;
-   bool select;
-   bool start;
+   bool right = false;
+   bool left = false;
+   bool up = false;
+   bool down = false;
+   bool a = false;
+   bool b = false;
+   bool select = false;
+   bool start = false;
+
+   static inline Joypad unionOf(const Joypad& first, const Joypad& second)
+   {
+      Joypad result;
+
+      result.right = first.right || second.right;
+      result.left = first.left || second.left;
+      result.up = first.up || second.up;
+      result.down = first.down || second.down;
+      result.a = first.a || second.a;
+      result.b = first.b || second.b;
+      result.select = first.select || second.select;
+      result.start = first.start || second.start;
+
+      return result;
+   }
 };
 
 class Device {

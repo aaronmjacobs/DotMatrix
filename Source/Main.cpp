@@ -9,6 +9,8 @@
 #include "GBC/Device.h"
 
 #include "Wrapper/Audio/AudioManager.h"
+#include "Wrapper/Input/ControllerInputDevice.h"
+#include "Wrapper/Input/KeyboardInputDevice.h"
 #include "Wrapper/Platform/IOUtils.h"
 #include "Wrapper/Platform/OSUtils.h"
 #include "Wrapper/Video/Renderer.h"
@@ -33,44 +35,6 @@ void onFramebufferSizeChange(GLFWwindow *window, int width, int height) {
 void onKeyChanged(GLFWwindow* window, int key, int scancode, int action, int mods) {
    if (keyCallback) {
       keyCallback(key, action != GLFW_RELEASE);
-   }
-}
-
-void updateJoypadState(GBC::Joypad& joypadState, int key, bool enabled) {
-   switch (key) {
-      case GLFW_KEY_LEFT:
-         joypadState.left = enabled;
-         break;
-      case GLFW_KEY_RIGHT:
-         joypadState.right = enabled;
-         break;
-      case GLFW_KEY_UP:
-         joypadState.up = enabled;
-         break;
-      case GLFW_KEY_DOWN:
-         joypadState.down = enabled;
-         break;
-      case GLFW_KEY_S:
-         joypadState.a = enabled;
-         break;
-      case GLFW_KEY_A:
-         joypadState.b = enabled;
-         break;
-      case GLFW_KEY_Z:
-         joypadState.select = enabled;
-         break;
-      case GLFW_KEY_X:
-         joypadState.start = enabled;
-         break;
-
-      // Needed since many keyboards do not support 4 nearby buttons being pressed at the same time
-      // Used for certain game functions, e.g. reset, save, etc.
-      case GLFW_KEY_D:
-         joypadState.a = enabled;
-         joypadState.b = enabled;
-         joypadState.select = enabled;
-         joypadState.start = enabled;
-         break;
    }
 }
 
@@ -226,10 +190,9 @@ int main(int argc, char* argv[]) {
 
    AudioManager audioManager;
 
-   GBC::Joypad joypadState{};
    float timeModifier = 1.0f;
    bool doSave = false;
-   keyCallback = [&joypadState, &timeModifier, &doSave](int key, bool enabled) {
+   keyCallback = [&timeModifier, &doSave](int key, bool enabled) {
    #if !NDEBUG
       if (key == GLFW_KEY_1 && enabled) {
          timeModifier = 1.0f;
@@ -247,12 +210,13 @@ int main(int argc, char* argv[]) {
       if (key == GLFW_KEY_SPACE && enabled) {
          doSave = true;
       }
-
-      updateJoypadState(joypadState, key, enabled);
    };
 
    UPtr<GBC::Device> device = createDevice(window, argc > 1 ? argv[1] : nullptr);
    glfwSetWindowUserPointer(window, &device);
+
+   KeyboardInputDevice keyboardInputDevice(window);
+   ControllerInputDevice controllerInputDevice(window);
 
    static const double kMaxFrameTime = 0.25;
    static const double kDt = 1.0 / 60.0;
@@ -266,7 +230,11 @@ int main(int argc, char* argv[]) {
 
       accumulator += frameTime * timeModifier;
       while (accumulator >= kDt) {
-         device->setJoypadState(joypadState);
+         glfwPollEvents();
+
+         GBC::Joypad joypad = GBC::Joypad::unionOf(keyboardInputDevice.poll(), controllerInputDevice.poll());
+         device->setJoypadState(joypad);
+
          device->tick(kDt);
          accumulator -= kDt;
       }
@@ -283,7 +251,6 @@ int main(int argc, char* argv[]) {
       }
 
       glfwSwapBuffers(window);
-      glfwPollEvents();
    }
 
    glfwDestroyWindow(window);
