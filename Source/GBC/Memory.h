@@ -72,29 +72,29 @@ public:
                ByteArray<7> pad1;   // Padding                       (0xFF08-0xFF0E, 7)
                uint8_t ifr;         // Interrupt flag                (0xFF0F, 1)
 
-               // Sound mode 1
+               // Sound mode 1 (square 1)
                uint8_t nr10;        // Sweep                         (0xFF10, 1)
                uint8_t nr11;        // Length / wave pattern duty    (0xFF11, 1)
                uint8_t nr12;        // Envelope                      (0xFF12, 1)
                uint8_t nr13;        // Frequency lo                  (0xFF13, 1)
                uint8_t nr14;        // Frequency hi                  (0xFF14, 1)
-               ByteArray<1> pad2;   // Padding                       (0xFF15, 1)
 
-               // Sound mode 2
+               // Sound mode 2 (square 2)
+               ByteArray<1> pad2;   // Padding (nr20, unused)        (0xFF15, 1)
                uint8_t nr21;        // Length / wave pattern duty    (0xFF16, 1)
                uint8_t nr22;        // Envelope                      (0xFF17, 1)
                uint8_t nr23;        // Frequency lo                  (0xFF18, 1)
                uint8_t nr24;        // Frequency hi                  (0xFF19, 1)
 
-               // Sound mode 3
+               // Sound mode 3 (wave)
                uint8_t nr30;        // On / off                      (0xFF1A, 1)
                uint8_t nr31;        // Length                        (0xFF1B, 1)
                uint8_t nr32;        // Output level                  (0xFF1C, 1)
                uint8_t nr33;        // Frequency lo                  (0xFF1D, 1)
                uint8_t nr34;        // Frequency hi                  (0xFF1E, 1)
-               ByteArray<1> pad3;   // Padding                       (0xFF1F, 1)
 
-               // Sound mode 4
+               // Sound mode 4 (noise)
+               ByteArray<1> pad3;   // Padding (nr40, unused)        (0xFF1F, 1)
                uint8_t nr41;        // Length                        (0xFF20, 1)
                uint8_t nr42;        // Envelope                      (0xFF21, 1)
                uint8_t nr43;        // Polynomial counter            (0xFF22, 1)

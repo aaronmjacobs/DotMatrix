@@ -54,7 +54,7 @@ enum Enum {
 } // namespace
 
 Device::Device()
-   : memory(*this), cpu(memory), lcdController(memory), soundController(memory),
+   : memory(*this), cpu(memory), lcdController(memory), soundController(),
      cart(nullptr), cartWroteToRam(false), joypad({}), lastInputVals(P1::kInMask), counter(0), lastCounter(0),
      clocksUntilInterrupt(0), ifOverrideClocks(0), lastTimerBit(false), serialCycles(0), serialCallback(nullptr) {
 }

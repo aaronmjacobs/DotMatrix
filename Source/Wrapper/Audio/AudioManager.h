@@ -3,6 +3,8 @@
 
 #include "Pointers.h"
 
+#include "GBC/SoundController.h"
+
 #include <array>
 #include <cstdint>
 #include <functional>
@@ -19,13 +21,18 @@ public:
    AudioManager();
    ~AudioManager();
 
-   void queue(const std::vector<uint8_t>& audioData);
+   bool isValid() const {
+      return device.get() != nullptr && context.get() != nullptr;
+   }
+
+   bool canQueue() const;
+   void queue(const std::vector<GBC::AudioSample>& audioData);
 
 private:
    UPtr<ALCdevice, std::function<void(ALCdevice*)>> device;
    UPtr<ALCcontext, std::function<void(ALCcontext*)>> context;
    ALuint source;
-   std::array<ALuint, 2> buffers;
+   std::array<ALuint, 3> buffers;
 };
 
 #endif

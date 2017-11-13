@@ -61,7 +61,7 @@ public:
       return lcdController;
    }
 
-   const SoundController& getSoundController() const {
+   SoundController& getSoundController() {
       return soundController;
    }
 

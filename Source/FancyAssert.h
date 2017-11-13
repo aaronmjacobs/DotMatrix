@@ -22,10 +22,4 @@
 
 #define STATIC_ASSERT         PPK_STATIC_ASSERT
 
-#if GBC_DEBUG
-#define RUN_DEBUG(...) do { __VA_ARGS__ } while(0);
-#else
-#define RUN_DEBUG(...)
-#endif
-
 #endif

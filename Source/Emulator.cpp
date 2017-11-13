@@ -219,6 +219,9 @@ bool Emulator::init() {
 
    device = std::make_unique<GBC::Device>();
 
+   // Don't generate audio data if the audio manager isn't valid
+   device->getSoundController().setGenerateAudioData(audioManager.isValid());
+
    saveThread = std::thread([this] {
       saveThreadMain();
    });
@@ -247,8 +250,13 @@ void Emulator::render() {
    if (device && renderer) {
       renderer->draw(device->getLCDController().getFramebuffer());
 
-      std::vector<uint8_t> audioData = device->getSoundController().getAudioData();
-      audioManager.queue(audioData);
+      if (audioManager.canQueue()) {
+         const std::vector<GBC::AudioSample>& audioData = device->getSoundController().getAudioData();
+
+         if (!audioData.empty()) {
+            audioManager.queue(audioData);
+         }
+      }
    }
 
    glfwSwapBuffers(window);
@@ -268,6 +276,7 @@ void Emulator::setRom(const char* romPath) {
 
       if (cartridge) {
          device = std::make_unique<GBC::Device>();
+         device->getSoundController().setGenerateAudioData(audioManager.isValid());
          device->setCartridge(std::move(cartridge));
 
          std::string windowTitle = getWindowTitle(device.get());

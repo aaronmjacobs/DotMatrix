@@ -3,30 +3,18 @@
 #include "FancyAssert.h"
 #include "Log.h"
 
+#include "GBC/SoundController.h"
+
 #include <AL/al.h>
 #include <AL/alc.h>
 
 namespace {
 
-const ALsizei kAudioFrequency = 44100;
-const size_t kBufferSize = 1470;
-
-void deleteDevice(ALCdevice* device) {
-   if (device) {
-      alcCloseDevice(device);
-   }
-}
-
-void deleteContext(ALCcontext* context) {
-   if (context) {
-      alcDestroyContext(context);
-   }
-}
-
-const char* errorString(ALCenum error) {
+#if GBC_DEBUG
+const char* alErrorString(ALenum error) {
    switch (error) {
       case AL_NO_ERROR:
-         return "";
+         return "No error";
       case AL_INVALID_NAME:
          return "Invalid name parameter";
       case AL_INVALID_ENUM:
@@ -42,38 +30,70 @@ const char* errorString(ALCenum error) {
    }
 }
 
-void checkError(const char* location) {
-   ALCenum error = alGetError();
-   if (error != AL_NO_ERROR) {
-      LOG_ERROR("OpenAL error while " << location << ": " << errorString(error));
+const char* alcErrorString(ALCenum error) {
+   switch (error) {
+      case ALC_NO_ERROR:
+         return "No error";
+      case ALC_INVALID_DEVICE:
+         return "Invalid device handle";
+      case ALC_INVALID_CONTEXT:
+         return "Invalid context handle";
+      case ALC_INVALID_ENUM:
+         return "Invalid enum parameter passed to an ALC call";
+      case ALC_INVALID_VALUE:
+         return "Invalid value parameter passed to an ALC call";
+      case ALC_OUT_OF_MEMORY:
+         return "Out of memory";
+      default:
+         return "Invalid error";
+   }
+}
+#endif // GBC_DEBUG
+
+void checkAlError(const char* location) {
+#if GBC_DEBUG
+   ALenum error = alGetError();
+   ASSERT(error == AL_NO_ERROR, "OpenAL error while %s: %s", location, alErrorString(error));
+#endif // GBC_DEBUG
+}
+
+void checkAlcError(ALCdevice* device, const char* location) {
+#if GBC_DEBUG
+   ALCenum error = alcGetError(device);
+   ASSERT(error == ALC_NO_ERROR, "OpenAL context error while %s: %s", location, alcErrorString(error));
+#endif // GBC_DEBUG
+}
+
+void deleteDevice(ALCdevice* device) {
+   if (device) {
+      alcCloseDevice(device);
+      checkAlcError(device, "closing device");
    }
 }
 
-std::vector<uint8_t> mono4ToMono8(const std::vector<uint8_t>& mono4) {
-   std::vector<uint8_t> mono8(mono4.size() * 2);
+void deleteContext(ALCcontext* context) {
+   if (context) {
+      ALCdevice* device = alcGetContextsDevice(context);
 
-   for (size_t i = 0; i < mono4.size(); ++i) {
-      uint8_t value = mono4[i];
-      uint8_t first = (value & 0xF0) >> 4;
-      uint8_t second = (value & 0x0F);
-
-      mono8[2 * i + 0] = first << 4;
-      mono8[2 * i + 1] = second << 4;
+      alcDestroyContext(context);
+      checkAlcError(device, "destroying context");
    }
-
-   return mono8;
 }
 
 } // namespace
 
 AudioManager::AudioManager()
-   : device(alcOpenDevice(nullptr), deleteDevice), source(0) {
+   : device(alcOpenDevice(nullptr), deleteDevice), source(0), buffers{} {
+   checkAlcError(device.get(), "opening device");
+
    if (!device) {
       LOG_ERROR_MSG_BOX("Unable to open audio device");
       return;
    }
 
    context = UPtr<ALCcontext, std::function<void(ALCcontext*)>>(alcCreateContext(device.get(), nullptr), deleteContext);
+   checkAlcError(device.get(), "creating context");
+
    if (!context) {
       LOG_ERROR_MSG_BOX("Unable to create audio context");
       return;
@@ -83,79 +103,87 @@ AudioManager::AudioManager()
       LOG_ERROR_MSG_BOX("Unable to make audio context current");
       return;
    }
-   RUN_DEBUG(checkError("making audio context current");)
+   checkAlcError(device.get(), "making audio context current");
 
    alGenSources(1, &source);
-   RUN_DEBUG(checkError("generating audio source");)
+   checkAlError("generating audio source");
 
    alSourcef(source, AL_PITCH, 1.0f);
-   RUN_DEBUG(checkError("setting source pitch");)
+   checkAlError("setting source pitch");
    alSourcef(source, AL_GAIN, 1.0f);
-   RUN_DEBUG(checkError("setting source gain");)
+   checkAlError("setting source gain");
    alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
-   RUN_DEBUG(checkError("setting source position");)
+   checkAlError("setting source position");
    alSource3f(source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
-   RUN_DEBUG(checkError("setting source velocity");)
+   checkAlError("setting source velocity");
    alSourcei(source, AL_LOOPING, AL_FALSE);
-   RUN_DEBUG(checkError("disabling source looping");)
+   checkAlError("disabling source looping");
 
    alGenBuffers(static_cast<ALsizei>(buffers.size()), buffers.data());
-   RUN_DEBUG(checkError("generating buffers");)
+   checkAlError("generating buffers");
 
-   std::array<uint8_t, kBufferSize> silence;
-   silence.fill(128);
+   GBC::AudioSample silenceSample;
    for (ALuint buffer : buffers) {
-      alBufferData(buffer, AL_FORMAT_MONO8, silence.data(), static_cast<ALsizei>(silence.size()), kAudioFrequency);
-      RUN_DEBUG(checkError("setting buffer data");)
+      alBufferData(buffer, AL_FORMAT_STEREO16, &silenceSample, static_cast<ALsizei>(sizeof(GBC::AudioSample)), static_cast<ALsizei>(GBC::SoundController::kSampleRate));
+      checkAlError("setting buffer data");
    }
 
    alSourceQueueBuffers(source, static_cast<ALsizei>(buffers.size()), buffers.data());
-   RUN_DEBUG(checkError("queueing buffers");)
+   checkAlError("queueing buffers");
 
    alSourcePlay(source);
-   RUN_DEBUG(checkError("playing source");)
+   checkAlError("playing source");
 }
 
 AudioManager::~AudioManager() {
    if (alIsSource(source)) {
       alDeleteSources(1, &source);
+      checkAlError("deleting source");
+
       alDeleteBuffers(static_cast<ALsizei>(buffers.size()), buffers.data());
+      checkAlError("deleting buffers");
    }
 
    alcMakeContextCurrent(nullptr);
+   checkAlcError(device.get(), "making no context current");
 
    // Destroy in order
    context = nullptr;
    device = nullptr;
 }
 
-void AudioManager::queue(const std::vector<uint8_t>& audioData) {
-   ALint numProcessed;
-   alGetSourcei(source, AL_BUFFERS_PROCESSED, &numProcessed);
-   RUN_DEBUG(checkError("querying number of buffers processed");)
-
-   if (numProcessed < 1) {
-      // No room for more audio data
-      return;
+bool AudioManager::canQueue() const {
+   if (!isValid()) {
+      return false;
    }
 
-   ALuint buffer;
-   alSourceUnqueueBuffers(source, 1, &buffer);
-   RUN_DEBUG(checkError("unqueueing buffer");)
+   ALint numProcessed = 0;
+   alGetSourcei(source, AL_BUFFERS_PROCESSED, &numProcessed);
+   checkAlError("querying number of buffers processed");
 
-   std::vector<uint8_t> audioData8 = mono4ToMono8(audioData);
-   alBufferData(buffer, AL_FORMAT_MONO8, audioData8.data(), static_cast<ALsizei>(audioData8.size()), kAudioFrequency);
-   RUN_DEBUG(checkError("setting buffer data");)
+   return numProcessed > 0;
+}
+
+void AudioManager::queue(const std::vector<GBC::AudioSample>& audioData) {
+   ASSERT(!audioData.empty());
+   ASSERT(canQueue());
+
+   ALuint buffer = 0;
+   alSourceUnqueueBuffers(source, 1, &buffer);
+   checkAlError("unqueueing buffer");
+
+   alBufferData(buffer, AL_FORMAT_STEREO16, audioData.data(), static_cast<ALsizei>(audioData.size() * sizeof(GBC::AudioSample)), static_cast<ALsizei>(GBC::SoundController::kSampleRate));
+   checkAlError("setting buffer data");
 
    alSourceQueueBuffers(source, 1, &buffer);
-   RUN_DEBUG(checkError("queueing buffer");)
+   checkAlError("queueing buffer");
 
-   ALint state;
+   ALint state = 0;
    alGetSourcei(source, AL_SOURCE_STATE, &state);
-   RUN_DEBUG(checkError("getting source state");)
+   checkAlError("getting source state");
 
    if (state != AL_PLAYING) {
       alSourcePlay(source);
-      RUN_DEBUG(checkError("playing source");)
+      checkAlError("playing source");
    }
 }

@@ -33,6 +33,11 @@ uint8_t Memory::read(uint16_t address) const {
       return cart->read(address);
    }
 
+   if (address >= 0xFF10 && address < 0xFF40) {
+      // Sound registers
+      /*return*/ device.getSoundController().read(address);
+   }
+
    if (address >= 0xE000 && address < 0xFE00) {
       // Mirror of working ram
       address -= 0x2000;
@@ -54,6 +59,12 @@ void Memory::write(uint16_t address, uint8_t value) {
    if (cart && address >= 0xA000 && address < 0xC000) {
       cart->write(address, value);
       return;
+   }
+
+   if (address >= 0xFF10 && address < 0xFF40) {
+      // Sound registers
+      device.getSoundController().write(address, value);
+      //return;
    }
 
    if (address >= 0xE000 && address < 0xFE00) {
