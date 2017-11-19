@@ -71,6 +71,12 @@ void Memory::set(uint16_t address, uint8_t val) {
       device.onIfWrite();
    }
 
+   if (address == 0xFF41) {
+      // LCD status - mode flag should be unaffected by memory writes
+      static const uint8_t kModeFlagMask = 0b00000011;
+      val = (val & ~kModeFlagMask) | (stat & kModeFlagMask);
+   }
+
    raw[address] = val;
 
    if (address == 0xFF46) {
