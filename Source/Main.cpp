@@ -122,6 +122,37 @@ void loadGame(GBC::Device& device) {
    }
 }
 
+UPtr<GBC::Device> createDevice(GLFWwindow* window, const char* cartPath) {
+   UPtr<GBC::Device> device(std::make_unique<GBC::Device>());
+
+   // Try to load a cartridge
+   if (cartPath) {
+      std::vector<uint8_t> cartData = IOUtils::readBinaryFile(cartPath);
+
+      LOG_INFO("Loading cartridge: " << cartPath);
+      UPtr<GBC::Cartridge> cartridge(GBC::Cartridge::fromData(std::move(cartData)));
+
+      if (cartridge) {
+         device->setCartridge(std::move(cartridge));
+         glfwSetWindowTitle(window, device->title());
+
+         // Try to load a save file
+         loadGame(*device);
+      }
+   }
+
+   return device;
+}
+
+void onFilesDropped(GLFWwindow* window, int count, const char* paths[]) {
+   void* userPointer = glfwGetWindowUserPointer(window);
+
+   if (userPointer && count > 0) {
+      UPtr<GBC::Device>* device = reinterpret_cast<UPtr<GBC::Device>*>(userPointer);
+      *device = createDevice(window, paths[0]);
+   }
+}
+
 GLFWwindow* init() {
    int glfwInitRes = glfwInit();
    if (!glfwInitRes) {
@@ -143,6 +174,7 @@ GLFWwindow* init() {
 
    glfwSetFramebufferSizeCallback(window, onFramebufferSizeChange);
    glfwSetKeyCallback(window, onKeyChanged);
+   glfwSetDropCallback(window, onFilesDropped);
    glfwMakeContextCurrent(window);
    glfwSwapInterval(1); // VSYNC
 
@@ -171,7 +203,7 @@ uint8_t onSerial(uint8_t receivedVal) {
    return 0xFF;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
    LOG_INFO(kProjectName << " " << kVersionMajor << "." << kVersionMinor << "."
       << kVersionMicro << " (" << kVersionBuild << ")");
 
@@ -219,25 +251,8 @@ int main(int argc, char *argv[]) {
       updateJoypadState(joypadState, key, enabled);
    };
 
-   UPtr<GBC::Device> device(std::make_unique<GBC::Device>());
-   //device->setSerialCallback(onSerial);
-
-   // Try to load a cartridge
-   if (argc > 1) {
-      const char* cartPath = argv[1];
-      std::vector<uint8_t> cartData = IOUtils::readBinaryFile(cartPath);
-
-      LOG_INFO("Loading cartridge: " << cartPath);
-      UPtr<GBC::Cartridge> cartridge(GBC::Cartridge::fromData(std::move(cartData)));
-
-      if (cartridge) {
-         device->setCartridge(std::move(cartridge));
-         glfwSetWindowTitle(window, device->title());
-
-         // Try to load a save file
-         loadGame(*device);
-      }
-   }
+   UPtr<GBC::Device> device = createDevice(window, argc > 1 ? argv[1] : nullptr);
+   glfwSetWindowUserPointer(window, &device);
 
    static const double kMaxFrameTime = 0.25;
    static const double kDt = 1.0 / 60.0;
