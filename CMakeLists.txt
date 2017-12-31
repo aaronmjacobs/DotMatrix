@@ -154,7 +154,7 @@ attach_lib("${OPENAL_DIR}/include" "" "${OPENAL_LIBRARY}")
 ### Building ###
 
 # Binary
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS})
 
 # Includes
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDES})

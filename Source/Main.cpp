@@ -292,4 +292,10 @@ int main(int argc, char* argv[]) {
    return EXIT_SUCCESS;
 }
 
+#if defined(_WIN32)
+int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow) {
+   return main(__argc, __argv);
+}
+#endif // defined(_WIN32)
+
 #endif // !defined(GBC_RUN_TESTS)
