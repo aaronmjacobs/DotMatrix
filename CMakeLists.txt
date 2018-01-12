@@ -59,9 +59,24 @@ foreach(HEADER_NAME ${HEADER_NAMES})
    list(APPEND HEADERS "${SRC_DIR}/${HEADER_NAME}")
 endforeach(HEADER_NAME)
 
+set(RESOURCES)
+
 source_group(TREE ${SRC_DIR} PREFIX Sources FILES ${SOURCES} ${HEADERS})
 source_group("Sources\\Generated" "${BIN_INCLUDE_DIR}/*")
 source_group("Libraries" "${LIB_DIR}/*")
+source_group("Resources" "${RES_DIR}/*")
+
+if(APPLE)
+   list(APPEND RESOURCES
+      "${RES_DIR}/macOS/Info.plist.in"
+      "${RES_DIR}/macOS/Run-GBC.icns"
+   )
+elseif(WIN32)
+   list(APPEND RESOURCES
+      "${RES_DIR}/Windows/Run-GBC.rc"
+      "${RES_DIR}/Windows/Run-GBC.ico"
+   )
+endif(APPLE)
 
 list(APPEND HEADERS "${BIN_INCLUDE_DIR}/Constants.h")
 
@@ -154,7 +169,7 @@ attach_lib("${OPENAL_DIR}/include" "" "${OPENAL_LIBRARY}")
 ### Building ###
 
 # Binary
-add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS})
+add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${RESOURCES})
 
 # Includes
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDES})
