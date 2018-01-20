@@ -15,7 +15,7 @@ namespace GBC {
 class MemoryBankController {
 public:
    MemoryBankController(const class Cartridge& cartridge)
-      : cart(cartridge) {
+      : cart(cartridge), wroteToRam(false) {
    }
 
    virtual ~MemoryBankController() = default;
@@ -25,6 +25,7 @@ public:
    virtual void set(uint16_t address, uint8_t val) = 0;
 
    virtual void tick(double dt) {
+      wroteToRam = false;
    }
 
    virtual IOUtils::Archive saveRAM() const {
@@ -35,8 +36,13 @@ public:
       return false;
    }
 
+   bool wroteToRamThisFrame() const {
+      return wroteToRam;
+   }
+
 protected:
    const class Cartridge& cart;
+   bool wroteToRam;
 };
 
 class Cartridge {
@@ -69,9 +75,7 @@ public:
 
    void tick(double dt) {
       ASSERT(controller);
-      if (hasTimer()) {
-         controller->tick(dt);
-      }
+      controller->tick(dt);
    }
 
    IOUtils::Archive saveRAM() const {
@@ -82,6 +86,11 @@ public:
    bool loadRAM(IOUtils::Archive& ramData) {
       ASSERT(controller);
       return controller->loadRAM(ramData);
+   }
+
+   bool wroteToRamThisFrame() const {
+      ASSERT(controller);
+      return controller->wroteToRamThisFrame();
    }
 
    bool hasRAM() const {

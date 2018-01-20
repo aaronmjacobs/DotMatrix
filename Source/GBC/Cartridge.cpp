@@ -263,6 +263,7 @@ public:
             if (ramEnabled) {
                uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
                ramBanks[ramBank][address - 0xA000] = val;
+               wroteToRam = true;
             } else {
                LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(val));
             }
@@ -398,6 +399,7 @@ public:
             if (ramEnabled) {
                // only the lower 4 bits of the "bytes" in this memory area are used
                ram[address - 0xA000] = 0xF0 | (val & 0x0F);
+               wroteToRam = true;
             } else {
                LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(val));
             }
@@ -585,6 +587,7 @@ public:
                      ASSERT(false, "Invalid RAM bank / RTC selection value: %hhu", val);
                      break;
                }
+               wroteToRam = true;
             } else {
                LOG_WARNING("Trying to write to disabled RAM / RTC " << hex(address) << ": " << hex(val));
             }
@@ -599,6 +602,8 @@ public:
    }
 
    void tick(double dt) override {
+      MemoryBankController::tick(dt);
+
       if (rtc.halt || dt < 0.0) {
          return;
       }
@@ -794,6 +799,7 @@ public:
             // Switchable RAM bank
             if (ramEnabled) {
                ramBanks[ramBankNumber][address - 0xA000] = val;
+               wroteToRam = true;
             } else {
                LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(val));
             }

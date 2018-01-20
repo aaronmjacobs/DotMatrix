@@ -88,6 +88,10 @@ public:
       ifOverrideClocks = 4;
    }
 
+   bool cartWroteToRamThisFrame() const {
+      return cartWroteToRam;
+   }
+
 private:
    void tickJoypad();
 
@@ -102,6 +106,8 @@ private:
    LCDController lcdController;
    SoundController soundController;
    UPtr<class Cartridge> cart;
+
+   bool cartWroteToRam;
 
    Joypad joypad;
    uint8_t lastInputVals;

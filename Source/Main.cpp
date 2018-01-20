@@ -17,11 +17,17 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <cstdlib>
 #include <functional>
+#include <future>
+#include <thread>
 #include <vector>
 
 namespace {
+
+std::mutex saveDataMutex;
+bool quitting = false;
 
 std::function<void(int, int)> framebufferCallback;
 std::function<void(int, bool)> keyCallback;
@@ -60,16 +66,36 @@ std::string getSaveName(const char* title) {
    return saveName;
 }
 
-void saveGame(const GBC::Device& device) {
+void saveGameAsync(const GBC::Device& device) {
    IOUtils::Archive cartRam = device.saveCartRAM();
-   const std::vector<uint8_t>& cartRamData = cartRam.getData();
 
-   if (cartRamData.size() > 0) {
-      std::string saveFileName = getSaveName(device.title());
+   if (cartRam.getData().size() > 0) {
+      std::async(std::launch::async, [](std::string&& gameTitle, IOUtils::Archive&& archive) {
+         static const int kNumRetries = 10;
+         static const auto kSleepTime = std::chrono::milliseconds(100);
 
-      if (saveFileName.size() > 0 && IOUtils::writeBinaryFile(saveFileName, cartRamData)) {
+         std::string saveFileName = getSaveName(gameTitle.c_str());
+         if (saveFileName.size() > 0) {
+            for (int i = 0; i < kNumRetries; ++i) {
+               bool saved = false;
+
+               {
+                  std::lock_guard<std::mutex> lockGuard(saveDataMutex);
+
+                  if (!quitting) {
+                     saved = IOUtils::writeBinaryFile(saveFileName, archive.getData());
+                  }
+               }
+
+               if (saved) {
          LOG_INFO("Saved game to: " << saveFileName);
+                  break;
+               }
+
+               std::this_thread::sleep_for(kSleepTime);
+            }
       }
+      }, std::string(device.title()), std::move(cartRam));
    }
 }
 
@@ -77,7 +103,11 @@ void loadGame(GBC::Device& device) {
    std::string saveFileName = getSaveName(device.title());
 
    if (saveFileName.size() > 0 && IOUtils::canRead(saveFileName)) {
-      std::vector<uint8_t> cartRamData = IOUtils::readBinaryFile(saveFileName);
+      std::vector<uint8_t> cartRamData;
+      {
+         std::lock_guard<std::mutex> lockGuard(saveDataMutex);
+         cartRamData = IOUtils::readBinaryFile(saveFileName);;
+      }
       IOUtils::Archive cartRam(cartRamData);
 
       if (device.loadCartRAM(cartRam)) {
@@ -191,8 +221,7 @@ int main(int argc, char* argv[]) {
    AudioManager audioManager;
 
    float timeModifier = 1.0f;
-   bool doSave = false;
-   keyCallback = [&timeModifier, &doSave](int key, bool enabled) {
+   keyCallback = [&timeModifier](int key, bool enabled) {
    #if !NDEBUG
       if (key == GLFW_KEY_1 && enabled) {
          timeModifier = 1.0f;
@@ -206,10 +235,6 @@ int main(int argc, char* argv[]) {
          timeModifier = 0.0f;
       }
    #endif
-
-      if (key == GLFW_KEY_SPACE && enabled) {
-         doSave = true;
-      }
    };
 
    UPtr<GBC::Device> device = createDevice(window, argc > 1 ? argv[1] : nullptr);
@@ -222,6 +247,8 @@ int main(int argc, char* argv[]) {
    static const double kDt = 1.0 / 60.0;
    double lastTime = glfwGetTime();
    double accumulator = 0.0;
+
+   bool cartWroteToRamLastFrame = false;
 
    while (!glfwWindowShouldClose(window)) {
       double now = glfwGetTime();
@@ -237,6 +264,12 @@ int main(int argc, char* argv[]) {
 
          device->tick(kDt);
          accumulator -= kDt;
+
+         bool cartWroteToRamThisFrame = device->cartWroteToRamThisFrame();
+         if (!cartWroteToRamThisFrame && cartWroteToRamLastFrame) {
+            saveGameAsync(*device);
+         }
+         cartWroteToRamLastFrame = cartWroteToRamThisFrame;
       }
 
       renderer.draw(device->getLCDController().getFramebuffer());
@@ -244,13 +277,12 @@ int main(int argc, char* argv[]) {
       std::vector<uint8_t> audioData = device->getSoundController().getAudioData();
       audioManager.queue(audioData);
 
-      // Try to save the game
-      if (doSave) {
-         doSave = false;
-         saveGame(*device);
-      }
-
       glfwSwapBuffers(window);
+   }
+
+   {
+      std::lock_guard<std::mutex> lockGuard(saveDataMutex);
+      quitting = true;
    }
 
    glfwDestroyWindow(window);
