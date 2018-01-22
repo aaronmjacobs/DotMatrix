@@ -1,4 +1,5 @@
 set(SOURCE_NAMES
+   Emulator.cpp
    Main.cpp
 
    GBC/Cartridge.cpp
@@ -28,6 +29,7 @@ set(SOURCE_NAMES
 )
 
 set(HEADER_NAMES
+   Emulator.h
    FancyAssert.h
    GLIncludes.h
    Log.h

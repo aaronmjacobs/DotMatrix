@@ -3,16 +3,13 @@
 
 #include "InputDevice.h"
 
-struct GLFWwindow;
-
 class ControllerInputDevice : public InputDevice {
 public:
-   ControllerInputDevice(GLFWwindow* const window);
+   ControllerInputDevice();
 
    virtual GBC::Joypad poll() override;
 
 private:
-   GLFWwindow* const window;
    int controllerId;
 };
 

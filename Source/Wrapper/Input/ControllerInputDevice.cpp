@@ -16,8 +16,8 @@ int findFirstPresentGamepad() {
 
 } // namespace
 
-ControllerInputDevice::ControllerInputDevice(GLFWwindow* const window)
-   : window(window), controllerId(findFirstPresentGamepad()) {
+ControllerInputDevice::ControllerInputDevice()
+   : controllerId(findFirstPresentGamepad()) {
 }
 
 GBC::Joypad ControllerInputDevice::poll() {

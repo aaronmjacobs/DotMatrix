@@ -7,14 +7,18 @@ struct GLFWwindow;
 
 class KeyboardInputDevice : public InputDevice {
 public:
-   KeyboardInputDevice(GLFWwindow* const window);
+   KeyboardInputDevice(GLFWwindow* initialWindow = nullptr);
 
    virtual GBC::Joypad poll() override;
+
+   void setWindow(GLFWwindow* newWindow) {
+      window = newWindow;
+   }
 
 private:
    bool pressed(int key);
 
-   GLFWwindow* const window;
+   GLFWwindow* window;
 };
 
 #endif

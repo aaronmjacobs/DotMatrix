@@ -4,16 +4,11 @@
 #include "GLIncludes.h"
 
 class Shader {
-protected:
-   const GLuint id;
-   const GLenum type;
-
 public:
    Shader(const GLenum type);
+   ~Shader();
 
-   virtual ~Shader();
-
-   bool compile(const char *source);
+   bool compile(const char* source);
 
    GLuint getID() const {
       return id;
@@ -22,6 +17,10 @@ public:
    GLenum getType() const {
       return type;
    }
+
+private:
+   const GLuint id;
+   const GLenum type;
 };
 
 #endif

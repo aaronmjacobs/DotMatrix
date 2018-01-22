@@ -15,18 +15,17 @@ typedef struct ALCdevice_struct ALCdevice;
 typedef unsigned int ALuint;
 
 class AudioManager {
+public:
+   AudioManager();
+   ~AudioManager();
+
+   void queue(const std::vector<uint8_t>& audioData);
+
 private:
    UPtr<ALCdevice, std::function<void(ALCdevice*)>> device;
    UPtr<ALCcontext, std::function<void(ALCcontext*)>> context;
    ALuint source;
    std::array<ALuint, 2> buffers;
-
-public:
-   AudioManager();
-
-   virtual ~AudioManager();
-
-   void queue(const std::vector<uint8_t>& audioData);
 };
 
 #endif

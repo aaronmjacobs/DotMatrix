@@ -4,19 +4,11 @@
 #include "GLIncludes.h"
 
 class Mesh {
-private:
-   GLuint vbo;
-   GLuint ibo;
-   unsigned int numIndices;
-   unsigned int dimensionality;
-
 public:
-   Mesh(const float *vertices, unsigned int numVertices,
-        const unsigned int *indices, unsigned int numIndices, unsigned int dimensionality = 3);
-
-   Mesh(Mesh &&other);
-
-   virtual ~Mesh();
+   Mesh(const float* vertices, unsigned int numVertices,
+        const unsigned int* indices, unsigned int numIndices, unsigned int dimensionality = 3);
+   Mesh(Mesh&& other);
+   ~Mesh();
 
    GLuint getVBO() const {
       return vbo;
@@ -33,6 +25,12 @@ public:
    unsigned int getDimensionality() const {
       return dimensionality;
    }
+
+private:
+   GLuint vbo;
+   GLuint ibo;
+   unsigned int numIndices;
+   unsigned int dimensionality;
 };
 
 #endif

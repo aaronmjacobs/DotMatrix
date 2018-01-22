@@ -1,9 +1,9 @@
-#include "Mesh.h"
-
 #include "FancyAssert.h"
 
-Mesh::Mesh(const float *vertices, unsigned int numVertices,
-           const unsigned int *indices, unsigned int numIndices, unsigned int dimensionality)
+#include "Wrapper/Video/Mesh.h"
+
+Mesh::Mesh(const float* vertices, unsigned int numVertices,
+           const unsigned int* indices, unsigned int numIndices, unsigned int dimensionality)
    : numIndices(numIndices), dimensionality(dimensionality) {
    ASSERT(vertices || numVertices == 0, "numVertices > 0, but no vertices provided");
    ASSERT(indices || numIndices == 0, "numIndices > 0, but no indices provided");
@@ -21,7 +21,7 @@ Mesh::Mesh(const float *vertices, unsigned int numVertices,
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-Mesh::Mesh(Mesh &&other)
+Mesh::Mesh(Mesh&& other)
    : vbo(other.vbo), ibo(other.ibo), numIndices(other.numIndices), dimensionality(other.dimensionality) {
    other.vbo = other.ibo = other.numIndices = other.dimensionality = 0;
 }

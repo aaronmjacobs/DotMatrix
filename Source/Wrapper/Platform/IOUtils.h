@@ -20,9 +20,19 @@ bool canRead(const std::string& fileName);
 bool readTextFile(const std::string& fileName, std::string& data);
 
 /**
+ * Reads the entire contents of the text file with the given name while under the IOUtils mutex
+ */
+bool readTextFileLocked(const std::string& fileName, std::string& data);
+
+/**
  * Reads the entire contents of the binary file with the given name
  */
 std::vector<uint8_t> readBinaryFile(const std::string& fileName);
+
+/**
+ * Reads the entire contents of the binary file with the given name while under the IOUtils mutex
+ */
+std::vector<uint8_t> readBinaryFileLocked(const std::string& fileName);
 
 /**
  * Writes the contents of the given text to the file with the given name, returning true on success
@@ -30,9 +40,19 @@ std::vector<uint8_t> readBinaryFile(const std::string& fileName);
 bool writeTextFile(const std::string& fileName, const std::string& data);
 
 /**
+ * Writes the contents of the given text to the file with the given name while under the IOUtils mutex, returning true on success
+ */
+bool writeTextFileLocked(const std::string& fileName, const std::string& data);
+
+/**
  * Writes the contents of the given vector to the file with the given name, returning true on success
  */
 bool writeBinaryFile(const std::string& fileName, const std::vector<uint8_t>& data);
+
+/**
+ * Writes the contents of the given vector to the file with the given name while under the IOUtils mutex, returning true on success
+ */
+bool writeBinaryFileLocked(const std::string& fileName, const std::vector<uint8_t>& data);
 
 /**
  * Gets the absolute path of a resource stored in the app data folder given a relative path and application name,

@@ -4,8 +4,11 @@
 
 #include <filesystem>
 #include <fstream>
+#include <mutex>
 
 namespace IOUtils {
+
+std::mutex ioMutex;
 
 bool canRead(const std::string& fileName) {
    ASSERT(!fileName.empty(), "Trying to check empty file name");
@@ -21,6 +24,11 @@ bool readTextFile(const std::string& fileName, std::string& data) {
 
    data = std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
    return true;
+}
+
+bool readTextFileLocked(const std::string& fileName, std::string& data) {
+   std::lock_guard<std::mutex> lock(ioMutex);
+   return readTextFile(fileName, data);
 }
 
 std::vector<uint8_t> readBinaryFile(const std::string& fileName) {
@@ -43,6 +51,11 @@ std::vector<uint8_t> readBinaryFile(const std::string& fileName) {
    return data;
 }
 
+std::vector<uint8_t> readBinaryFileLocked(const std::string& fileName) {
+   std::lock_guard<std::mutex> lock(ioMutex);
+   return readBinaryFile(fileName);
+}
+
 bool writeTextFile(const std::string& fileName, const std::string& data) {
    ASSERT(!fileName.empty(), "Trying to write to empty file name");
 
@@ -59,6 +72,11 @@ bool writeTextFile(const std::string& fileName, const std::string& data) {
    return true;
 }
 
+bool writeTextFileLocked(const std::string& fileName, const std::string& data) {
+   std::lock_guard<std::mutex> lock(ioMutex);
+   return writeTextFile(fileName, data);
+}
+
 bool writeBinaryFile(const std::string& fileName, const std::vector<uint8_t>& data) {
    ASSERT(!fileName.empty(), "Trying to write to empty file name");
 
@@ -73,6 +91,11 @@ bool writeBinaryFile(const std::string& fileName, const std::vector<uint8_t>& da
 
    out.write(reinterpret_cast<const char*>(data.data()), data.size());
    return true;
+}
+
+bool writeBinaryFileLocked(const std::string& fileName, const std::vector<uint8_t>& data) {
+   std::lock_guard<std::mutex> lock(ioMutex);
+   return writeBinaryFile(fileName, data);
 }
 
 bool appDataPath(const std::string& appName, const std::string& fileName, std::string& path) {

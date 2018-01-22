@@ -5,8 +5,15 @@
 
 namespace {
 
-void bindAttribute(GLuint id, ShaderAttributes::Attributes attribute) {
-   glBindAttribLocation(id, attribute, ShaderAttributes::NAMES[attribute]);
+void bindAttribute(GLuint id, ShaderAttribute::Enum attribute) {
+   static const std::array<const char*, 4> kNames = {
+      "aPosition",
+      "aNormal",
+      "aTexCoord",
+      "aColor"
+   };
+
+   glBindAttribLocation(id, attribute, kNames[attribute]);
 }
 
 } // namespace
@@ -15,9 +22,6 @@ void bindAttribute(GLuint id, ShaderAttributes::Attributes attribute) {
 
 Uniform::Uniform(const GLint location, const GLenum type, const std::string &name)
    : location(location), type(type), name(name), dirty(false) {
-}
-
-Uniform::~Uniform() {
 }
 
 void Uniform::commit() {
@@ -83,7 +87,7 @@ void Uniform::setValue(int value) {
 }
 
 void Uniform::setValue(GLenum value) {
-   setValue((int)value);
+   setValue(static_cast<int>(value));
 }
 
 void Uniform::setValue(float value) {
@@ -122,7 +126,7 @@ ShaderProgram::ShaderProgram()
    : id(glCreateProgram()) {
 }
 
-ShaderProgram::ShaderProgram(ShaderProgram &&other)
+ShaderProgram::ShaderProgram(ShaderProgram&& other)
    : id(other.id), shaders(std::move(other.shaders)), uniforms(std::move(other.uniforms)) {
    other.id = 0;
 }
@@ -131,7 +135,7 @@ ShaderProgram::~ShaderProgram() {
    glDeleteProgram(id);
 }
 
-void ShaderProgram::attach(SPtr<Shader> shader) {
+void ShaderProgram::attach(const SPtr<Shader>& shader) {
    glAttachShader(id, shader->getID());
    shaders.push_back(shader);
 }
@@ -141,10 +145,10 @@ bool ShaderProgram::link() {
 
    uniforms.clear();
 
-   bindAttribute(id, ShaderAttributes::POSITION);
-   bindAttribute(id, ShaderAttributes::NORMAL);
-   bindAttribute(id, ShaderAttributes::TEX_COORD);
-   bindAttribute(id, ShaderAttributes::COLOR);
+   bindAttribute(id, ShaderAttribute::kPosition);
+   bindAttribute(id, ShaderAttribute::kNormal);
+   bindAttribute(id, ShaderAttribute::kTexCoord);
+   bindAttribute(id, ShaderAttribute::kColor);
 
    glLinkProgram(id);
 
@@ -158,18 +162,17 @@ bool ShaderProgram::link() {
    GLint numUniforms;
    glGetProgramiv(id, GL_ACTIVE_UNIFORMS, &numUniforms);
 
-   const int nameBufSize = 512;
-   char nameBuf[nameBufSize];
-   for (int i = 0; i < numUniforms; ++i) {
+   std::array<char, 215> nameBuf;
+   for (GLint i = 0; i < numUniforms; ++i) {
       GLsizei length = 0;
       GLint size = 0;
       GLenum type;
-      glGetActiveUniform(id, i, nameBufSize, &length, &size, &type, nameBuf);
+      glGetActiveUniform(id, i, static_cast<GLsizei>(nameBuf.size()), &length, &size, &type, nameBuf.data());
 
       if (length < 1 || size < 1) {
          LOG_WARNING("Unable to get active uniform: " << i);
       } else {
-         std::string name(nameBuf);
+         std::string name(nameBuf.data());
          GLint location = glGetUniformLocation(id, name.c_str());
          uniforms[name] = std::make_shared<Uniform>(location, type, name);
       }
@@ -178,15 +181,11 @@ bool ShaderProgram::link() {
    return true;
 }
 
-void ShaderProgram::use() const {
-   glUseProgram(id);
-}
-
-bool ShaderProgram::hasUniform(const std::string &name) const {
+bool ShaderProgram::hasUniform(const std::string& name) const {
    return uniforms.count(name) > 0;
 }
 
-SPtr<Uniform> ShaderProgram::getUniform(const std::string &name) const {
+SPtr<Uniform> ShaderProgram::getUniform(const std::string& name) const {
    ASSERT(hasUniform(name), "Uniform with given name doesn't exist: %s", name.c_str());
    return uniforms.at(name);
 }
@@ -194,7 +193,11 @@ SPtr<Uniform> ShaderProgram::getUniform(const std::string &name) const {
 void ShaderProgram::commit() {
    use();
 
-   for (UniformMap::iterator itr = uniforms.begin(); itr != uniforms.end(); ++itr) {
-      itr->second->commit();
+   for (const auto& pair : uniforms) {
+      pair.second->commit();
    }
+}
+
+void ShaderProgram::use() const {
+   glUseProgram(id);
 }

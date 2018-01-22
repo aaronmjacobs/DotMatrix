@@ -1,9 +1,9 @@
-#include "Texture.h"
-
 #include "FancyAssert.h"
 
-Texture::Texture(GLenum target)
-   : target(target) {
+#include "Wrapper/Video/Texture.h"
+
+Texture::Texture(GLenum textureTarget)
+   : target(textureTarget) {
    ASSERT(target == GL_TEXTURE_1D ||
           target == GL_TEXTURE_2D ||
           target == GL_TEXTURE_3D ||
@@ -19,7 +19,7 @@ Texture::Texture(GLenum target)
    glGenTextures(1, &textureID);
 }
 
-Texture::Texture(Texture &&other)
+Texture::Texture(Texture&& other)
    : textureID(other.textureID), target(other.target) {
    other.textureID = 0;
 }

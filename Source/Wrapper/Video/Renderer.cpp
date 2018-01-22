@@ -9,8 +9,9 @@
 
 namespace {
 
-const char *VERT_SHADER_SOURCE = GLSL(
+const char *kVertShaderSource = GLSL(
    uniform mat4 uProj;
+
    in vec2 aPosition;
 
    out vec2 vTexCoord;
@@ -21,7 +22,7 @@ const char *VERT_SHADER_SOURCE = GLSL(
    }
 );
 
-const char *FRAG_SHADER_SOURCE = GLSL(
+const char *kFragShaderSource = GLSL(
    uniform sampler2D uTexture;
 
    in vec2 vTexCoord;
@@ -33,16 +34,17 @@ const char *FRAG_SHADER_SOURCE = GLSL(
    }
 );
 
-const std::array<float, 8> vertices = { -1.0f, -1.0f,
-                                         1.0f, -1.0f,
-                                        -1.0f,  1.0f,
-                                         1.0f,  1.0f };
+const std::array<float, 8> kVertices = { -1.0f, -1.0f,
+                                          1.0f, -1.0f,
+                                         -1.0f,  1.0f,
+                                          1.0f,  1.0f };
 
-const std::array<unsigned int, 6> indices = { 0, 1, 2,
-                                              1, 3, 2 };
+const std::array<unsigned int, 6> kIndices = { 0, 1, 2,
+                                               1, 3, 2 };
 
-const GLenum textureUnit = 0;
+const GLenum kTextureUnit = 0;
 
+#if GBC_DEBUG
 std::string getErrorName(GLenum error) {
    switch (error) {
       case GL_NO_ERROR:
@@ -68,9 +70,10 @@ void checkGLError() {
       LOG_WARNING("OpenGL error " << error << " (" << getErrorName(error) << ")");
    }
 }
+#endif // GBC_DEBUG
 
-void fiveToEightBit(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> &pixels,
-                    std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> &eightBitPixels) {
+void fiveToEightBit(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& pixels,
+                    std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& eightBitPixels) {
    // Transform pixels from 5-bit to 8-bit format
    // Also flip the image vertically since (0, 0) is the lower left corner for OpenGL textures
    for (size_t i = 0; i < pixels.size(); ++i) {
@@ -104,19 +107,19 @@ Mat4 ortho(float left, float right, float bottom, float top) {
 
 Renderer::Renderer(int width, int height)
    : texture(GL_TEXTURE_2D),
-     model(Mesh(vertices.data(), static_cast<unsigned int>(vertices.size()), indices.data(), static_cast<unsigned int>(indices.size()), 2), ShaderProgram()) {
+     model(Mesh(kVertices.data(), static_cast<unsigned int>(kVertices.size()), kIndices.data(), static_cast<unsigned int>(kIndices.size()), 2), ShaderProgram()) {
    // Back face culling
    glEnable(GL_CULL_FACE);
    glCullFace(GL_BACK);
 
    // Shaders
-   SPtr<Shader> vertShader(std::make_shared<Shader>(GL_VERTEX_SHADER));
-   SPtr<Shader> fragShader(std::make_shared<Shader>(GL_FRAGMENT_SHADER));
+   SPtr<Shader> vertShader = std::make_shared<Shader>(GL_VERTEX_SHADER);
+   SPtr<Shader> fragShader = std::make_shared<Shader>(GL_FRAGMENT_SHADER);
 
-   if (!vertShader->compile(VERT_SHADER_SOURCE)) {
+   if (!vertShader->compile(kVertShaderSource)) {
       ASSERT(false, "Unable to compile vertex shader");
    }
-   if (!fragShader->compile(FRAG_SHADER_SOURCE)) {
+   if (!fragShader->compile(kFragShaderSource)) {
       ASSERT(false, "Unable to compile fragment shader");
    }
 
@@ -127,7 +130,7 @@ Renderer::Renderer(int width, int height)
    }
 
    // Texture
-   glActiveTexture(GL_TEXTURE0 + textureUnit);
+   glActiveTexture(GL_TEXTURE0 + kTextureUnit);
    texture.bind();
 
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -137,17 +140,16 @@ Renderer::Renderer(int width, int height)
 
    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, GBC::kScreenWidth, GBC::kScreenHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
-   model.getProgram().setUniformValue("uTexture", textureUnit);
+   model.getProgram().setUniformValue("uTexture", kTextureUnit);
 
-   onFramebufferSizeChange(width, height);
+   onFramebufferSizeChanged(width, height);
 }
 
-Renderer::~Renderer() {
-}
-
-void Renderer::onFramebufferSizeChange(int width, int height) {
+void Renderer::onFramebufferSizeChanged(int width, int height) {
    ASSERT(width > 0 && height > 0, "Invalid framebuffer size: %d x %d", width, height);
 
+   width = std::max(1, width);
+   height = std::max(1, height);
    glViewport(0, 0, width, height);
 
    static const float kInvGameBoyAspectRatio = static_cast<float>(GBC::kScreenHeight) / GBC::kScreenWidth;
@@ -155,18 +157,14 @@ void Renderer::onFramebufferSizeChange(int width, int height) {
    float aspectRatio = framebufferAspectRatio * kInvGameBoyAspectRatio;
    float invAspectRatio = 1.0f / aspectRatio;
 
-   Mat4 proj;
-   if (aspectRatio >= 1.0f) {
-      proj = ortho(-aspectRatio, aspectRatio, -1.0f, 1.0f);
-   } else {
-      proj = ortho(-1.0f, 1.0f, -invAspectRatio, invAspectRatio);
-   }
-
+   Mat4 proj = aspectRatio >= 1.0f ? ortho(-aspectRatio, aspectRatio, -1.0f, 1.0f) : ortho(-1.0f, 1.0f, -invAspectRatio, invAspectRatio);
    model.getProgram().setUniformValue("uProj", proj);
 }
 
-void Renderer::draw(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> &pixels) {
-   RUN_DEBUG(checkGLError();)
+void Renderer::draw(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& pixels) {
+#if GBC_DEBUG
+   checkGLError();
+#endif // GBC_DEBUG
 
    glClear(GL_COLOR_BUFFER_BIT);
 

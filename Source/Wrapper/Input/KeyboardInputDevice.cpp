@@ -2,8 +2,8 @@
 
 #include "GLIncludes.h"
 
-KeyboardInputDevice::KeyboardInputDevice(GLFWwindow* const window)
-   : window(window) {
+KeyboardInputDevice::KeyboardInputDevice(GLFWwindow* initialWindow)
+   : window(initialWindow) {
 }
 
 GBC::Joypad KeyboardInputDevice::poll() {
@@ -33,5 +33,5 @@ GBC::Joypad KeyboardInputDevice::poll() {
 }
 
 bool KeyboardInputDevice::pressed(int key) {
-   return glfwGetKey(window, key) == GLFW_PRESS;
+   return window && glfwGetKey(window, key) == GLFW_PRESS;
 }

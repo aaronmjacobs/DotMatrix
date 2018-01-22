@@ -1,6 +1,6 @@
-#include "Shader.h"
-
 #include "FancyAssert.h"
+
+#include "Wrapper/Video/Shader.h"
 
 Shader::Shader(const GLenum type)
    : id(glCreateShader(type)), type(type) {
@@ -11,7 +11,7 @@ Shader::~Shader() {
    glDeleteShader(id);
 }
 
-bool Shader::compile(const char *source) {
+bool Shader::compile(const char* source) {
    glShaderSource(id, 1, &source, nullptr);
    glCompileShader(id);
 

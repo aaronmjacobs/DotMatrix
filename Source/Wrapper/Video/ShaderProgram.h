@@ -15,46 +15,32 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-typedef glm::vec2 vec2;
-typedef glm::vec3 vec3;
-typedef glm::vec4 vec4;
-typedef glm::mat4 mat4;
+using vec2 = glm::vec2;
+using vec3 = glm::vec3;
+using vec4 = glm::vec4;
+using mat4 = glm::mat4;
 #define RAW_VALUE(x) glm::value_ptr(x)
 
 #else
 
-#include <array>
-typedef std::array<float, 2> vec2;
-typedef std::array<float, 3> vec3;
-typedef std::array<float, 4> vec4;
-typedef std::array<float, 16> mat4;
+using vec2 = std::array<float, 2>;
+using vec3 = std::array<float, 3>;
+using vec4 = std::array<float, 4>;
+using mat4 = std::array<float, 16>;
 #define RAW_VALUE(x) (x).data()
 
 #endif
 
-class Shader;
+namespace ShaderAttribute {
 
-namespace ShaderAttributes {
-
-enum Attributes : GLint {
-   POSITION = 0,
-   NORMAL = 1,
-   TEX_COORD = 2,
-   COLOR = 3,
+enum Enum : GLuint {
+   kPosition = 0,
+   kNormal = 1,
+   kTexCoord = 2,
+   kColor = 3,
 };
 
-namespace {
-
-const std::array<const char*, 4> NAMES = {
-   "aPosition",
-   "aNormal",
-   "aTexCoord",
-   "aColor"
-};
-
-} // namespace
-
-} // namespace ShaderAttributes
+} // namespace ShaderAttribute
 
 union UniformData {
    bool boolVal;
@@ -68,24 +54,11 @@ union UniformData {
    UniformData() {
       memset(this, 0, sizeof(UniformData));
    }
-
-   ~UniformData() {
-   }
 };
 
 class Uniform {
-protected:
-   const GLint location;
-   const GLenum type;
-   const std::string name;
-   UniformData activeData;
-   UniformData pendingData;
-   bool dirty;
-
 public:
    Uniform(const GLint location, const GLenum type, const std::string &name);
-
-   virtual ~Uniform();
 
    void commit();
 
@@ -111,52 +84,31 @@ public:
    }
 
    void setValue(bool value);
-
    void setValue(int value);
-
    void setValue(GLenum value);
-
    void setValue(float value);
-
    void setValue(const vec2 &value);
-
    void setValue(const vec3 &value);
-
    void setValue(const vec4 &value);
-
    void setValue(const mat4 &value);
+
+protected:
+   const GLint location;
+   const GLenum type;
+   const std::string name;
+   UniformData activeData;
+   UniformData pendingData;
+   bool dirty;
 };
 
-typedef std::unordered_map<std::string, SPtr<Uniform>> UniformMap;
+class Shader;
+using UniformMap = std::unordered_map<std::string, SPtr<Uniform>>;
 
 class ShaderProgram {
-protected:
-   /**
-    * The shader program's handle
-    */
-   GLuint id;
-
-   /**
-    * All shaders attached to the program
-    */
-   std::vector<SPtr<Shader>> shaders;
-
-   /**
-    * All uniforms in the shader program
-    */
-   UniformMap uniforms;
-
-   /**
-    * Sets the program as the active program
-    */
-   void use() const;
-
 public:
    ShaderProgram();
-
-   ShaderProgram(ShaderProgram &&other);
-
-   virtual ~ShaderProgram();
+   ShaderProgram(ShaderProgram&& other);
+   ~ShaderProgram();
 
    /**
     * Gets the shader program's handle
@@ -168,7 +120,7 @@ public:
    /**
     * Attaches the given shader to the program
     */
-   void attach(SPtr<Shader> shader);
+   void attach(const SPtr<Shader>& shader);
 
    /**
     * Links the shader program
@@ -178,12 +130,12 @@ public:
    /**
     * Returns whether the program has a uniform with the given name
     */
-   bool hasUniform(const std::string &name) const;
+   bool hasUniform(const std::string& name) const;
 
    /**
     * Gets the uniform with the given name
     */
-   SPtr<Uniform> getUniform(const std::string &name) const;
+   SPtr<Uniform> getUniform(const std::string& name) const;
 
    /**
     * Commits the values of all uniforms in the shader program
@@ -194,7 +146,7 @@ public:
     * Sets the value of the uniform with the given name
     */
    template<typename T>
-   void setUniformValue(const std::string &name, const T &value, bool ignoreFailure = false) {
+   void setUniformValue(const std::string& name, const T& value, bool ignoreFailure = false) {
       UniformMap::iterator itr = uniforms.find(name);
       if (itr == uniforms.end()) {
          if (!ignoreFailure) {
@@ -206,6 +158,27 @@ public:
 
       itr->second->setValue(value);
    }
+
+protected:
+   /**
+   * The shader program's handle
+   */
+   GLuint id;
+
+   /**
+   * All shaders attached to the program
+   */
+   std::vector<SPtr<Shader>> shaders;
+
+   /**
+   * All uniforms in the shader program
+   */
+   UniformMap uniforms;
+
+   /**
+   * Sets the program as the active program
+   */
+   void use() const;
 };
 
 #endif

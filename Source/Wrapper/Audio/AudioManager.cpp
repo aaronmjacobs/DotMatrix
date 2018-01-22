@@ -11,13 +11,13 @@ namespace {
 const ALsizei kAudioFrequency = 44100;
 const size_t kBufferSize = 1470;
 
-void deleteDevice(ALCdevice *device) {
+void deleteDevice(ALCdevice* device) {
    if (device) {
       alcCloseDevice(device);
    }
 }
 
-void deleteContext(ALCcontext *context) {
+void deleteContext(ALCcontext* context) {
    if (context) {
       alcDestroyContext(context);
    }
@@ -42,7 +42,7 @@ const char* errorString(ALCenum error) {
    }
 }
 
-void checkError(const char *location) {
+void checkError(const char* location) {
    ALCenum error = alGetError();
    if (error != AL_NO_ERROR) {
       LOG_ERROR("OpenAL error while " << location << ": " << errorString(error));

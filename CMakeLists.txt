@@ -183,6 +183,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDES})
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 
 # Platform compile definitions
+target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_DEBUG=$<CONFIG:Debug>)
+
 include(TestBigEndian)
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
 if(IS_BIG_ENDIAN)
