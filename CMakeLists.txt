@@ -122,6 +122,11 @@ set(PEMPEK_DIR "${LIB_DIR}/PempekAssert")
 attach_lib("${PEMPEK_DIR}/include" "${PEMPEK_DIR}/lib/pempek_assert.cpp" "")
 source_group("Libraries\\PempekAssert" "${PEMPEK_DIR}/*")
 
+# readerwriterqueue
+set(QUEUE_DIR "${LIB_DIR}/readerwriterqueue")
+attach_lib("${QUEUE_DIR}" "${QUEUE_DIR}/readerwriterqueue.h;${QUEUE_DIR}/atomicops.h" "")
+source_group("Libraries\\readerwriterqueue" "${QUEUE_DIR}/*")
+
 # templog
 set(TEMPLOG_DIR "${LIB_DIR}/templog")
 attach_lib("${TEMPLOG_DIR}/include" "${TEMPLOG_DIR}/imp/logging.cpp" "")

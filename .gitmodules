@@ -7,3 +7,6 @@
 [submodule "dependencies/Boxer"]
 	path = Libraries/Boxer
 	url = https://github.com/aaronmjacobs/Boxer.git
+[submodule "Libraries/readerwriterqueue"]
+	path = Libraries/readerwriterqueue
+	url = https://github.com/cameron314/readerwriterqueue
