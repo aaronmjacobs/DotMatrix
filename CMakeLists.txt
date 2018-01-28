@@ -4,26 +4,11 @@ cmake_minimum_required(VERSION 3.8)
 project(Run-GBC VERSION 0.0.0.1 LANGUAGES C CXX)
 set(PROJECT_DISPLAY_NAME "Run-G.B.C.")
 
-# Build type
-if(NOT CMAKE_BUILD_TYPE)
-   message(STATUS "No build type selected, defaulting to Debug")
-   set(CMAKE_BUILD_TYPE "Debug")
-endif(NOT CMAKE_BUILD_TYPE)
-
-# Compiler requirements
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # Platform detection
 set(LINUX FALSE)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
    set(LINUX TRUE)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-
-# rpath handling
-if(LINUX)
-   set(CMAKE_INSTALL_RPATH "$ORIGIN/")
-endif(LINUX)
 
 # Directories
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/Source")
@@ -86,104 +71,12 @@ list(APPEND INCLUDES
    ${BIN_INCLUDE_DIR}
 )
 
-### Libraries ###
+### Target Info ###
 
-function(attach_lib include source lib)
-   if(include)
-      list(APPEND INCLUDES ${include})
-      set(INCLUDES ${INCLUDES} PARENT_SCOPE)
-   endif(include)
-
-   if(source)
-      list(APPEND SOURCES ${source})
-      set(SOURCES ${SOURCES} PARENT_SCOPE)
-   endif(source)
-
-   if(lib)
-      list(APPEND LIBS ${lib})
-      set(LIBS ${LIBS} PARENT_SCOPE)
-
-      if(BUILD_SHARED_LIBS)
-         list(APPEND COPY_LIBS ${lib})
-         set(COPY_LIBS ${COPY_LIBS} PARENT_SCOPE)
-      endif(BUILD_SHARED_LIBS)
-   endif(lib)
-endfunction(attach_lib)
-
-## Integrated ##
-
-# glad
-set(GLAD_DIR "${LIB_DIR}/glad")
-attach_lib("${GLAD_DIR}/include" "${GLAD_DIR}/src/glad.c" "${CMAKE_DL_LIBS}")
-source_group("Libraries\\glad" "${GLAD_DIR}/*")
-
-# Pempek Assert
-set(PEMPEK_DIR "${LIB_DIR}/PempekAssert")
-attach_lib("${PEMPEK_DIR}/include" "${PEMPEK_DIR}/lib/pempek_assert.cpp" "")
-source_group("Libraries\\PempekAssert" "${PEMPEK_DIR}/*")
-
-# readerwriterqueue
-set(QUEUE_DIR "${LIB_DIR}/readerwriterqueue")
-attach_lib("${QUEUE_DIR}" "${QUEUE_DIR}/readerwriterqueue.h;${QUEUE_DIR}/atomicops.h" "")
-source_group("Libraries\\readerwriterqueue" "${QUEUE_DIR}/*")
-
-# templog
-set(TEMPLOG_DIR "${LIB_DIR}/templog")
-attach_lib("${TEMPLOG_DIR}/include" "${TEMPLOG_DIR}/imp/logging.cpp" "")
-source_group("Libraries\\Templog" "${TEMPLOG_DIR}/*")
-
-## Static ##
-
-set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "Build shared libraries")
-
-# Boxer
-set(BOXER_DIR "${LIB_DIR}/Boxer")
-add_subdirectory(${BOXER_DIR})
-attach_lib("${BOXER_DIR}/include" "" "Boxer")
-
-## Shared ##
-
-set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build shared libraries")
-
-# GLFW
-set(GLFW_DIR "${LIB_DIR}/glfw")
-set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs")
-set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs")
-set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
-set(GLFW_INSTALL OFF CACHE INTERNAL "Generate installation target")
-set(GLFW_USE_CHDIR OFF CACHE INTERNAL "Make glfwInit chdir to Contents/Resources")
-add_subdirectory(${GLFW_DIR})
-attach_lib("${GLFW_DIR}/include" "" "glfw")
-
-# OpenAL
-set(OPENAL_DIR "${LIB_DIR}/openal-soft")
-set(ALSOFT_UTILS OFF CACHE INTERNAL "Build and install utility programs")
-set(ALSOFT_NO_CONFIG_UTIL ON CACHE INTERNAL "Disable building the alsoft-config utility")
-set(ALSOFT_EXAMPLES OFF CACHE INTERNAL "Build and install example programs")
-set(ALSOFT_CONFIG OFF CACHE INTERNAL "Install alsoft.conf sample configuration file")
-set(ALSOFT_HRTF_DEFS OFF CACHE INTERNAL "Install HRTF definition files")
-set(ALSOFT_INSTALL OFF CACHE INTERNAL "Install headers and libraries")
-add_subdirectory(${OPENAL_DIR})
-if(WIN32)
-   set(OPENAL_LIBRARY OpenAL32)
-else(WIN32)
-   set(OPENAL_LIBRARY openal)
-endif(WIN32)
-attach_lib("${OPENAL_DIR}/include" "" "${OPENAL_LIBRARY}")
-
-### Building ###
-
-# Binary
 add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${RESOURCES})
-
-# Includes
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDES})
-
-# Link
-target_link_libraries(${PROJECT_NAME} ${LIBS})
-
-# Platform compile definitions
 target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_DEBUG=$<CONFIG:Debug>)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
 
 include(TestBigEndian)
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
@@ -196,6 +89,85 @@ endif(IS_BIG_ENDIAN)
 if(WIN32)
    target_compile_definitions(${PROJECT_NAME} PRIVATE "NOMINMAX")
 endif(WIN32)
+
+### Libraries ###
+
+set(COPY_LIBS)
+
+## Integrated ##
+
+# PPK_ASSERT
+set(PPK_DIR "${LIB_DIR}/PPK_ASSERT")
+target_sources(${PROJECT_NAME} PRIVATE "${PPK_DIR}/src/ppk_assert.h;${PPK_DIR}/src/ppk_assert.cpp")
+target_include_directories(${PROJECT_NAME} PUBLIC "${PPK_DIR}/src")
+source_group("Libraries\\PPK_ASSERT" "${PPK_DIR}/src")
+
+# readerwriterqueue
+set(QUEUE_DIR "${LIB_DIR}/readerwriterqueue")
+target_sources(${PROJECT_NAME} PRIVATE "${QUEUE_DIR}/atomicops.h;${QUEUE_DIR}/readerwriterqueue.h")
+target_include_directories(${PROJECT_NAME} PUBLIC "${QUEUE_DIR}")
+source_group("Libraries\\readerwriterqueue" "${QUEUE_DIR}/*")
+
+# templog
+set(TEMPLOG_DIR "${LIB_DIR}/templog")
+set(TEMPLOG_SOURCES
+   "${TEMPLOG_DIR}/config.h"
+   "${TEMPLOG_DIR}/logging.h"
+   "${TEMPLOG_DIR}/templ_meta.h"
+   "${TEMPLOG_DIR}/tuples.h"
+   "${TEMPLOG_DIR}/type_lists.h"
+   "${TEMPLOG_DIR}/imp/logging.cpp"
+)
+target_sources(${PROJECT_NAME} PRIVATE "${TEMPLOG_SOURCES}")
+target_include_directories(${PROJECT_NAME} PUBLIC "${TEMPLOG_DIR}")
+source_group("Libraries\\templog" "${TEMPLOG_DIR}/*")
+
+## Static ##
+
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "Build shared libraries")
+
+# Boxer
+add_subdirectory("${LIB_DIR}/Boxer")
+target_link_libraries(${PROJECT_NAME} PUBLIC Boxer)
+
+# glad
+add_subdirectory("${LIB_DIR}/glad")
+target_link_libraries(${PROJECT_NAME} PUBLIC optimized glad)
+target_link_libraries(${PROJECT_NAME} PUBLIC debug glad-debug)
+list(APPEND COPY_LIBS "${CMAKE_DL_LIBS}")
+
+## Shared ##
+
+set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build shared libraries")
+
+# GLFW
+set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs")
+set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs")
+set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
+set(GLFW_INSTALL OFF CACHE INTERNAL "Generate installation target")
+add_subdirectory("${LIB_DIR}/glfw")
+target_compile_definitions(${PROJECT_NAME} PUBLIC GLFW_INCLUDE_NONE)
+target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
+list(APPEND COPY_LIBS glfw)
+
+# OpenAL
+set(OPENAL_DIR "${LIB_DIR}/openal-soft")
+set(ALSOFT_UTILS OFF CACHE INTERNAL "Build and install utility programs")
+set(ALSOFT_NO_CONFIG_UTIL ON CACHE INTERNAL "Disable building the alsoft-config utility")
+set(ALSOFT_EXAMPLES OFF CACHE INTERNAL "Build and install example programs")
+set(ALSOFT_CONFIG OFF CACHE INTERNAL "Install alsoft.conf sample configuration file")
+set(ALSOFT_HRTF_DEFS OFF CACHE INTERNAL "Install HRTF definition files")
+set(ALSOFT_INSTALL OFF CACHE INTERNAL "Install headers and libraries")
+add_subdirectory("${LIB_DIR}/openal-soft")
+if(WIN32)
+   set(OPENAL_LIBRARY OpenAL32)
+else(WIN32)
+   set(OPENAL_LIBRARY openal)
+endif(WIN32)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${OPENAL_LIBRARY})
+# openal-soft doesn't populate INTERFACE_INCLUDE_DIRECTORIES, so we need to manually add the includes here
+target_include_directories(${PROJECT_NAME} PUBLIC $<TARGET_PROPERTY:${OPENAL_LIBRARY},INCLUDE_DIRECTORIES>)
+list(APPEND COPY_LIBS ${OPENAL_LIBRARY})
 
 ### Post-Build ###
 
@@ -210,7 +182,7 @@ endif(WIN32)
 
 ### Install ###
 
-## OS X ##
+## macOS ##
 
 if(APPLE)
    set(APP_DIR "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}.app")
@@ -257,16 +229,16 @@ if(WIN32)
    endforeach(COPY_LIB)
 
    # Install system libraries
-   set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP true) # Let us choose the install location
+   set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ".") # Copy into the same folder as the exe, not the 'bin' folder (which is the default)
    include(InstallRequiredSystemLibraries)
-   if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
-      install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION ".")
-   endif(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
 endif(WIN32)
 
 ## Linux ##
 
 if(LINUX)
+   # rpath handling
+   set(CMAKE_INSTALL_RPATH "$ORIGIN/")
+
    # Copy the executable (not install, so that the rpath doesn't change)
    install(FILES "$<TARGET_FILE:${PROJECT_NAME}>" DESTINATION "${CMAKE_INSTALL_PREFIX}"
            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)

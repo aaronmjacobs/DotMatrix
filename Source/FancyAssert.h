@@ -1,7 +1,7 @@
 #ifndef FANCY_ASSERT_H
 #define FANCY_ASSERT_H
 
-#include <pempek/pempek_assert.h>
+#include <ppk_assert.h>
 
 #define ASSERT                PPK_ASSERT
 #define ASSERT_WARNING        PPK_ASSERT_WARNING
