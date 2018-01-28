@@ -1,8 +1,11 @@
 #include "FancyAssert.h"
+#include "Log.h"
 #include "IOUtils.h"
 #include "OSUtils.h"
 
+#if GBC_HAS_FILESYSTEM_SUPPORT
 #include <filesystem>
+#endif // GBC_HAS_FILESYSTEM_SUPPORT
 #include <fstream>
 #include <mutex>
 
@@ -124,6 +127,7 @@ bool ensurePathToFileExists(const std::string& path) {
 std::vector<std::string> getAllFilePathsRecursive(const std::string& directory) {
    std::vector<std::string> filePaths;
 
+#if GBC_HAS_FILESYSTEM_SUPPORT
    for (const std::tr2::sys::directory_entry& entry : std::tr2::sys::recursive_directory_iterator(directory)) {
       const std::tr2::sys::path& path = entry.path();
       std::string pathString = path.string();
@@ -132,6 +136,9 @@ std::vector<std::string> getAllFilePathsRecursive(const std::string& directory) 
          filePaths.push_back(pathString);
       }
    }
+#else
+   ASSERT(false, "This build was generated without <filesystem> support, getAllFilePathsRecursive() will return an empty vector!");
+#endif // GBC_HAS_FILESYSTEM_SUPPORT
 
    return filePaths;
 }

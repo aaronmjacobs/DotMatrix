@@ -174,7 +174,7 @@ private:
       struct {
          union {
             struct {
-#if GBC_BIG_ENDIAN
+#if GBC_IS_BIG_ENDIAN
                uint8_t a;  // accumulator register
                uint8_t f;  // status register
 

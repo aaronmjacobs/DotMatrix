@@ -5,6 +5,8 @@
 #include "GBC/Device.h"
 #include "GBC/Memory.h"
 
+#include <cstring>
+
 namespace GBC {
 
 Memory::Memory(Device& dev)

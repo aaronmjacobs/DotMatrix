@@ -10,6 +10,7 @@
 
 #include "Wrapper/Platform/IOUtils.h"
 
+#include <algorithm>
 #include <future>
 #include <vector>
 

@@ -79,12 +79,12 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_DEBUG=$<CONFIG:Debug>)
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
 
 include(TestBigEndian)
-TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
-if(IS_BIG_ENDIAN)
-   target_compile_definitions(${PROJECT_NAME} PRIVATE "GBC_BIG_ENDIAN")
-else(IS_BIG_ENDIAN)
-   target_compile_definitions(${PROJECT_NAME} PRIVATE "GBC_LITTLE_ENDIAN")
-endif(IS_BIG_ENDIAN)
+TEST_BIG_ENDIAN(GBC_IS_BIG_ENDIAN)
+target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_IS_BIG_ENDIAN=$<BOOL:${GBC_IS_BIG_ENDIAN}>)
+
+include(CheckIncludeFileCXX)
+CHECK_INCLUDE_FILE_CXX("filesystem" GBC_HAS_FILESYSTEM_SUPPORT)
+target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_HAS_FILESYSTEM_SUPPORT=$<BOOL:${GBC_HAS_FILESYSTEM_SUPPORT}>)
 
 if(WIN32)
    target_compile_definitions(${PROJECT_NAME} PRIVATE "NOMINMAX")
