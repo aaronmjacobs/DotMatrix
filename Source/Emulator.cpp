@@ -182,6 +182,11 @@ bool Emulator::init() {
       return true;
    }
 
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+
    std::string windowTitle = getWindowTitle(nullptr);
    window = glfwCreateWindow(GBC::kScreenWidth * 2, GBC::kScreenHeight * 2, windowTitle.c_str() , nullptr, nullptr);
    if (!window) {
@@ -207,6 +212,7 @@ bool Emulator::init() {
    keyboardInputDevice.setWindow(window);
 
    glfwSetWindowUserPointer(window, this);
+   glfwSetWindowSizeLimits(window, GBC::kScreenWidth, GBC::kScreenHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
    glfwSetDropCallback(window, dropCallback);
    glfwSetKeyCallback(window, keyCallback);
