@@ -1,9 +1,7 @@
 #ifndef CPUTESTER_H
 #define CPUTESTER_H
 
-#include "Constants.h"
-
-#if defined(GBC_RUN_TESTS)
+#if GBC_RUN_TESTS
 
 #include <cstdint>
 #include <vector>
@@ -39,6 +37,6 @@ private:
 
 } // namespace GBC
 
-#endif // defined(GBC_RUN_TESTS)
+#endif // GBC_RUN_TESTS
 
 #endif

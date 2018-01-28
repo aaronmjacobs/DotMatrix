@@ -26,10 +26,7 @@ option(GBC_LOG_MSVC_STYLE "Format logs for MSVC" ${GBC_LOG_MSVC_STYLE_DEFAULT})
 option(GBC_RUN_TESTS "Run emulator tests" OFF)
 
 # Generated content
-configure_file(
-  "${SRC_DIR}/Constants.h.in"
-  "${BIN_INCLUDE_DIR}/Constants.h"
-)
+configure_file("${SRC_DIR}/Constants.h.in" "${BIN_INCLUDE_DIR}/Constants.h")
 
 # Source content
 include(Sources.cmake)
@@ -77,6 +74,9 @@ add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${HEADERS} ${RESOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDES})
 target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_DEBUG=$<CONFIG:Debug>)
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_LOG_MSVC_STYLE=$<BOOL:${GBC_LOG_MSVC_STYLE}>)
+target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_RUN_TESTS=$<BOOL:${GBC_RUN_TESTS}>)
 
 include(TestBigEndian)
 TEST_BIG_ENDIAN(GBC_IS_BIG_ENDIAN)

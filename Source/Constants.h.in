@@ -1,9 +1,6 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#cmakedefine GBC_LOG_MSVC_STYLE
-#cmakedefine GBC_RUN_TESTS
-
 namespace {
 
 constexpr const char* kProjectName = "@PROJECT_NAME@";

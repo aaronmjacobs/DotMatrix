@@ -1,7 +1,6 @@
+#if !GBC_RUN_TESTS
+
 #include "Constants.h"
-
-#if !defined(GBC_RUN_TESTS)
-
 #include "Emulator.h"
 #include "GLIncludes.h"
 #include "Log.h"
@@ -61,4 +60,4 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE hPrevInstance, _In
 }
 #endif // defined(_WIN32)
 
-#endif // !defined(GBC_RUN_TESTS)
+#endif // !GBC_RUN_TESTS

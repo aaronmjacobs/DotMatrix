@@ -1,6 +1,4 @@
-#include "Constants.h"
-
-#if defined(GBC_RUN_TESTS)
+#if GBC_RUN_TESTS
 
 // Hack to allow us access to private members of the CPU
 #define _ALLOW_KEYWORD_MACROS
@@ -149,4 +147,4 @@ int main(int argc, char *argv[]) {
    return 0;
 }
 
-#endif // defined(GBC_RUN_TESTS)
+#endif // GBC_RUN_TESTS

@@ -1,6 +1,4 @@
-#include "Constants.h"
-
-#if defined(GBC_RUN_TESTS)
+#if GBC_RUN_TESTS
 
 #include "FancyAssert.h"
 #include "Log.h"
@@ -2908,4 +2906,4 @@ void CPUTester::init() {
 
 } // namespace GBC
 
-#endif // defined(GBC_RUN_TESTS)
+#endif // GBC_RUN_TESTS
