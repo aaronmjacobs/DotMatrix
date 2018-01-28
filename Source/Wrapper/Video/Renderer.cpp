@@ -44,34 +44,6 @@ const std::array<unsigned int, 6> kIndices = { 0, 1, 2,
 
 const GLenum kTextureUnit = 0;
 
-#if GBC_DEBUG
-std::string getErrorName(GLenum error) {
-   switch (error) {
-      case GL_NO_ERROR:
-         return "GL_NO_ERROR";
-      case GL_INVALID_ENUM:
-         return "GL_INVALID_ENUM";
-      case GL_INVALID_VALUE:
-         return "GL_INVALID_VALUE";
-      case GL_INVALID_OPERATION:
-         return "GL_INVALID_OPERATION";
-      case GL_INVALID_FRAMEBUFFER_OPERATION:
-         return "GL_INVALID_FRAMEBUFFER_OPERATION";
-      case GL_OUT_OF_MEMORY:
-         return "GL_OUT_OF_MEMORY";
-      default:
-         return "Unknown";
-   }
-}
-
-void checkGLError() {
-   GLenum error = glGetError();
-   if (error != GL_NO_ERROR) {
-      LOG_WARNING("OpenGL error " << error << " (" << getErrorName(error) << ")");
-   }
-}
-#endif // GBC_DEBUG
-
 void fiveToEightBit(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& pixels,
                     std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& eightBitPixels) {
    // Transform pixels from 5-bit to 8-bit format
@@ -162,10 +134,6 @@ void Renderer::onFramebufferSizeChanged(int width, int height) {
 }
 
 void Renderer::draw(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& pixels) {
-#if GBC_DEBUG
-   checkGLError();
-#endif // GBC_DEBUG
-
    glClear(GL_COLOR_BUFFER_BIT);
 
    std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> eightBitPixels;

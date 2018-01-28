@@ -15,11 +15,43 @@
 
 namespace {
 
+#if GBC_DEBUG
+const char* getGlErrorName(GLenum error) {
+   switch (error) {
+   case GL_NO_ERROR:
+      return "GL_NO_ERROR";
+   case GL_INVALID_ENUM:
+      return "GL_INVALID_ENUM";
+   case GL_INVALID_VALUE:
+      return "GL_INVALID_VALUE";
+   case GL_INVALID_OPERATION:
+      return "GL_INVALID_OPERATION";
+   case GL_INVALID_FRAMEBUFFER_OPERATION:
+      return "GL_INVALID_FRAMEBUFFER_OPERATION";
+   case GL_OUT_OF_MEMORY:
+      return "GL_OUT_OF_MEMORY";
+   default:
+      return "Unknown";
+   }
+}
+
+void gladPostCallback(const char* name, void* funcptr, int numArgs, ...) {
+   GLenum errorCode = glad_glGetError();
+   ASSERT(errorCode == GL_NO_ERROR, "OpenGL error %d (%s) in %s", errorCode, getGlErrorName(errorCode), name);
+}
+#endif // GBC_DEBUG
+
 bool loadGl() {
    static bool loaded = false;
 
    if (!loaded) {
       loaded = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) != 0;
+
+#if GBC_DEBUG
+      if (loaded) {
+         glad_set_post_callback(gladPostCallback);
+      }
+#endif // GBC_DEBUG
    }
 
    return loaded;
@@ -92,6 +124,9 @@ Emulator::~Emulator() {
       saveThreadConditionVariable.notify_all();
       saveThread.join();
    }
+
+   renderer = nullptr;
+   device = nullptr;
 
    if (window) {
       glfwDestroyWindow(window);
