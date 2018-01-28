@@ -161,8 +161,8 @@ public:
 #if defined(NDEBUG)
    // Prevent text logging in release builds
 #  define CERR_SEV_THRESHOLD templog::sev_fatal + 1
-   // Prevent messages boxes lower than error in release builds
-#  define MSG_BOX_SEV_THRESHOLD templog::sev_error
+   // Prevent debug messages boxes in release builds
+#  define MSG_BOX_SEV_THRESHOLD templog::sev_info
 #else // defined(NDEBUG)
 #  define CERR_SEV_THRESHOLD templog::sev_debug
 #  define MSG_BOX_SEV_THRESHOLD templog::sev_debug

@@ -26,6 +26,13 @@ struct SaveData {
    std::string gameTitle;
 };
 
+struct Bounds {
+   int x = 0;
+   int y = 0;
+   int width = 0;
+   int height = 0;
+};
+
 class Emulator {
 public:
    Emulator()
@@ -49,15 +56,16 @@ public:
 
    void onFramebufferSizeChanged(int width, int height);
    void onFilesDropped(int count, const char* paths[]);
-#if GBC_DEBUG
    void onKeyChanged(int key, int scancode, int action, int mods);
 
+#if GBC_DEBUG
    double getTimeModifier() const {
       return timeModifier;
    }
 #endif // GBC_DEBUG
 
 private:
+   void toggleFullScreen();
    void loadGame();
    void saveGameAsync();
    void saveThreadMain();
@@ -77,6 +85,8 @@ private:
    std::condition_variable saveThreadConditionVariable;
    std::atomic_bool exiting;
    moodycamel::ReaderWriterQueue<SaveData> saveQueue;
+
+   Bounds savedWindowBounds;
 
 #if GBC_DEBUG
    double timeModifier;

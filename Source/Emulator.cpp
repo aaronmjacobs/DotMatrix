@@ -70,15 +70,57 @@ void dropCallback(GLFWwindow* window, int count, const char* paths[]) {
    }
 }
 
-#if GBC_DEBUG
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
    if (Emulator* emulator = static_cast<Emulator*>(glfwGetWindowUserPointer(window))) {
       emulator->onKeyChanged(key, scancode, action, mods);
    }
 }
-#endif // GBC_DEBUG
+
+GLFWmonitor* selectFullScreenMonitor(const Bounds& windowBounds) {
+   GLFWmonitor* fullScreenMonitor = glfwGetPrimaryMonitor();
+
+   int windowCenterX = windowBounds.x + (windowBounds.width / 2);
+   int windowCenterY = windowBounds.y + (windowBounds.height / 2);
+
+   int monitorCount = 0;
+   GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
+
+   for (int i = 0; i < monitorCount; ++i) {
+      GLFWmonitor* candidateMonitor = monitors[i];
+
+      if (const GLFWvidmode* vidMode = glfwGetVideoMode(candidateMonitor)) {
+         Bounds monitorBounds;
+         glfwGetMonitorPos(candidateMonitor, &monitorBounds.x, &monitorBounds.y);
+         monitorBounds.width = vidMode->width;
+         monitorBounds.height = vidMode->height;
+
+         if (windowCenterX >= monitorBounds.x && windowCenterX < monitorBounds.x + monitorBounds.width &&
+             windowCenterY >= monitorBounds.y && windowCenterY < monitorBounds.y + monitorBounds.height) {
+            fullScreenMonitor = candidateMonitor;
+            break;
+         }
+      }
+   }
+
+   return fullScreenMonitor;
+}
+
+std::string getWindowTitle(const GBC::Device* device) {
+   static const std::string kBaseTitle = kProjectDisplayName;
+
+   const char* gameTitle = device ? device->title() : nullptr;
+   if (gameTitle) {
+      return kBaseTitle + " - " + gameTitle;
+   }
+
+   return kBaseTitle;
+}
 
 std::string getSaveName(const char* title) {
+   if (!title) {
+      return "";
+   }
+
    // Start with the cartridge title
    std::string fileName = title;
 
@@ -140,7 +182,8 @@ bool Emulator::init() {
       return true;
    }
 
-   window = glfwCreateWindow(GBC::kScreenWidth, GBC::kScreenHeight, kProjectDisplayName, nullptr, nullptr);
+   std::string windowTitle = getWindowTitle(nullptr);
+   window = glfwCreateWindow(GBC::kScreenWidth * 2, GBC::kScreenHeight * 2, windowTitle.c_str() , nullptr, nullptr);
    if (!window) {
       LOG_ERROR_MSG_BOX("Unable to create GLFW window");
       return false;
@@ -166,9 +209,7 @@ bool Emulator::init() {
    glfwSetWindowUserPointer(window, this);
    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
    glfwSetDropCallback(window, dropCallback);
-#if GBC_DEBUG
    glfwSetKeyCallback(window, keyCallback);
-#endif // GBC_DEBUG
 
    device = std::make_unique<GBC::Device>();
 
@@ -222,12 +263,14 @@ void Emulator::setRom(const char* romPath) {
       if (cartridge) {
          device = std::make_unique<GBC::Device>();
          device->setCartridge(std::move(cartridge));
-         glfwSetWindowTitle(window, device->title());
+
+         std::string windowTitle = getWindowTitle(device.get());
+         glfwSetWindowTitle(window, windowTitle.c_str());
 
          // Try to load a save file
          loadGame();
       } else {
-         LOG_WARNING("Failed to load rom: " << romPath);
+         LOG_WARNING_MSG_BOX("Failed to load rom: " << romPath);
       }
    }
 }
@@ -244,30 +287,57 @@ void Emulator::onFilesDropped(int count, const char* paths[]) {
    }
 }
 
-#if GBC_DEBUG
 void Emulator::onKeyChanged(int key, int scancode, int action, int mods) {
-   bool enabled = action != GLFW_RELEASE;
+   bool enabled = action == GLFW_PRESS;
 
-   if (key == GLFW_KEY_1 && enabled) {
-      timeModifier = 1.0;
-   } else if (key == GLFW_KEY_2 && enabled) {
-      timeModifier = 2.0;
-   } else if (key == GLFW_KEY_3 && enabled) {
-      timeModifier = 5.0;
-   } else if (key == GLFW_KEY_4 && enabled) {
-      timeModifier = 1.0 / 60.0;
-   } else if (key == GLFW_KEY_5 && enabled) {
-      timeModifier = 0.0;
+   if (enabled) {
+      if (key == GLFW_KEY_F11 || (key == GLFW_KEY_ENTER && ((mods & GLFW_MOD_ALT) != 0))) {
+         toggleFullScreen();
+      }
+
+#if GBC_DEBUG
+      if (key == GLFW_KEY_1) {
+         timeModifier = 1.0;
+      } else if (key == GLFW_KEY_2) {
+         timeModifier = 2.0;
+      } else if (key == GLFW_KEY_3) {
+         timeModifier = 5.0;
+      } else if (key == GLFW_KEY_4) {
+         timeModifier = 1.0 / 60.0;
+      } else if (key == GLFW_KEY_5) {
+         timeModifier = 0.0;
+      }
+#endif // GBC_DEBUG
    }
 }
-#endif // GBC_DEBUG
+
+void Emulator::toggleFullScreen() {
+   ASSERT(window);
+
+   if (GLFWmonitor* currentMonitor = glfwGetWindowMonitor(window)) {
+      // Currently in full screen mode, swap back to windowed (with last saved window location)
+      glfwSetWindowMonitor(window, nullptr, savedWindowBounds.x, savedWindowBounds.y, savedWindowBounds.width, savedWindowBounds.height, 0);
+      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+   } else {
+      // Currently in windowed mode, save the window location and swap to full screen
+      glfwGetWindowPos(window, &savedWindowBounds.x, &savedWindowBounds.y);
+      glfwGetWindowSize(window, &savedWindowBounds.width, &savedWindowBounds.height);
+
+      if (GLFWmonitor* newMonitor = selectFullScreenMonitor(savedWindowBounds)) {
+         if (const GLFWvidmode* vidMode = glfwGetVideoMode(newMonitor)) {
+            glfwSetWindowMonitor(window, newMonitor, 0, 0, vidMode->width, vidMode->height, vidMode->refreshRate);
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+         }
+      }
+   }
+}
 
 void Emulator::loadGame() {
    ASSERT(device);
 
    std::string saveFileName = getSaveName(device->title());
 
-   if (saveFileName.size() > 0 && IOUtils::canRead(saveFileName)) {
+   if (!saveFileName.empty() && IOUtils::canRead(saveFileName)) {
       std::vector<uint8_t> cartRamData = IOUtils::readBinaryFile(saveFileName);
       IOUtils::Archive cartRam(cartRamData);
 
@@ -280,18 +350,19 @@ void Emulator::loadGame() {
 void Emulator::saveGameAsync() {
    ASSERT(device);
 
-   SaveData saveData;
-   saveData.archive = device->saveCartRAM();
+   if (const char* title = device->title()) {
+      SaveData saveData;
+      saveData.archive = device->saveCartRAM();
+      saveData.gameTitle = title;
 
-   if (saveData.archive.getData().size() > 0) {
-      saveData.gameTitle = device->title();
+      if (saveData.archive.getData().size() > 0) {
+         {
+            std::lock_guard<std::mutex> lock(saveThreadMutex);
+            saveQueue.enqueue(std::move(saveData));
+         }
 
-      {
-         std::lock_guard<std::mutex> lock(saveThreadMutex);
-         saveQueue.enqueue(std::move(saveData));
+         saveThreadConditionVariable.notify_all();
       }
-
-      saveThreadConditionVariable.notify_all();
    }
 }
 

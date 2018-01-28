@@ -119,7 +119,7 @@ bool Device::loadCartRAM(IOUtils::Archive& ram) {
 
 const char* Device::title() const {
    if (!cart) {
-      return "none";
+      return nullptr;
    }
 
    return cart->title();
