@@ -333,6 +333,10 @@ void Emulator::toggleFullScreen() {
          if (const GLFWvidmode* vidMode = glfwGetVideoMode(newMonitor)) {
             glfwSetWindowMonitor(window, newMonitor, 0, 0, vidMode->width, vidMode->height, vidMode->refreshRate);
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+            // Due to a bug, the previously set swap interval is ignored on Windows 10 when transitioning to full screen, so we set it again here
+            // See: https://github.com/glfw/glfw/issues/1072
+            glfwSwapInterval(1);
          }
       }
    }
