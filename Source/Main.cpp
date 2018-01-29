@@ -25,9 +25,7 @@ int main(int argc, char* argv[]) {
       }
 
       static const double kMaxFrameTime = 0.25;
-      static const double kDt = 1.0 / 60.0;
       double lastTime = glfwGetTime();
-      double accumulator = 0.0;
 
       while (!emulator.shouldExit()) {
          double now = glfwGetTime();
@@ -38,15 +36,10 @@ int main(int argc, char* argv[]) {
          frameTime *= emulator.getTimeModifier();
 #endif // GBC_DEBUG
 
-         accumulator += frameTime;
-         while (accumulator >= kDt) {
-            glfwPollEvents();
-            emulator.tick(kDt);
-            accumulator -= kDt;
-         }
-
-         emulator.render();
          glfwPollEvents();
+
+         emulator.tick(frameTime);
+         emulator.render();
       }
    }
 
