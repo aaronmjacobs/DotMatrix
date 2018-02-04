@@ -17,17 +17,17 @@ Memory::Memory(Device& dev)
    eram.fill(0xFF);
 }
 
-const uint8_t* Memory::getAddr(uint16_t address) const {
+uint8_t Memory::read(uint16_t address) const {
    if (boot == Boot::kBooting && address <= 0x00FF) {
-      return &kBootstrap[address];
+      return kBootstrap[address];
    }
 
    if (cart && address < 0x8000) {
-      return cart->get(address);
+      return cart->read(address);
    }
 
    if (cart && address >= 0xA000 && address < 0xC000) {
-      return cart->get(address);
+      return cart->read(address);
    }
 
    if (address >= 0xE000 && address < 0xFE00) {
@@ -35,21 +35,21 @@ const uint8_t* Memory::getAddr(uint16_t address) const {
       address -= 0x2000;
    }
 
-   return &raw[address];
+   return raw[address];
 }
 
-void Memory::set(uint16_t address, uint8_t val) {
+void Memory::write(uint16_t address, uint8_t val) {
    if (boot == Boot::kBooting && address <= 0x00FF) {
       return; // Bootstrap is read only
    }
 
    if (cart && address < 0x8000) {
-      cart->set(address, val);
+      cart->write(address, val);
       return;
    }
 
    if (cart && address >= 0xA000 && address < 0xC000) {
-      cart->set(address, val);
+      cart->write(address, val);
       return;
    }
 

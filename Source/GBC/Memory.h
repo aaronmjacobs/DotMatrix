@@ -124,13 +124,8 @@ public:
       };
    };
 
-   const uint8_t* getAddr(uint16_t address) const;
-
-   uint8_t get(uint16_t address) const {
-      return *getAddr(address);
-   }
-
-   void set(uint16_t address, uint8_t val);
+   uint8_t read(uint16_t address) const;
+   void write(uint16_t address, uint8_t val);
 
    void setCartridge(class Cartridge* cartridge) {
       cart = cartridge;

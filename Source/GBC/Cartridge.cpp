@@ -142,16 +142,16 @@ public:
       : MemoryBankController(cartridge) {
    }
 
-   const uint8_t* get(uint16_t address) const override {
+   uint8_t read(uint16_t address) const override {
       if (address < 0x8000) {
          return cart.data(address);
       }
 
       LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
-      return &Cartridge::kInvalidAddressByte;
+      return Cartridge::kInvalidAddressByte;
    }
 
-   void set(uint16_t address, uint8_t val) override {
+   void write(uint16_t address, uint8_t val) override {
       // No writable memory
       LOG_WARNING("Trying to write to read-only cartridge at location " << hex(address) << ": " << hex(val));
    }
@@ -164,8 +164,9 @@ public:
         bankingMode(kROMBankingMode), ramBanks({}) {
    }
 
-   const uint8_t* get(uint16_t address) const override {
-      const uint8_t* pointer = &Cartridge::kInvalidAddressByte;
+   uint8_t read(uint16_t address) const override {
+      uint8_t value = Cartridge::kInvalidAddressByte;
+
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -173,7 +174,7 @@ public:
          case 0x3000:
          {
             // Always contains the first 16Bytes of the ROM
-            pointer = cart.data(address);
+            value = cart.data(address);
             break;
          }
          case 0x4000:
@@ -183,7 +184,7 @@ public:
          {
             // Switchable ROM bank
             ASSERT(romBankNumber > 0);
-            pointer = cart.data(address + ((romBankNumber - 1) * 0x4000));
+            value = cart.data(address + ((romBankNumber - 1) * 0x4000));
             break;
          }
          case 0xA000:
@@ -194,7 +195,7 @@ public:
             // Switchable RAM bank
             if (ramEnabled) {
                uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
-               pointer = &ramBanks[ramBank][address - 0xA000];
+               value = ramBanks[ramBank][address - 0xA000];
             } else {
                LOG_WARNING("Trying to read from RAM when not enabled");
             }
@@ -207,10 +208,10 @@ public:
          }
       }
 
-      return pointer;
+      return value;
    }
 
-   void set(uint16_t address, uint8_t val) override {
+   void write(uint16_t address, uint8_t val) override {
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -318,8 +319,9 @@ public:
       ram.fill(0xFF);
    }
 
-   const uint8_t* get(uint16_t address) const override {
-      const uint8_t* pointer = &Cartridge::kInvalidAddressByte;
+   uint8_t read(uint16_t address) const override {
+      uint8_t value = Cartridge::kInvalidAddressByte;
+
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -327,7 +329,7 @@ public:
          case 0x3000:
          {
             // Always contains the first 16Bytes of the ROM
-            pointer = cart.data(address);
+            value = cart.data(address);
             break;
          }
          case 0x4000:
@@ -337,7 +339,7 @@ public:
          {
             // Switchable ROM bank
             ASSERT(romBankNumber > 0);
-            pointer = cart.data(address + ((romBankNumber - 1) * 0x4000));
+            value = cart.data(address + ((romBankNumber - 1) * 0x4000));
             break;
          }
          case 0xA000:
@@ -348,7 +350,7 @@ public:
 
             // Switchable RAM bank
             if (ramEnabled) {
-               pointer = &ram[address - 0xA000];
+               value = ram[address - 0xA000];
             } else {
                LOG_WARNING("Trying to read from RAM when not enabled");
             }
@@ -361,10 +363,10 @@ public:
          }
       }
 
-      return pointer;
+      return value;
    }
 
-   void set(uint16_t address, uint8_t val) override {
+   void write(uint16_t address, uint8_t val) override {
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -440,8 +442,9 @@ public:
       STATIC_ASSERT(sizeof(RTC) == 5, "Invalid RTC size (check bitfields)");
    }
 
-   const uint8_t* get(uint16_t address) const override {
-      const uint8_t* pointer = &Cartridge::kInvalidAddressByte;
+   uint8_t read(uint16_t address) const override {
+      uint8_t value = Cartridge::kInvalidAddressByte;
+
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -449,7 +452,7 @@ public:
          case 0x3000:
          {
             // Always contains the first 16Bytes of the ROM
-            pointer = cart.data(address);
+            value = cart.data(address);
             break;
          }
          case 0x4000:
@@ -459,7 +462,7 @@ public:
          {
             // Switchable ROM bank
             ASSERT(romBankNumber > 0);
-            pointer = cart.data(address + ((romBankNumber - 1) * 0x4000));
+            value = cart.data(address + ((romBankNumber - 1) * 0x4000));
             break;
          }
          case 0xA000:
@@ -476,22 +479,22 @@ public:
                   case kBankOne:
                   case kBankTwo:
                   case kBankThree:
-                     pointer = &ramBanks[bankRegisterMode][address - 0xA000];
+                     value = ramBanks[bankRegisterMode][address - 0xA000];
                      break;
                   case kRTCSeconds:
-                     pointer = &readRTC.seconds;
+                     value = readRTC.seconds;
                      break;
                   case kRTCMinutes:
-                     pointer = &readRTC.minutes;
+                     value = readRTC.minutes;
                      break;
                   case kRTCHours:
-                     pointer = &readRTC.hours;
+                     value = readRTC.hours;
                      break;
                   case kRTCDaysLow:
-                     pointer = &readRTC.daysLow;
+                     value = readRTC.daysLow;
                      break;
                   case kRTCDaysHigh:
-                     pointer = &readRTC.daysHigh;
+                     value = readRTC.daysHigh;
                      break;
                   default:
                      ASSERT(false, "Invalid RAM bank / RTC selection value: %hhu", bankRegisterMode);
@@ -509,10 +512,10 @@ public:
          }
       }
 
-      return pointer;
+      return value;
    }
 
-   void set(uint16_t address, uint8_t val) override {
+   void write(uint16_t address, uint8_t val) override {
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -718,8 +721,9 @@ public:
       : MemoryBankController(cartridge), ramEnabled(false), romBankNumber(0x0001), ramBankNumber(0x00), ramBanks({}) {
    }
 
-   const uint8_t* get(uint16_t address) const override {
-      const uint8_t* pointer = &Cartridge::kInvalidAddressByte;
+   uint8_t read(uint16_t address) const override {
+      uint8_t value = Cartridge::kInvalidAddressByte;
+
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -727,7 +731,7 @@ public:
          case 0x3000:
          {
             // Always contains the first 16Bytes of the ROM
-            pointer = cart.data(address);
+            value = cart.data(address);
             break;
          }
          case 0x4000:
@@ -737,7 +741,7 @@ public:
          {
             // Switchable ROM bank
             ASSERT(romBankNumber <= 0x01E0);
-            pointer = cart.data(address + ((static_cast<int16_t>(romBankNumber) - 1) * 0x4000));
+            value = cart.data(address + ((static_cast<int16_t>(romBankNumber) - 1) * 0x4000));
             break;
          }
          case 0xA000:
@@ -747,7 +751,7 @@ public:
 
             // Switchable RAM bank
             if (ramEnabled) {
-               pointer = &ramBanks[ramBankNumber][address - 0xA000];
+               value = ramBanks[ramBankNumber][address - 0xA000];
             } else {
                LOG_WARNING("Trying to read from RAM when not enabled");
             }
@@ -760,10 +764,10 @@ public:
          }
       }
 
-      return pointer;
+      return value;
    }
 
-   void set(uint16_t address, uint8_t val) override {
+   void write(uint16_t address, uint8_t val) override {
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:

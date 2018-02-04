@@ -20,9 +20,9 @@ public:
 
    virtual ~MemoryBankController() = default;
 
-   virtual const uint8_t* get(uint16_t address) const = 0;
+   virtual uint8_t read(uint16_t address) const = 0;
 
-   virtual void set(uint16_t address, uint8_t val) = 0;
+   virtual void write(uint16_t address, uint8_t val) = 0;
 
    virtual void tick(double dt) {
       wroteToRam = false;
@@ -53,24 +53,24 @@ public:
       return cartTitle.data();
    }
 
-   const uint8_t* data(size_t address) const {
+   uint8_t data(size_t address) const {
       ASSERT(address < cartData.size());
 
       if (address >= cartData.size()) {
-         return &kInvalidAddressByte;
+         return kInvalidAddressByte;
       }
 
-      return &cartData[address];
+      return cartData[address];
    }
 
-   const uint8_t* get(uint16_t address) const {
+   uint8_t read(uint16_t address) const {
       ASSERT(controller);
-      return controller->get(address);
+      return controller->read(address);
    }
 
-   void set(uint16_t address, uint8_t val) {
+   void write(uint16_t address, uint8_t val) {
       ASSERT(controller);
-      controller->set(address, val);
+      controller->write(address, val);
    }
 
    void tick(double dt) {

@@ -221,7 +221,7 @@ private:
    };
 
    uint8_t readPC() {
-      return mem.get(reg.pc++);
+      return mem.read(reg.pc++);
    }
 
    uint16_t readPC16() {
@@ -269,13 +269,13 @@ private:
 
    void push(uint16_t val) {
       reg.sp -= 2;
-      mem.set(reg.sp, val & 0x00FF);
-      mem.set(reg.sp + 1, (val & 0xFF00) >> 8);
+      mem.write(reg.sp, val & 0x00FF);
+      mem.write(reg.sp + 1, (val & 0xFF00) >> 8);
    }
 
    uint16_t pop() {
-      uint8_t low = mem.get(reg.sp);
-      uint8_t high = mem.get(reg.sp + 1);
+      uint8_t low = mem.read(reg.sp);
+      uint8_t high = mem.read(reg.sp + 1);
       reg.sp += 2;
 
       return (high << 8) | low;
