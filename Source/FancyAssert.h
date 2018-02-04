@@ -1,6 +1,10 @@
 #ifndef FANCY_ASSERT_H
 #define FANCY_ASSERT_H
 
+#if GBC_DEBUG == NDEBUG
+#  error "GBC_DEBUG and NDEBUG are both defined"
+#endif // GBC_DEBUG == NDEBUG
+
 #include <ppk_assert.h>
 
 #define ASSERT                PPK_ASSERT
@@ -18,10 +22,10 @@
 
 #define STATIC_ASSERT         PPK_STATIC_ASSERT
 
-#ifdef NDEBUG
-#define RUN_DEBUG(...)
-#else
+#if GBC_DEBUG
 #define RUN_DEBUG(...) do { __VA_ARGS__ } while(0);
+#else
+#define RUN_DEBUG(...)
 #endif
 
 #endif

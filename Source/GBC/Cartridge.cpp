@@ -7,9 +7,9 @@
 #include "Wrapper/Platform/IOUtils.h"
 #include "Wrapper/Platform/OSUtils.h"
 
-#if !defined(NDEBUG)
+#if GBC_DEBUG
 #  include "Debug.h"
-#endif // !defined(NDEBUG)
+#endif // GBC_DEBUG
 
 #include <cstring>
 #include <memory>

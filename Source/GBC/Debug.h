@@ -1,9 +1,9 @@
 #ifndef GBC_DEBUG_H
 #define GBC_DEBUG_H
 
-#if defined(NDEBUG)
+#if !GBC_DEBUG
 #  error "Trying to include Debug.h in a release build"
-#endif
+#endif // !GBC_DEBUG
 
 #include "GBC/CPU.h"
 

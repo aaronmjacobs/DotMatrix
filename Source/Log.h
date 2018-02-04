@@ -156,15 +156,15 @@ public:
    }
 };
 
-#if defined(NDEBUG)
-   // Prevent text logging in release builds
-#  define CERR_SEV_THRESHOLD templog::sev_fatal + 1
-   // Prevent debug messages boxes in release builds
-#  define MSG_BOX_SEV_THRESHOLD templog::sev_info
-#else // defined(NDEBUG)
+#if GBC_DEBUG
 #  define CERR_SEV_THRESHOLD templog::sev_debug
 #  define MSG_BOX_SEV_THRESHOLD templog::sev_debug
-#endif // defined(NDEBUG)
+#else // GBC_DEBUG
+// Prevent text logging in release builds
+#  define CERR_SEV_THRESHOLD templog::sev_fatal + 1
+// Prevent debug messages boxes in release builds
+#  define MSG_BOX_SEV_THRESHOLD templog::sev_info
+#endif // GBC_DEBUG
 
 typedef templog::logger<templog::non_filtering_logger<text_formating_policy, templog::std_write_policy>
                       , CERR_SEV_THRESHOLD

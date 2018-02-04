@@ -3,9 +3,9 @@
 #include "GBC/CPU.h"
 #include "GBC/Operations.h"
 
-#if !defined(NDEBUG)
+#if GBC_DEBUG
 #  include "Debug.h"
-#endif // !defined(NDEBUG)
+#endif // GBC_DEBUG
 
 namespace GBC {
 
