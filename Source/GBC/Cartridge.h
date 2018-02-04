@@ -4,6 +4,8 @@
 #include "FancyAssert.h"
 #include "Pointers.h"
 
+#include "GBC/Memory.h"
+
 #include "Wrapper/Platform/IOUtils.h"
 
 #include <array>
@@ -21,8 +23,7 @@ public:
    virtual ~MemoryBankController() = default;
 
    virtual uint8_t read(uint16_t address) const = 0;
-
-   virtual void write(uint16_t address, uint8_t val) = 0;
+   virtual void write(uint16_t address, uint8_t value) = 0;
 
    virtual void tick(double dt) {
       wroteToRam = false;
@@ -57,7 +58,7 @@ public:
       ASSERT(address < cartData.size());
 
       if (address >= cartData.size()) {
-         return kInvalidAddressByte;
+         return Memory::kInvalidAddressByte;
       }
 
       return cartData[address];
@@ -68,9 +69,9 @@ public:
       return controller->read(address);
    }
 
-   void write(uint16_t address, uint8_t val) {
+   void write(uint16_t address, uint8_t value) {
       ASSERT(controller);
-      controller->write(address, val);
+      controller->write(address, value);
    }
 
    void tick(double dt) {
@@ -208,8 +209,6 @@ public:
       uint8_t headerChecksum;
       std::array<uint8_t, 2> globalChecksum;
    };
-
-   static const uint8_t kInvalidAddressByte;
 
 private:
    Cartridge(std::vector<uint8_t>&& data, const Header& headerData);

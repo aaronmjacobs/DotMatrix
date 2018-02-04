@@ -9,6 +9,9 @@
 
 namespace GBC {
 
+// static
+const uint8_t Memory::kInvalidAddressByte;
+
 Memory::Memory(Device& dev)
    : raw{}, cart(nullptr), device(dev) {
    // If no cartridge is available, all cartridge reads return 0xFF
@@ -38,18 +41,18 @@ uint8_t Memory::read(uint16_t address) const {
    return raw[address];
 }
 
-void Memory::write(uint16_t address, uint8_t val) {
+void Memory::write(uint16_t address, uint8_t value) {
    if (boot == Boot::kBooting && address <= 0x00FF) {
       return; // Bootstrap is read only
    }
 
    if (cart && address < 0x8000) {
-      cart->write(address, val);
+      cart->write(address, value);
       return;
    }
 
    if (cart && address >= 0xA000 && address < 0xC000) {
-      cart->write(address, val);
+      cart->write(address, value);
       return;
    }
 
@@ -76,10 +79,10 @@ void Memory::write(uint16_t address, uint8_t val) {
    if (address == 0xFF41) {
       // LCD status - mode flag should be unaffected by memory writes
       static const uint8_t kModeFlagMask = 0b00000011;
-      val = (val & ~kModeFlagMask) | (stat & kModeFlagMask);
+      value = (value & ~kModeFlagMask) | (stat & kModeFlagMask);
    }
 
-   raw[address] = val;
+   raw[address] = value;
 
    if (address == 0xFF46) {
       executeDMATransfer();

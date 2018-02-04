@@ -16,8 +16,6 @@
 
 namespace GBC {
 
-const uint8_t Cartridge::kInvalidAddressByte = 0xFF;
-
 namespace {
 
 const uint16_t kHeaderOffset = 0x0100;
@@ -148,12 +146,12 @@ public:
       }
 
       LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
-      return Cartridge::kInvalidAddressByte;
+      return Memory::kInvalidAddressByte;
    }
 
-   void write(uint16_t address, uint8_t val) override {
+   void write(uint16_t address, uint8_t value) override {
       // No writable memory
-      LOG_WARNING("Trying to write to read-only cartridge at location " << hex(address) << ": " << hex(val));
+      LOG_WARNING("Trying to write to read-only cartridge at location " << hex(address) << ": " << hex(value));
    }
 };
 
@@ -165,7 +163,7 @@ public:
    }
 
    uint8_t read(uint16_t address) const override {
-      uint8_t value = Cartridge::kInvalidAddressByte;
+      uint8_t value = Memory::kInvalidAddressByte;
 
       switch (address & 0xF000) {
          case 0x0000:
@@ -211,20 +209,20 @@ public:
       return value;
    }
 
-   void write(uint16_t address, uint8_t val) override {
+   void write(uint16_t address, uint8_t value) override {
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
          {
             // RAM enable
-            ramEnabled = (val & 0x0A) != 0x00;
+            ramEnabled = (value & 0x0A) != 0x00;
             break;
          }
          case 0x2000:
          case 0x3000:
          {
             // ROM bank number
-            romBankNumber = val & 0x1F;
+            romBankNumber = value & 0x1F;
             if (romBankNumber == 0x00 || romBankNumber == 0x20 || romBankNumber == 0x40 || romBankNumber == 0x60) {
                // Handle banks 0x00, 0x20, 0x40, 0x60
                romBankNumber += 0x01;
@@ -235,7 +233,7 @@ public:
          case 0x5000:
          {
             // RAM bank number or upper bits of ROM bank number
-            uint8_t bankNumber = val & 0x03;
+            uint8_t bankNumber = value & 0x03;
             switch (bankingMode) {
                case kROMBankingMode:
                   romBankNumber = (romBankNumber & 0x1F) | (bankNumber << 5);
@@ -252,7 +250,7 @@ public:
          case 0x7000:
          {
             // ROM / RAM mode select
-            bankingMode = (val & 0x01) == 0x00 ? kROMBankingMode : kRAMBankingMode;
+            bankingMode = (value & 0x01) == 0x00 ? kROMBankingMode : kRAMBankingMode;
             break;
          }
          case 0xA000:
@@ -263,16 +261,16 @@ public:
             // Switchable RAM bank
             if (ramEnabled) {
                uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
-               ramBanks[ramBank][address - 0xA000] = val;
+               ramBanks[ramBank][address - 0xA000] = value;
                wroteToRam = true;
             } else {
-               LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(val));
+               LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(value));
             }
             break;
          }
          default:
          {
-            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(val));
+            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(value));
             break;
          }
       };
@@ -320,7 +318,7 @@ public:
    }
 
    uint8_t read(uint16_t address) const override {
-      uint8_t value = Cartridge::kInvalidAddressByte;
+      uint8_t value = Memory::kInvalidAddressByte;
 
       switch (address & 0xF000) {
          case 0x0000:
@@ -366,7 +364,7 @@ public:
       return value;
    }
 
-   void write(uint16_t address, uint8_t val) override {
+   void write(uint16_t address, uint8_t value) override {
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
@@ -374,7 +372,7 @@ public:
             // RAM enable
             // The least significant bit of the upper address byte must be zero to enable/disable cart RAM
             if ((address & 0x0100) == 0x0000) {
-               ramEnabled = (val & 0x0A) != 0x00;
+               ramEnabled = (value & 0x0A) != 0x00;
             }
             break;
          }
@@ -384,7 +382,7 @@ public:
             // ROM bank number
             // The least significant bit of the upper address byte must be one to select a ROM bank
             if ((address & 0x0100) != 0x0000) {
-               romBankNumber = val & 0x0F;
+               romBankNumber = value & 0x0F;
             }
             break;
          }
@@ -400,16 +398,16 @@ public:
             // Switchable RAM bank
             if (ramEnabled) {
                // only the lower 4 bits of the "bytes" in this memory area are used
-               ram[address - 0xA000] = 0xF0 | (val & 0x0F);
+               ram[address - 0xA000] = 0xF0 | (value & 0x0F);
                wroteToRam = true;
             } else {
-               LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(val));
+               LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(value));
             }
             break;
          }
          default:
          {
-            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(val));
+            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(value));
             break;
          }
       };
@@ -443,7 +441,7 @@ public:
    }
 
    uint8_t read(uint16_t address) const override {
-      uint8_t value = Cartridge::kInvalidAddressByte;
+      uint8_t value = Memory::kInvalidAddressByte;
 
       switch (address & 0xF000) {
          case 0x0000:
@@ -515,20 +513,20 @@ public:
       return value;
    }
 
-   void write(uint16_t address, uint8_t val) override {
+   void write(uint16_t address, uint8_t value) override {
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
          {
             // RAM / RTC enable
-            ramRTCEnabled = (val & 0x0A) != 0x00;
+            ramRTCEnabled = (value & 0x0A) != 0x00;
             break;
          }
          case 0x2000:
          case 0x3000:
          {
             // ROM bank number
-            romBankNumber = val & 0x7F;
+            romBankNumber = value & 0x7F;
             if (romBankNumber == 0x00) {
                // Handle bank 0x00
                romBankNumber += 0x01;
@@ -539,22 +537,22 @@ public:
          case 0x5000:
          {
             // RAM bank number or RTC register select
-            ASSERT(val <= 0x03 || (val >= 0x08 && val <= 0x0C), "Invalid RAM bank / RTC selection value: %hhu", val);
-            bankRegisterMode = static_cast<BankRegisterMode>(val);
+            ASSERT(value <= 0x03 || (value >= 0x08 && value <= 0x0C), "Invalid RAM bank / RTC selection value: %hhu", value);
+            bankRegisterMode = static_cast<BankRegisterMode>(value);
             break;
          }
          case 0x6000:
          case 0x7000:
          {
             // Latch clock data
-            if (latchData == 0x00 && val == 0x01) {
+            if (latchData == 0x00 && value == 0x01) {
                rtcLatched = !rtcLatched;
 
                if (rtcLatched) {
                   rtcLatchedCopy = rtc;
                }
             }
-            latchData = val;
+            latchData = value;
             break;
          }
          case 0xA000:
@@ -569,36 +567,36 @@ public:
                   case kBankOne:
                   case kBankTwo:
                   case kBankThree:
-                     ramBanks[bankRegisterMode][address - 0xA000] = val;
+                     ramBanks[bankRegisterMode][address - 0xA000] = value;
                      break;
                   case kRTCSeconds:
-                     rtc.seconds = val;
+                     rtc.seconds = value;
                      break;
                   case kRTCMinutes:
-                     rtc.minutes = val;
+                     rtc.minutes = value;
                      break;
                   case kRTCHours:
-                     rtc.hours = val;
+                     rtc.hours = value;
                      break;
                   case kRTCDaysLow:
-                     rtc.daysLow = val;
+                     rtc.daysLow = value;
                      break;
                   case kRTCDaysHigh:
-                     rtc.daysHigh = val;
+                     rtc.daysHigh = value;
                      break;
                   default:
-                     ASSERT(false, "Invalid RAM bank / RTC selection value: %hhu", val);
+                     ASSERT(false, "Invalid RAM bank / RTC selection value: %hhu", value);
                      break;
                }
                wroteToRam = true;
             } else {
-               LOG_WARNING("Trying to write to disabled RAM / RTC " << hex(address) << ": " << hex(val));
+               LOG_WARNING("Trying to write to disabled RAM / RTC " << hex(address) << ": " << hex(value));
             }
             break;
          }
          default:
          {
-            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(val));
+            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(value));
             break;
          }
       };
@@ -722,7 +720,7 @@ public:
    }
 
    uint8_t read(uint16_t address) const override {
-      uint8_t value = Cartridge::kInvalidAddressByte;
+      uint8_t value = Memory::kInvalidAddressByte;
 
       switch (address & 0xF000) {
          case 0x0000:
@@ -767,32 +765,32 @@ public:
       return value;
    }
 
-   void write(uint16_t address, uint8_t val) override {
+   void write(uint16_t address, uint8_t value) override {
       switch (address & 0xF000) {
          case 0x0000:
          case 0x1000:
          {
             // RAM enable
-            ramEnabled = (val & 0x0A) != 0x00;
+            ramEnabled = (value & 0x0A) != 0x00;
             break;
          }
          case 0x2000:
          {
             // ROM bank number (lower 8 bits)
-            romBankNumber = (romBankNumber & 0xFF00) | val;
+            romBankNumber = (romBankNumber & 0xFF00) | value;
             break;
          }
          case 0x3000:
          {
             // ROM bank number (upper 9th bit)
-            romBankNumber = ((val & 0x01) << 8) | (romBankNumber & 0x00FF);
+            romBankNumber = ((value & 0x01) << 8) | (romBankNumber & 0x00FF);
             break;
          }
          case 0x4000:
          case 0x5000:
          {
             // RAM bank number
-            ramBankNumber = val & 0x0F;
+            ramBankNumber = value & 0x0F;
             break;
          }
          case 0xA000:
@@ -802,16 +800,16 @@ public:
 
             // Switchable RAM bank
             if (ramEnabled) {
-               ramBanks[ramBankNumber][address - 0xA000] = val;
+               ramBanks[ramBankNumber][address - 0xA000] = value;
                wroteToRam = true;
             } else {
-               LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(val));
+               LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(value));
             }
             break;
          }
          default:
          {
-            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(val));
+            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(value));
             break;
          }
       };

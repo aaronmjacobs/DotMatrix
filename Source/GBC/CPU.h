@@ -230,24 +230,24 @@ private:
       return (high << 8) | low;
    }
 
-   void setFlag(Flag flag, bool val) {
+   void setFlag(Flag flag, bool value) {
       ASSERT(flag == kZero || flag == kSub || flag == kHalfCarry || flag == kCarry, "Invalid flag value: %hhu", flag);
 
       /*
        * This function is equivalent to the following:
        *
-       * if (val) {
+       * if (value) {
        *    reg.f |= flag;
        * } else {
        *    reg.f &= ~flag;
        * }
       */
 
-      uint8_t mask = ~(static_cast<uint8_t>(val) - 1); // 0xFF if true, 0x00 if false
-      ASSERT((val && mask == 0xFF) || (!val && mask == 0x00));
+      uint8_t mask = ~(static_cast<uint8_t>(value) - 1); // 0xFF if true, 0x00 if false
+      ASSERT((value && mask == 0xFF) || (!value && mask == 0x00));
 
-      uint8_t setVal = (reg.f | flag) & mask; // Sets the flag if val is true, otherwise results in 0x00
-      uint8_t clearVal = reg.f & ~(flag | mask); // Clears the flag if val is false, otherwise results in 0x00
+      uint8_t setVal = (reg.f | flag) & mask; // Sets the flag if value is true, otherwise results in 0x00
+      uint8_t clearVal = reg.f & ~(flag | mask); // Clears the flag if value is false, otherwise results in 0x00
       ASSERT((setVal >= 0x00 && clearVal == 0x00) || (clearVal >= 0x00 && setVal == 0x00));
 
       reg.f = setVal | clearVal;
@@ -267,10 +267,10 @@ private:
 
    void execute16(Operation operation);
 
-   void push(uint16_t val) {
+   void push(uint16_t value) {
       reg.sp -= 2;
-      mem.write(reg.sp, val & 0x00FF);
-      mem.write(reg.sp + 1, (val & 0xFF00) >> 8);
+      mem.write(reg.sp, value & 0x00FF);
+      mem.write(reg.sp + 1, (value & 0xFF00) >> 8);
    }
 
    uint16_t pop() {

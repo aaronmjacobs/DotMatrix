@@ -124,7 +124,7 @@ private:
 };
 
 uint8_t CPU::Operand::read8() const {
-   uint8_t value = 0xFF;
+   uint8_t value = Memory::kInvalidAddressByte;
 
    switch (opr) {
       case Opr::kNone:

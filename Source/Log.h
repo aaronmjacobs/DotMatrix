@@ -15,15 +15,15 @@ namespace GBC {
 
 namespace {
 
-std::string hex(uint8_t val) {
+std::string hex(uint8_t value) {
    std::ostringstream stream;
-   stream << "0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << static_cast<uint16_t>(val);
+   stream << "0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << static_cast<uint16_t>(value);
    return stream.str();
 }
 
-std::string hex(uint16_t val) {
+std::string hex(uint16_t value) {
    std::ostringstream stream;
-   stream << "0x" << std::uppercase << std::setfill('0') << std::setw(4) << std::hex << val;
+   stream << "0x" << std::uppercase << std::setfill('0') << std::setw(4) << std::hex << value;
    return stream.str();
 }
 

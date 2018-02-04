@@ -32,7 +32,16 @@ public:
    template<size_t size>
    using ByteArray = std::array<uint8_t, size>;
 
+   static const uint8_t kInvalidAddressByte = 0xFF;
+
    Memory(class Device& dev);
+
+   uint8_t read(uint16_t address) const;
+   void write(uint16_t address, uint8_t value);
+
+   void setCartridge(class Cartridge* cartridge) {
+      cart = cartridge;
+   }
 
    union {
       ByteArray<0x10000> raw;       // Direct access                 (0x0000-0xFFFF, 64k)
@@ -123,13 +132,6 @@ public:
          uint8_t ie;                // Interrupt enable register     (0xFFFF, 1)
       };
    };
-
-   uint8_t read(uint16_t address) const;
-   void write(uint16_t address, uint8_t val);
-
-   void setCartridge(class Cartridge* cartridge) {
-      cart = cartridge;
-   }
 
 private:
    void executeDMATransfer();

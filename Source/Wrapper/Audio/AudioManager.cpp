@@ -53,9 +53,9 @@ std::vector<uint8_t> mono4ToMono8(const std::vector<uint8_t>& mono4) {
    std::vector<uint8_t> mono8(mono4.size() * 2);
 
    for (size_t i = 0; i < mono4.size(); ++i) {
-      uint8_t val = mono4[i];
-      uint8_t first = (val & 0xF0) >> 4;
-      uint8_t second = (val & 0x0F);
+      uint8_t value = mono4[i];
+      uint8_t first = (value & 0xF0) >> 4;
+      uint8_t second = (value & 0x0F);
 
       mono8[2 * i + 0] = first << 4;
       mono8[2 * i + 1] = second << 4;
