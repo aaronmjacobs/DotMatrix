@@ -17,11 +17,7 @@ struct Pixel {
    uint8_t g;
    uint8_t b;
 
-   Pixel()
-      : r(0x00), g(0x00), b(0x00) {
-   }
-
-   Pixel(uint8_t red, uint8_t green, uint8_t blue)
+   Pixel(uint8_t red = 0x00, uint8_t green = 0x00, uint8_t blue = 0x00)
       : r(red), g(green), b(blue) {
    }
 };

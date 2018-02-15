@@ -19,6 +19,7 @@ const char *kVertShaderSource = GLSL(
    void main() {
       gl_Position = uProj * vec4(aPosition, 0.0, 1.0);
       vTexCoord = (aPosition + 1.0) / 2.0;
+      vTexCoord.y = 1.0 - vTexCoord.y; // OpenGL maps textures from bottom to top
    }
 );
 
@@ -43,22 +44,6 @@ const std::array<unsigned int, 6> kIndices = { 0, 1, 2,
                                                1, 3, 2 };
 
 const GLenum kTextureUnit = 0;
-
-void fiveToEightBit(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& pixels,
-                    std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& eightBitPixels) {
-   // Transform pixels from 5-bit to 8-bit format
-   // Also flip the image vertically since (0, 0) is the lower left corner for OpenGL textures
-   for (size_t i = 0; i < pixels.size(); ++i) {
-      size_t x = i % GBC::kScreenWidth;
-      size_t y = i / GBC::kScreenWidth;
-      size_t newY = GBC::kScreenHeight - y - 1;
-      size_t newOffset = x + newY * GBC::kScreenWidth;
-
-      eightBitPixels[newOffset].r = (pixels[i].r * 255) / 31;
-      eightBitPixels[newOffset].g = (pixels[i].g * 255) / 31;
-      eightBitPixels[newOffset].b = (pixels[i].b * 255) / 31;
-   }
-}
 
 using Mat4 = std::array<float, 16>;
 
@@ -136,11 +121,7 @@ void Renderer::onFramebufferSizeChanged(int width, int height) {
 void Renderer::draw(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& pixels) {
    glClear(GL_COLOR_BUFFER_BIT);
 
-   std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight> eightBitPixels;
-   fiveToEightBit(pixels, eightBitPixels);
-
-   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GBC::kScreenWidth, GBC::kScreenHeight,
-                   GL_RGB, GL_UNSIGNED_BYTE, eightBitPixels.data());
+   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GBC::kScreenWidth, GBC::kScreenHeight, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
  
    model.draw();
 }

@@ -76,10 +76,10 @@ enum Enum : uint8_t {
 namespace Color {
 
 // Green / blue (trying to approximate original Game Boy screen colors)
-const Pixel kWhite(0x15, 0x19, 0x09);
-const Pixel kLightGray(0x0F, 0x15, 0x0D);
-const Pixel kDarkGray(0x04, 0x0D, 0x0C);
-const Pixel kBlack(0x01, 0x05, 0x0A);
+const Pixel kWhite(0xAC, 0xCD, 0x4A);
+const Pixel kLightGray(0x7B, 0xAC, 0x6A);
+const Pixel kDarkGray(0x20, 0x6A, 0x62);
+const Pixel kBlack(0x08, 0x29, 0x52);
 
 } // namespace Color
 
