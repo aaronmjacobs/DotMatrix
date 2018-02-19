@@ -35,7 +35,7 @@ uint8_t Memory::read(uint16_t address) const {
 
    if (address >= 0xFF10 && address < 0xFF40) {
       // Sound registers
-      /*return*/ device.getSoundController().read(address);
+      return device.getSoundController().read(address);
    }
 
    if (address >= 0xE000 && address < 0xFE00) {
@@ -64,7 +64,7 @@ void Memory::write(uint16_t address, uint8_t value) {
    if (address >= 0xFF10 && address < 0xFF40) {
       // Sound registers
       device.getSoundController().write(address, value);
-      //return;
+      return;
    }
 
    if (address >= 0xE000 && address < 0xFE00) {
