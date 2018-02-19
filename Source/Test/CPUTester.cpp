@@ -178,7 +178,7 @@ void dumpMem(const Memory& mem, uint16_t start, uint16_t end, const char* name =
       if (i % 8 == 0) {
          out << "\n" << hex(i) << " |";
       }
-      out << " " << hex(mem.get(i));
+      out << " " << hex(mem.read(i));
    }
    out << "\n";
    LOG_INFO(out.str());
@@ -224,13 +224,13 @@ void prepareInitial(CPU& cpu, const CPUTestGroup& testGroup, bool randomizeData,
    for (const CPUTest& test : testGroup) {
       Operation operation = kOperations[test.opcode];
 
-      cpu.mem.set(cpu.reg.pc + pcOffset++, test.opcode);
+      cpu.mem.write(cpu.reg.pc + pcOffset++, test.opcode);
 
       if (usesImm8(operation)) {
-         cpu.mem.set(cpu.reg.pc + pcOffset++, kInitialMem1);
+         cpu.mem.write(cpu.reg.pc + pcOffset++, kInitialMem1);
       } else if (usesImm16(operation)) {
-         cpu.mem.set(cpu.reg.pc + pcOffset++, kInitialMem1);
-         cpu.mem.set(cpu.reg.pc + pcOffset++, kInitialMem2);
+         cpu.mem.write(cpu.reg.pc + pcOffset++, kInitialMem1);
+         cpu.mem.write(cpu.reg.pc + pcOffset++, kInitialMem2);
       }
    }
 }
@@ -254,11 +254,11 @@ void prepareFinal(CPU& cpu, const CPUTestGroup& testGroup, size_t testIndex, boo
 }
 
 uint8_t imm8(CPU& cpu) {
-   return cpu.mem.get(cpu.reg.pc + 1);
+   return cpu.mem.read(cpu.reg.pc + 1);
 }
 
 uint16_t imm16(CPU& cpu) {
-   return cpu.mem.get(cpu.reg.pc + 1) | (cpu.mem.get(cpu.reg.pc + 2) << 8);
+   return cpu.mem.read(cpu.reg.pc + 1) | (cpu.mem.read(cpu.reg.pc + 2) << 8);
 }
 
 } // namespace
@@ -305,7 +305,7 @@ void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
    bool memoryMatches = true;
    uint16_t mismatchLocation = 0;
    for (uint16_t i = 0, j = 0; i >= j; j = i++) {
-      if (cpu.mem.get(i) != finalCPU.mem.get(i)) {
+      if (cpu.mem.read(i) != finalCPU.mem.read(i)) {
          memoryMatches = false;
          mismatchLocation = i;
          break;
@@ -361,7 +361,7 @@ void CPUTester::init() {
          {
             0x02, // LD (BC),A
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.bc, initial.reg.a);
+               final.mem.write(initial.reg.bc, initial.reg.a);
             }
          }
       },
@@ -425,8 +425,8 @@ void CPUTester::init() {
                uint8_t spHigh = (initial.reg.sp >> 8) & 0xFF;
                uint16_t a16 = imm16(initial);
 
-               final.mem.set(a16, spLow);
-               final.mem.set(a16 + 1, spHigh);
+               final.mem.write(a16, spLow);
+               final.mem.write(a16 + 1, spHigh);
             }
          }
       },
@@ -444,7 +444,7 @@ void CPUTester::init() {
          {
             0x0A, // LD A,(BC)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.get(initial.reg.bc) | (initial.mem.get(initial.reg.bc + 1) << 8);
+               final.reg.a = initial.mem.read(initial.reg.bc) | (initial.mem.read(initial.reg.bc + 1) << 8);
             }
          }
       },
@@ -505,8 +505,8 @@ void CPUTester::init() {
          {
             0x10, // STOP 0
             [](CPU& initial, CPU& final) {
-               initial.mem.set(initial.reg.pc + 1, 0x00);
-               final.mem.set(initial.reg.pc + 1, 0x00);
+               initial.mem.write(initial.reg.pc + 1, 0x00);
+               final.mem.write(initial.reg.pc + 1, 0x00);
 
                final.stopped = true;
             }
@@ -524,7 +524,7 @@ void CPUTester::init() {
          {
             0x12, // LD (DE),A
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.de, initial.reg.a);
+               final.mem.write(initial.reg.de, initial.reg.a);
             }
          }
       },
@@ -604,7 +604,7 @@ void CPUTester::init() {
          {
             0x1A, // LD A,(DE)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.get(initial.reg.de);
+               final.reg.a = initial.mem.read(initial.reg.de);
             }
          }
       },
@@ -687,7 +687,7 @@ void CPUTester::init() {
          {
             0x22, // LD (HL+),A
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.hl, initial.reg.a);
+               final.mem.write(initial.reg.hl, initial.reg.a);
                final.reg.hl = initial.reg.hl + 1;
             }
          }
@@ -791,7 +791,7 @@ void CPUTester::init() {
          {
             0x2A, // LD A,(HL+)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.get(initial.reg.hl);
+               final.reg.a = initial.mem.read(initial.reg.hl);
                final.reg.hl = initial.reg.hl + 1;
             }
          }
@@ -869,7 +869,7 @@ void CPUTester::init() {
          {
             0x32, // LD (HL-),A
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.hl, initial.reg.a);
+               final.mem.write(initial.reg.hl, initial.reg.a);
                final.reg.hl = initial.reg.hl - 1;
             }
          }
@@ -886,12 +886,12 @@ void CPUTester::init() {
          {
             0x34, // INC (HL)
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.hl, initial.mem.get(initial.reg.hl) + 1);
+               final.mem.write(initial.reg.hl, initial.mem.read(initial.reg.hl) + 1);
 
                // hacky way to make macro still work - use a to store the result temporarily
                uint8_t initialA = initial.reg.a;
-               initial.reg.a = initial.mem.get(initial.reg.hl);
-               final.reg.a = initial.mem.get(initial.reg.hl) + 1;
+               initial.reg.a = initial.mem.read(initial.reg.hl);
+               final.reg.a = initial.mem.read(initial.reg.hl) + 1;
                UPDATE_FLAGS(a, "Z0H-")
                initial.reg.a = final.reg.a = initialA;
             }
@@ -901,12 +901,12 @@ void CPUTester::init() {
          {
             0x35, // DEC (HL)
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.hl, initial.mem.get(initial.reg.hl) - 1);
+               final.mem.write(initial.reg.hl, initial.mem.read(initial.reg.hl) - 1);
 
                // hacky way to make macro still work - use a to store the result temporarily
                uint8_t initialA = initial.reg.a;
-               initial.reg.a = initial.mem.get(initial.reg.hl);
-               final.reg.a = initial.mem.get(initial.reg.hl) - 1;
+               initial.reg.a = initial.mem.read(initial.reg.hl);
+               final.reg.a = initial.mem.read(initial.reg.hl) - 1;
                UPDATE_FLAGS(a, "Z1H-")
                initial.reg.a = final.reg.a = initialA;
             }
@@ -916,7 +916,7 @@ void CPUTester::init() {
          {
             0x36, // LD (HL),d8
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.hl, imm8(initial));
+               final.mem.write(initial.reg.hl, imm8(initial));
             }
          }
       },
@@ -956,7 +956,7 @@ void CPUTester::init() {
          {
             0x3A, // LD A,(HL-)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.get(initial.reg.hl);
+               final.reg.a = initial.mem.read(initial.reg.hl);
                final.reg.hl = initial.reg.hl - 1;
             }
          }
@@ -1058,7 +1058,7 @@ void CPUTester::init() {
          {
             0x46, // LD B,(HL)
             [](CPU& initial, CPU& final) {
-               final.reg.b = initial.mem.get(initial.reg.hl);
+               final.reg.b = initial.mem.read(initial.reg.hl);
             }
          }
       },
@@ -1122,7 +1122,7 @@ void CPUTester::init() {
          {
             0x4E, // LD C,(HL)
             [](CPU& initial, CPU& final) {
-               final.reg.c = initial.mem.get(initial.reg.hl);
+               final.reg.c = initial.mem.read(initial.reg.hl);
             }
          }
       },
@@ -1187,7 +1187,7 @@ void CPUTester::init() {
          {
             0x56, // LD D,(HL)
             [](CPU& initial, CPU& final) {
-               final.reg.d = initial.mem.get(initial.reg.hl);
+               final.reg.d = initial.mem.read(initial.reg.hl);
             }
          }
       },
@@ -1251,7 +1251,7 @@ void CPUTester::init() {
          {
             0x5E, // LD E,(HL)
             [](CPU& initial, CPU& final) {
-               final.reg.e = initial.mem.get(initial.reg.hl);
+               final.reg.e = initial.mem.read(initial.reg.hl);
             }
          }
       },
@@ -1316,7 +1316,7 @@ void CPUTester::init() {
          {
             0x66, // LD H,(HL)
             [](CPU& initial, CPU& final) {
-               final.reg.h = initial.mem.get(initial.reg.hl);
+               final.reg.h = initial.mem.read(initial.reg.hl);
             }
          }
       },
@@ -1380,7 +1380,7 @@ void CPUTester::init() {
          {
             0x6E, // LD L,(HL)
             [](CPU& initial, CPU& final) {
-               final.reg.l = initial.mem.get(initial.reg.hl);
+               final.reg.l = initial.mem.read(initial.reg.hl);
             }
          }
       },
@@ -1397,7 +1397,7 @@ void CPUTester::init() {
          {
             0x70, // LD (HL),B
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.hl, initial.reg.b);
+               final.mem.write(initial.reg.hl, initial.reg.b);
             }
          }
       },
@@ -1405,7 +1405,7 @@ void CPUTester::init() {
          {
             0x71, // LD (HL),C
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.hl, initial.reg.c);
+               final.mem.write(initial.reg.hl, initial.reg.c);
             }
          }
       },
@@ -1413,7 +1413,7 @@ void CPUTester::init() {
          {
             0x72, // LD (HL),D
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.hl, initial.reg.d);
+               final.mem.write(initial.reg.hl, initial.reg.d);
             }
          }
       },
@@ -1421,7 +1421,7 @@ void CPUTester::init() {
          {
             0x73, // LD (HL),E
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.hl, initial.reg.e);
+               final.mem.write(initial.reg.hl, initial.reg.e);
             }
          }
       },
@@ -1429,7 +1429,7 @@ void CPUTester::init() {
          {
             0x74, // LD (HL),H
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.hl, initial.reg.h);
+               final.mem.write(initial.reg.hl, initial.reg.h);
             }
          }
       },
@@ -1437,7 +1437,7 @@ void CPUTester::init() {
          {
             0x75, // LD (HL),L
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.hl, initial.reg.l);
+               final.mem.write(initial.reg.hl, initial.reg.l);
             }
          }
       },
@@ -1453,7 +1453,7 @@ void CPUTester::init() {
          {
             0x77, // LD (HL),A
             [](CPU& initial, CPU& final) {
-               final.mem.set(initial.reg.hl, initial.reg.a);
+               final.mem.write(initial.reg.hl, initial.reg.a);
             }
          }
       },
@@ -1509,7 +1509,7 @@ void CPUTester::init() {
          {
             0x7E, // LD A,(HL)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.get(initial.reg.hl);
+               final.reg.a = initial.mem.read(initial.reg.hl);
             }
          }
       },
@@ -1586,7 +1586,7 @@ void CPUTester::init() {
          {
             0x86, // ADD A,(HL)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.mem.get(initial.reg.hl);
+               final.reg.a = initial.reg.a + initial.mem.read(initial.reg.hl);
 
                UPDATE_FLAGS(a, "Z0HC")
             }
@@ -1714,15 +1714,15 @@ void CPUTester::init() {
          {
             0x8E, // ADC A,(HL)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.mem.get(initial.reg.hl) + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+               final.reg.a = initial.reg.a + initial.mem.read(initial.reg.hl) + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z0HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.mem.get(initial.reg.hl) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+               if (initial.mem.read(initial.reg.hl) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
                   final.reg.f |= CPU::kCarry;
                }
-               if ((initial.mem.get(initial.reg.hl) & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+               if ((initial.mem.read(initial.reg.hl) & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
                   final.reg.f |= CPU::kHalfCarry;
                }
             }
@@ -1811,7 +1811,7 @@ void CPUTester::init() {
          {
             0x96, // SUB (HL)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.mem.get(initial.reg.hl);
+               final.reg.a = initial.reg.a - initial.mem.read(initial.reg.hl);
 
                UPDATE_FLAGS(a, "Z1HC")
             }
@@ -1939,15 +1939,15 @@ void CPUTester::init() {
          {
             0x9E, // SBC A,(HL)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.mem.get(initial.reg.hl) - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+               final.reg.a = initial.reg.a - initial.mem.read(initial.reg.hl) - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z1HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.mem.get(initial.reg.hl) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+               if (initial.mem.read(initial.reg.hl) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
                   final.reg.f |= CPU::kCarry;
                }
-               if ((initial.mem.get(initial.reg.hl) & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+               if ((initial.mem.read(initial.reg.hl) & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
                   final.reg.f |= CPU::kHalfCarry;
                }
             }
@@ -2036,7 +2036,7 @@ void CPUTester::init() {
          {
             0xA6, // AND (HL)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a & initial.mem.get(initial.reg.hl);
+               final.reg.a = initial.reg.a & initial.mem.read(initial.reg.hl);
 
                UPDATE_FLAGS(a, "Z010")
             }
@@ -2116,7 +2116,7 @@ void CPUTester::init() {
          {
             0xAE, // XOR (HL)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a ^ initial.mem.get(initial.reg.hl);
+               final.reg.a = initial.reg.a ^ initial.mem.read(initial.reg.hl);
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2197,7 +2197,7 @@ void CPUTester::init() {
          {
             0xB6, // OR (HL)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a | initial.mem.get(initial.reg.hl);
+               final.reg.a = initial.reg.a | initial.mem.read(initial.reg.hl);
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2289,7 +2289,7 @@ void CPUTester::init() {
          {
             0xBE, // CP (HL)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.mem.get(initial.reg.hl);
+               final.reg.a = initial.reg.a - initial.mem.read(initial.reg.hl);
 
                UPDATE_FLAGS(a, "Z1HC")
 
@@ -2315,7 +2315,7 @@ void CPUTester::init() {
             0xC0, // RET NZ
             [](CPU& initial, CPU& final) {
                if (!(initial.reg.f & CPU::kZero)) {
-                  final.reg.pc = (initial.mem.get(initial.reg.sp) << 8) | (initial.mem.get(initial.reg.sp + 1));
+                  final.reg.pc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
                   final.reg.sp += 2;
                } else {
                   final.cycles -= 12;
@@ -2327,7 +2327,7 @@ void CPUTester::init() {
          {
             0xC1, // POP BC
             [](CPU& initial, CPU& final) {
-               final.reg.bc = (initial.mem.get(initial.reg.sp) << 8) | (initial.mem.get(initial.reg.sp + 1));
+               final.reg.bc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
                final.reg.sp += 2;
             }
          }
@@ -2358,8 +2358,8 @@ void CPUTester::init() {
             [](CPU& initial, CPU& final) {
                if (!(initial.reg.f & CPU::kZero)) {
                   final.reg.sp -= 2;
-                  final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-                  final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+                  final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+                  final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                   final.reg.pc = imm16(initial);
                } else {
                   final.cycles -= 12;
@@ -2372,8 +2372,8 @@ void CPUTester::init() {
             0xC5, // PUSH BC
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, initial.reg.c);
-               final.mem.set(final.reg.sp + 1, initial.reg.b);
+               final.mem.write(final.reg.sp, initial.reg.c);
+               final.mem.write(final.reg.sp + 1, initial.reg.b);
             }
          }
       },
@@ -2392,8 +2392,8 @@ void CPUTester::init() {
             0xC7, // RST 00H
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                final.reg.pc = 0x0000;
             }
          }
@@ -2403,7 +2403,7 @@ void CPUTester::init() {
             0xC8, // RET Z
             [](CPU& initial, CPU& final) {
                if (initial.reg.f & CPU::kZero) {
-                  final.reg.pc = (initial.mem.get(initial.reg.sp) << 8) | (initial.mem.get(initial.reg.sp + 1));
+                  final.reg.pc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
                   final.reg.sp += 2;
                } else {
                   final.cycles -= 12;
@@ -2415,7 +2415,7 @@ void CPUTester::init() {
          {
             0xC9, // RET
             [](CPU& initial, CPU& final) {
-               final.reg.pc = (initial.mem.get(initial.reg.sp) << 8) | (initial.mem.get(initial.reg.sp + 1));
+               final.reg.pc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
                final.reg.sp += 2;
             }
          }
@@ -2445,8 +2445,8 @@ void CPUTester::init() {
             [](CPU& initial, CPU& final) {
                if (initial.reg.f & CPU::kZero) {
                   final.reg.sp -= 2;
-                  final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-                  final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+                  final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+                  final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                   final.reg.pc = imm16(initial);
                } else {
                   final.cycles -= 12;
@@ -2459,8 +2459,8 @@ void CPUTester::init() {
             0xCD, // CALL a16
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                final.reg.pc = imm16(initial);
             }
          }
@@ -2488,8 +2488,8 @@ void CPUTester::init() {
             0xCF, // RST 08H
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                final.reg.pc = 0x0008;
             }
          }
@@ -2500,7 +2500,7 @@ void CPUTester::init() {
             0xD0, // RET NC
             [](CPU& initial, CPU& final) {
                if (!(initial.reg.f & CPU::kCarry)) {
-                  final.reg.pc = (initial.mem.get(initial.reg.sp) << 8) | (initial.mem.get(initial.reg.sp + 1));
+                  final.reg.pc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
                   final.reg.sp += 2;
                } else {
                   final.cycles -= 12;
@@ -2512,7 +2512,7 @@ void CPUTester::init() {
          {
             0xD1, // POP DE
             [](CPU& initial, CPU& final) {
-               final.reg.de = (initial.mem.get(initial.reg.sp) << 8) | (initial.mem.get(initial.reg.sp + 1));
+               final.reg.de = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
                final.reg.sp += 2;
             }
          }
@@ -2535,8 +2535,8 @@ void CPUTester::init() {
             [](CPU& initial, CPU& final) {
                if (!(initial.reg.f & CPU::kCarry)) {
                   final.reg.sp -= 2;
-                  final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-                  final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+                  final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+                  final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                   final.reg.pc = imm16(initial);
                } else {
                   final.cycles -= 12;
@@ -2549,8 +2549,8 @@ void CPUTester::init() {
             0xD5, // PUSH DE
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, initial.reg.e);
-               final.mem.set(final.reg.sp + 1, initial.reg.d);
+               final.mem.write(final.reg.sp, initial.reg.e);
+               final.mem.write(final.reg.sp + 1, initial.reg.d);
             }
          }
       },
@@ -2569,8 +2569,8 @@ void CPUTester::init() {
             0xD7, // RST 10H
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                final.reg.pc = 0x0010;
             }
          }
@@ -2580,7 +2580,7 @@ void CPUTester::init() {
             0xD8, // RET C
             [](CPU& initial, CPU& final) {
                if (initial.reg.f & CPU::kCarry) {
-                  final.reg.pc = (initial.mem.get(initial.reg.sp) << 8) | (initial.mem.get(initial.reg.sp + 1));
+                  final.reg.pc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
                   final.reg.sp += 2;
                } else {
                   final.cycles -= 12;
@@ -2592,7 +2592,7 @@ void CPUTester::init() {
          {
             0xD9, // RETI
             [](CPU& initial, CPU& final) {
-               final.reg.pc = (initial.mem.get(initial.reg.sp) << 8) | (initial.mem.get(initial.reg.sp + 1));
+               final.reg.pc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
                final.reg.sp += 2;
 
                // RETI doesn't delay enabling the IME like EI does
@@ -2618,8 +2618,8 @@ void CPUTester::init() {
             [](CPU& initial, CPU& final) {
                if (initial.reg.f & CPU::kCarry) {
                   final.reg.sp -= 2;
-                  final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-                  final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+                  final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+                  final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                   final.reg.pc = imm16(initial);
                } else {
                   final.cycles -= 12;
@@ -2650,8 +2650,8 @@ void CPUTester::init() {
             0xDF, // RST 18H
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                final.reg.pc = 0x0018;
             }
          }
@@ -2661,7 +2661,7 @@ void CPUTester::init() {
          {
             0xE0, // LDH (a8),A
             [](CPU& initial, CPU& final) {
-               final.mem.set(0xFF00 + imm8(initial), initial.reg.a);
+               final.mem.write(0xFF00 + imm8(initial), initial.reg.a);
             }
          }
       },
@@ -2669,7 +2669,7 @@ void CPUTester::init() {
          {
             0xE1, // POP HL
             [](CPU& initial, CPU& final) {
-               final.reg.hl = (initial.mem.get(initial.reg.sp) << 8) | (initial.mem.get(initial.reg.sp + 1));
+               final.reg.hl = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
                final.reg.sp += 2;
             }
          }
@@ -2678,7 +2678,7 @@ void CPUTester::init() {
          {
             0xE2, // LD (C),A
             [](CPU& initial, CPU& final) {
-               final.mem.set(0xFF00 + initial.reg.c, initial.reg.a);
+               final.mem.write(0xFF00 + initial.reg.c, initial.reg.a);
             }
          }
       },
@@ -2687,8 +2687,8 @@ void CPUTester::init() {
             0xE5, // PUSH HL
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, initial.reg.l);
-               final.mem.set(final.reg.sp + 1, initial.reg.h);
+               final.mem.write(final.reg.sp, initial.reg.l);
+               final.mem.write(final.reg.sp + 1, initial.reg.h);
             }
          }
       },
@@ -2707,8 +2707,8 @@ void CPUTester::init() {
             0xE7, // RST 20H
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                final.reg.pc = 0x0020;
             }
          }
@@ -2743,7 +2743,7 @@ void CPUTester::init() {
          {
             0xEA, // LD (a16),A
             [](CPU& initial, CPU& final) {
-               final.mem.set(imm16(initial), initial.reg.a);
+               final.mem.write(imm16(initial), initial.reg.a);
             }
          }
       },
@@ -2762,8 +2762,8 @@ void CPUTester::init() {
             0xEF, // RST 28H
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                final.reg.pc = 0x0028;
             }
          }
@@ -2773,7 +2773,7 @@ void CPUTester::init() {
          {
             0xF0, // LDH A,(a8)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.get(0xFF00 + imm8(initial));
+               final.reg.a = initial.mem.read(0xFF00 + imm8(initial));
             }
          }
       },
@@ -2781,7 +2781,7 @@ void CPUTester::init() {
          {
             0xF1, // POP AF
             [](CPU& initial, CPU& final) {
-               final.reg.af = (initial.mem.get(initial.reg.sp) << 8) | (initial.mem.get(initial.reg.sp + 1));
+               final.reg.af = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
                final.reg.f &= 0xF0;
                final.reg.sp += 2;
             }
@@ -2791,7 +2791,7 @@ void CPUTester::init() {
          {
             0xF2, // LD A,(C)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.get(0xFF00 + initial.reg.c);
+               final.reg.a = initial.mem.read(0xFF00 + initial.reg.c);
             }
          }
       },
@@ -2808,8 +2808,8 @@ void CPUTester::init() {
             0xF5, // PUSH AF
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, initial.reg.f);
-               final.mem.set(final.reg.sp + 1, initial.reg.a);
+               final.mem.write(final.reg.sp, initial.reg.f);
+               final.mem.write(final.reg.sp + 1, initial.reg.a);
             }
          }
       },
@@ -2828,8 +2828,8 @@ void CPUTester::init() {
             0xF7, // RST 30H
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                final.reg.pc = 0x0030;
             }
          }
@@ -2866,7 +2866,7 @@ void CPUTester::init() {
          {
             0xFA, // LD A,(a16)
             [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.get(imm16(initial));
+               final.reg.a = initial.mem.read(imm16(initial));
             }
          }
       },
@@ -2895,8 +2895,8 @@ void CPUTester::init() {
             0xFF, // RST 38H
             [](CPU& initial, CPU& final) {
                final.reg.sp -= 2;
-               final.mem.set(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.set(final.reg.sp + 1, final.reg.pc >> 8);
+               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
+               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
                final.reg.pc = 0x0038;
             }
          }

@@ -14,6 +14,11 @@
 
 #include <sstream>
 
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif // defined(_WIN32)
+
 namespace {
 
 bool endsWith(const std::string& str, const std::string& suffix) {
@@ -146,5 +151,11 @@ int main(int argc, char *argv[]) {
    printf("Usage: %s (-roms | -cpu) [options]\n", argv[0]);
    return 0;
 }
+
+#if defined(_WIN32)
+int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow) {
+   return main(__argc, __argv);
+}
+#endif // defined(_WIN32)
 
 #endif // GBC_RUN_TESTS
