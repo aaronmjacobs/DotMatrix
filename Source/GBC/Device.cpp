@@ -54,8 +54,8 @@ enum Enum {
 } // namespace
 
 Device::Device()
-   : memory(*this), cpu(memory), lcdController(memory), soundController(),
-     cart(nullptr), cartWroteToRam(false), joypad({}), lastInputVals(P1::kInMask), counter(0), lastCounter(0),
+   : memory(*this), cpu(*this), lcdController(memory), soundController(),
+     cart(nullptr), totalCycles(0), cartWroteToRam(false), joypad({}), lastInputVals(P1::kInMask), counter(0), lastCounter(0),
      clocksUntilInterrupt(0), ifOverrideClocks(0), lastTimerBit(false), serialCycles(0), serialCallback(nullptr) {
 }
 
@@ -64,25 +64,12 @@ Device::~Device() {
 }
 
 void Device::tick(double dt) {
-   uint64_t previousCycles = cpu.getCycles();
-   uint64_t targetCycles = previousCycles + static_cast<uint64_t>(CPU::kClockSpeed * dt);
+   uint64_t targetCycles = totalCycles + static_cast<uint64_t>(CPU::kClockSpeed * dt);
 
-   while (cpu.getCycles() < targetCycles) {
+   while (totalCycles < targetCycles) {
       if (!cpu.isStopped()) {
          cpu.tick();
-      }
-      uint64_t cyclesTicked = cpu.getCycles() - previousCycles;
-
-      tickJoypad();
-      tickDiv(cyclesTicked);
-      tickTima(cyclesTicked);
-      tickSerial(cyclesTicked);
-      lcdController.tick(cpu.getCycles(), cpu.isStopped());
-      soundController.tick(cyclesTicked);
-
-      previousCycles = cpu.getCycles();
-
-      if (cpu.isStopped()) {
+      } else {
          // Not going to tick any cycles, so break to avoid an infinite loop
          break;
       }
@@ -94,6 +81,17 @@ void Device::tick(double dt) {
    } else {
       cartWroteToRam = false;
    }
+}
+
+void Device::machineCycle() {
+   totalCycles += 4;
+
+   tickJoypad();
+   tickDiv(4);
+   tickTima(4);
+   tickSerial(4);
+   lcdController.tick(totalCycles, cpu.isStopped());
+   soundController.tick(4);
 }
 
 void Device::setCartridge(UPtr<Cartridge>&& cartridge) {

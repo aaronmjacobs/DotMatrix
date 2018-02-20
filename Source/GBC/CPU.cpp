@@ -1,6 +1,7 @@
 #include "Log.h"
 
 #include "GBC/CPU.h"
+#include "GBC/Device.h"
 #include "GBC/Operations.h"
 
 #if GBC_DEBUG
@@ -104,8 +105,8 @@ bool evalJumpCondition(Opr operand, bool zero, bool carry) {
 
 class CPU::Operand {
 public:
-   Operand(CPU::Registers& registers, Memory& memory, Opr op, uint8_t immediate8, uint16_t immediate16)
-      : reg(registers), mem(memory), opr(op), imm8(immediate8), imm16(immediate16) {
+   Operand(Device& device, CPU::Registers& registers, Memory& memory, Opr op, uint8_t immediate8, uint16_t immediate16)
+      : dev(device), reg(registers), mem(memory), opr(op), imm8(immediate8), imm16(immediate16) {
    }
 
    uint8_t read8() const;
@@ -115,6 +116,7 @@ public:
    void write16(uint16_t value);
 
 private:
+   Device& dev;
    CPU::Registers& reg;
    Memory& mem;
 
@@ -137,7 +139,7 @@ uint8_t CPU::Operand::read8() const {
       case Opr::k5:
       case Opr::k6:
       case Opr::k7:
-         break;
+         return value;
       case Opr::kA:
          value = reg.a;
          break;
@@ -209,7 +211,7 @@ uint16_t CPU::Operand::read16() const {
       case Opr::k30H:
       case Opr::k38H:
       case Opr::kDrefImm16: // Handled as a special case in execute16()
-         break;
+         return value;
       case Opr::kAF:
          value = reg.af;
          break;
@@ -312,8 +314,8 @@ void CPU::Operand::write16(uint16_t value) {
    }
 }
 
-CPU::CPU(Memory& memory)
-   : reg({}), mem(memory), ime(false), cycles(0), halted(false), stopped(false), interruptEnableRequested(false),
+CPU::CPU(Device& owningDevice)
+   : reg({}), device(owningDevice), mem(owningDevice.getMemory()), ime(false), halted(false), stopped(false), interruptEnableRequested(false),
      freezePC(false) {
 }
 
@@ -321,7 +323,7 @@ void CPU::tick() {
    handleInterrupts();
 
    if (halted) {
-      cycles += 4;
+      device.machineCycle();
       return;
    }
 
@@ -340,18 +342,24 @@ void CPU::tick() {
 
    // Handle PREFIX CB
    if (operation.ins == Ins::kPREFIX) {
-      cycles += operation.cycles;
+      //cycles += operation.cycles;
       opcode = readPC();
       operation = kCBOperations[opcode];
    }
 
    execute(operation);
 
-   cycles += operation.cycles;
+   //cycles += operation.cycles;
 
    if (goingToEnableInterrupts) {
       ime = true;
    }
+}
+
+uint8_t CPU::readPC()
+{
+   uint8_t value = mem.read(reg.pc++);
+   return value;
 }
 
 void CPU::handleInterrupts() {
@@ -389,11 +397,11 @@ void CPU::handleInterrupt(Interrupt::Enum interrupt) {
    halted = false;
 
    // two wait states
-   cycles += 2;
+   device.machineCycle();
+   device.machineCycle();
 
    // PC is pushed onto the stack
    push(reg.pc);
-   cycles += 2;
 
    // PC is set to the interrupt handler
    switch (interrupt) {
@@ -413,7 +421,8 @@ void CPU::handleInterrupt(Interrupt::Enum interrupt) {
          reg.pc = 0x0060;
          break;
    }
-   ++cycles;
+   //++cycles;
+   device.machineCycle(); // TODO Correct?
 }
 
 void CPU::execute(Operation operation) {
@@ -429,18 +438,20 @@ void CPU::execute(Operation operation) {
    // If this is a compound operation, execute each part
    if (operation.ins == Ins::kLDD) {
       execute(Operation(Ins::kLD, operation.param1, operation.param2, 0));
-      execute(Operation(Ins::kDEC, Opr::kHL, Opr::kNone, 0));
+      //execute(Operation(Ins::kDEC, Opr::kHL, Opr::kNone, 0));
+      --reg.hl;
       return;
    } else if (operation.ins == Ins::kLDI) {
       execute(Operation(Ins::kLD, operation.param1, operation.param2, 0));
-      execute(Operation(Ins::kINC, Opr::kHL, Opr::kNone, 0));
+      //execute(Operation(Ins::kINC, Opr::kHL, Opr::kNone, 0));
+      ++reg.hl;
       return;
    } else if (operation.ins == Ins::kRETI) {
       execute(Operation(Ins::kRET, Opr::kNone, Opr::kNone, 0));
-      execute(Operation(Ins::kEI, Opr::kNone, Opr::kNone, 0));
+      //execute(Operation(Ins::kEI, Opr::kNone, Opr::kNone, 0));
 
       // RETI doesn't delay enabling the IME like EI does
-      interruptEnableRequested = false;
+      //interruptEnableRequested = false;
       ime = true;
       return;
    }
@@ -454,10 +465,8 @@ void CPU::execute(Operation operation) {
       imm16 = readPC16();
    }
 
-   Operand param1(reg, mem, operation.param1, imm8, imm16);
-   Operand param2(reg, mem, operation.param2, imm8, imm16);
-   uint8_t param1Val = param1.read8();
-   uint8_t param2Val = param2.read8();
+   Operand param1(device, reg, mem, operation.param1, imm8, imm16);
+   Operand param2(device, reg, mem, operation.param2, imm8, imm16);
 
    switch (operation.ins) {
       // Loads
@@ -467,7 +476,7 @@ void CPU::execute(Operation operation) {
          ASSERT((operation.param2 != Opr::kDrefC || operation.param1 == Opr::kA)
             && (operation.param1 != Opr::kDrefC || operation.param2 == Opr::kA));
 
-         param1.write8(param2Val);
+         param1.write8(param2.read8());
          break;
       }
       case Ins::kLDH:
@@ -476,7 +485,7 @@ void CPU::execute(Operation operation) {
          ASSERT((operation.param1 == Opr::kDrefImm8 && operation.param2 == Opr::kA)
             || (operation.param1 == Opr::kA && operation.param2 == Opr::kDrefImm8));
 
-         param1.write8(param2Val);
+         param1.write8(param2.read8());
          break;
       }
 
@@ -485,6 +494,8 @@ void CPU::execute(Operation operation) {
       {
          ASSERT(operation.param1 == Opr::kA);
 
+         uint8_t param1Val = param1.read8();
+         uint8_t param2Val = param2.read8();
          uint16_t result = param1Val + param2Val;
          uint16_t carryBits = param1Val ^ param2Val ^ result;
 
@@ -502,6 +513,8 @@ void CPU::execute(Operation operation) {
          ASSERT(operation.param1 == Opr::kA);
 
          uint16_t carryVal = getFlag(kCarry) ? 1 : 0;
+         uint8_t param1Val = param1.read8();
+         uint8_t param2Val = param2.read8();
          uint16_t result = param1Val + param2Val + carryVal;
          uint16_t carryBits = param1Val ^ param2Val ^ carryVal ^ result;
 
@@ -516,6 +529,7 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kSUB:
       {
+         uint8_t param1Val = param1.read8();
          uint16_t result = reg.a - param1Val;
          uint16_t carryBits = reg.a ^ param1Val ^ result;
 
@@ -532,6 +546,8 @@ void CPU::execute(Operation operation) {
          ASSERT(operation.param1 == Opr::kA);
 
          uint16_t carryVal = getFlag(kCarry) ? 1 : 0;
+         uint8_t param1Val = param1.read8();
+         uint8_t param2Val = param2.read8();
          uint16_t result = param1Val - param2Val - carryVal;
          uint16_t carryBits = param1Val ^ param2Val ^ carryVal ^ result;
 
@@ -546,7 +562,7 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kAND:
       {
-         reg.a &= param1Val;
+         reg.a &= param1.read8();
 
          setFlag(kZero, reg.a == 0);
          setFlag(kSub, false);
@@ -556,7 +572,7 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kOR:
       {
-         reg.a |= param1Val;
+         reg.a |= param1.read8();
 
          setFlag(kZero, reg.a == 0);
          setFlag(kSub, false);
@@ -566,7 +582,7 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kXOR:
       {
-         reg.a ^= param1Val;
+         reg.a ^= param1.read8();
 
          setFlag(kZero, reg.a == 0);
          setFlag(kSub, false);
@@ -576,6 +592,7 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kCP:
       {
+         uint8_t param1Val = param1.read8();
          uint16_t result = reg.a - param1Val;
          uint16_t carryBits = reg.a ^ param1Val ^ result;
 
@@ -587,6 +604,7 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kINC:
       {
+         uint8_t param1Val = param1.read8();
          uint16_t result = param1Val + 1;
          uint16_t carryBits = param1Val ^ 1 ^ result;
 
@@ -600,6 +618,7 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kDEC:
       {
+         uint8_t param1Val = param1.read8();
          uint16_t result = param1Val - 1;
          uint16_t carryBits = param1Val ^ 1 ^ result;
 
@@ -615,6 +634,7 @@ void CPU::execute(Operation operation) {
       // Miscellaneous
       case Ins::kSWAP:
       {
+         uint8_t param1Val = param1.read8();
          uint8_t result = ((param1Val & 0x0F) << 4) | ((param1Val & 0xF0) >> 4);
          param1.write8(result);
 
@@ -700,7 +720,7 @@ void CPU::execute(Operation operation) {
       case Ins::kSTOP:
       {
          // STOP should be followed by 0x00 (treated here as an immediate)
-         ASSERT(param1Val == 0x00);
+         // ASSERT(param1Val == 0x00); // TODO
 
          stopped = true;
          break;
@@ -769,6 +789,7 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kRLC:
       {
+         uint8_t param1Val = param1.read8();
          uint8_t result = (param1Val << 1) | (param1Val >> 7);
          param1.write8(result);
 
@@ -781,6 +802,7 @@ void CPU::execute(Operation operation) {
       case Ins::kRL:
       {
          uint8_t carryVal = getFlag(kCarry) ? 1 : 0;
+         uint8_t param1Val = param1.read8();
          uint8_t newCarryVal = param1Val & 0x80;
 
          uint8_t result = (param1Val << 1) | carryVal;
@@ -794,6 +816,7 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kRRC:
       {
+         uint8_t param1Val = param1.read8();
          uint8_t result = (param1Val >> 1) | (param1Val << 7);
          param1.write8(result);
 
@@ -806,6 +829,7 @@ void CPU::execute(Operation operation) {
       case Ins::kRR:
       {
          uint8_t carryVal = getFlag(kCarry) ? 1 : 0;
+         uint8_t param1Val = param1.read8();
          uint8_t newCarryVal = param1Val & 0x01;
 
          uint8_t result = (param1Val >> 1) | (carryVal << 7);
@@ -819,6 +843,7 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kSLA:
       {
+         uint8_t param1Val = param1.read8();
          uint8_t newCarryVal = param1Val & 0x80;
 
          uint8_t result = param1Val << 1;
@@ -832,6 +857,7 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kSRA:
       {
+         uint8_t param1Val = param1.read8();
          uint8_t newCarryVal = param1Val & 0x01;
 
          uint8_t result = (param1Val >> 1) | (param1Val & 0x80);
@@ -845,6 +871,7 @@ void CPU::execute(Operation operation) {
       }
       case Ins::kSRL:
       {
+         uint8_t param1Val = param1.read8();
          uint8_t newCarryVal = param1Val & 0x01;
 
          uint8_t result = param1Val >> 1;
@@ -862,7 +889,7 @@ void CPU::execute(Operation operation) {
       {
          uint8_t mask = bitOprMask(operation.param1);
 
-         setFlag(kZero, (param2Val & mask) == 0);
+         setFlag(kZero, (param2.read8() & mask) == 0);
          setFlag(kSub, false);
          setFlag(kHalfCarry, true);
          break;
@@ -871,14 +898,14 @@ void CPU::execute(Operation operation) {
       {
          uint8_t mask = bitOprMask(operation.param1);
 
-         param2.write8(param2Val | mask);
+         param2.write8(param2.read8() | mask);
          break;
       }
       case Ins::kRES:
       {
          uint8_t mask = bitOprMask(operation.param1);
 
-         param2.write8(param2Val & ~mask);
+         param2.write8(param2.read8() & ~mask);
          break;
       }
 
@@ -904,15 +931,15 @@ void CPU::execute16(Operation operation) {
       imm16 = readPC16();
    }
 
-   Operand param1(reg, mem, operation.param1, imm8, imm16);
-   Operand param2(reg, mem, operation.param2, imm8, imm16);
-   uint16_t param1Val = param1.read16();
-   uint16_t param2Val = param2.read16();
+   Operand param1(device, reg, mem, operation.param1, imm8, imm16);
+   Operand param2(device, reg, mem, operation.param2, imm8, imm16);
 
    switch (operation.ins) {
       // Loads
       case Ins::kLD:
       {
+         uint16_t param2Val = param2.read16();
+
          if (operation.param1 == Opr::kDrefImm16) {
             ASSERT(operation.param2 == Opr::kSP);
 
@@ -920,6 +947,10 @@ void CPU::execute16(Operation operation) {
             mem.write(imm16 + 1, (param2Val >> 8) & 0x00FF);
          } else {
             param1.write16(param2Val);
+
+            if (operation.param2 == Opr::kHL) {
+               device.machineCycle();
+            }
          }
          break;
       }
@@ -929,6 +960,7 @@ void CPU::execute16(Operation operation) {
          // Special case - uses one byte signed immediate value
          int8_t n = toSigned(imm8);
 
+         uint16_t param1Val = param1.read16();
          uint32_t result = param1Val + n;
          uint32_t carryBits = param1Val ^ n ^ result;
 
@@ -939,11 +971,14 @@ void CPU::execute16(Operation operation) {
          setFlag(kSub, false);
          setFlag(kHalfCarry, (carryBits & 0x0010) != 0);
          setFlag(kCarry, (carryBits & 0x0100) != 0);
+
+         device.machineCycle();
          break;
       }
       case Ins::kPUSH:
       {
-         push(param1Val);
+         push(param1.read16());
+         device.machineCycle();
          break;
       }
       case Ins::kPOP:
@@ -958,6 +993,8 @@ void CPU::execute16(Operation operation) {
          ASSERT(operation.param1 == Opr::kHL || operation.param1 == Opr::kSP);
 
          if (operation.param1 == Opr::kHL) {
+            uint16_t param1Val = param1.read16();
+            uint16_t param2Val = param2.read16();
             uint32_t result = param1Val + param2Val;
             uint32_t carryBits = param1Val ^ param2Val ^ result;
 
@@ -966,12 +1003,15 @@ void CPU::execute16(Operation operation) {
             setFlag(kSub, false);
             setFlag(kHalfCarry, (carryBits & kHalfCaryMask) != 0);
             setFlag(kCarry, (carryBits & kCaryMask) != 0);
+
+            device.machineCycle();
          } else {
             ASSERT(operation.param2 == Opr::kImm8Signed);
 
             // Special case - uses one byte signed immediate value
             int8_t n = toSigned(imm8);
 
+            uint16_t param1Val = param1.read16();
             uint32_t result = param1Val + n;
             uint32_t carryBits = param1Val ^ n ^ result;
 
@@ -981,17 +1021,22 @@ void CPU::execute16(Operation operation) {
             setFlag(kSub, false);
             setFlag(kHalfCarry, (carryBits & 0x0010) != 0);
             setFlag(kCarry, (carryBits & 0x0100) != 0);
+
+            device.machineCycle();
+            device.machineCycle();
          }
          break;
       }
       case Ins::kINC:
       {
-         param1.write16(param1Val + 1);
+         param1.write16(param1.read16() + 1);
+         device.machineCycle();
          break;
       }
       case Ins::kDEC:
       {
-         param1.write16(param1Val - 1);
+         param1.write16(param1.read16() - 1);
+         device.machineCycle();
          break;
       }
 
@@ -1001,13 +1046,17 @@ void CPU::execute16(Operation operation) {
          if (operation.param2 == Opr::kNone) {
             ASSERT(operation.param1 == Opr::kImm16 || operation.param1 == Opr::kHL);
 
-            reg.pc = param1Val;
+            reg.pc = param1.read16();
+            if (operation.param1 == Opr::kImm16) {
+               device.machineCycle();
+            }
          } else {
             bool shouldJump = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
             if (shouldJump) {
-               reg.pc = param2Val;
+               reg.pc = param2.read16();
+               device.machineCycle();
             } else {
-               cycles -= 4;
+               //cycles -= 4;
             }
          }
          break;
@@ -1021,14 +1070,16 @@ void CPU::execute16(Operation operation) {
             ASSERT(operation.param1 == Opr::kImm8Signed);
 
             reg.pc += n;
+            device.machineCycle();
          } else {
             ASSERT(operation.param2 == Opr::kImm8Signed);
 
             bool shouldJump = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
             if (shouldJump) {
                reg.pc += n;
+               device.machineCycle();
             } else {
-               cycles -= 4;
+               //cycles -= 4;
             }
          }
          break;
@@ -1039,14 +1090,17 @@ void CPU::execute16(Operation operation) {
       {
          if (operation.param2 == Opr::kNone) {
             push(reg.pc);
-            reg.pc = param1Val;
+            reg.pc = param1.read16();
+            device.machineCycle();
          } else {
+            uint16_t param2Val = param2.read16();
             bool shouldCall = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
             if (shouldCall) {
+               device.machineCycle();
                push(reg.pc);
                reg.pc = param2Val;
             } else {
-               cycles -= 12;
+               //cycles -= 12;
             }
          }
          break;
@@ -1057,6 +1111,7 @@ void CPU::execute16(Operation operation) {
       {
          push(reg.pc);
          reg.pc = 0x0000 + rstOffset(operation.param1);
+         device.machineCycle(); // TODO Before push?
          break;
       }
 
@@ -1065,12 +1120,15 @@ void CPU::execute16(Operation operation) {
       {
          if (operation.param1 == Opr::kNone) {
             reg.pc = pop();
+            device.machineCycle();
          } else {
+            device.machineCycle();
             bool shouldReturn = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
             if (shouldReturn) {
                reg.pc = pop();
+               device.machineCycle();
             } else {
-               cycles -= 12;
+               //cycles -= 12;
             }
          }
          break;
@@ -1083,6 +1141,23 @@ void CPU::execute16(Operation operation) {
          break;
       }
    }
+}
+
+void CPU::push(uint16_t value) {
+   // TODO
+
+   reg.sp -= 2;
+   mem.write(reg.sp, value & 0x00FF);
+   mem.write(reg.sp + 1, (value & 0xFF00) >> 8);
+}
+
+uint16_t CPU::pop() {
+   // TODO
+
+   uint8_t low = mem.read(reg.sp);
+   uint8_t high = mem.read(reg.sp + 1);
+   reg.sp += 2;
+   return (high << 8) | low;
 }
 
 } // namespace GBC

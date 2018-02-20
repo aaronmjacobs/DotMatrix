@@ -102,11 +102,11 @@ uint8_t updateFlagRegister(uint8_t f, FlagOp z, FlagOp n, FlagOp h, FlagOp c) {
 #define UPDATE_FLAGS(_reg_, _znhc_)\
 {\
    bool add = _znhc_[1] != '1';\
-   FlagOp zero = getFlagOp(_znhc_[0], final.reg._reg_ == 0 ? kSet : kClear);\
+   FlagOp zero = getFlagOp(_znhc_[0], final.cpu.reg._reg_ == 0 ? kSet : kClear);\
    FlagOp sub = getFlagOp(_znhc_[1], add ? kClear : kSet);\
-   FlagOp halfCarry = getFlagOp(_znhc_[2], (add ? didHalfCarryAdd(initial.reg._reg_, final.reg._reg_) : didHalfCarrySub(initial.reg._reg_, final.reg._reg_)) ? kSet : kClear);\
-   FlagOp carry = getFlagOp(_znhc_[3], (add ? didCarryAdd(initial.reg._reg_, final.reg._reg_) : didCarrySub(initial.reg._reg_, final.reg._reg_)) ? kSet : kClear);\
-   final.reg.f = updateFlagRegister(initial.reg.f, zero, sub, halfCarry, carry);\
+   FlagOp halfCarry = getFlagOp(_znhc_[2], (add ? didHalfCarryAdd(initial.cpu.reg._reg_, final.cpu.reg._reg_) : didHalfCarrySub(initial.cpu.reg._reg_, final.cpu.reg._reg_)) ? kSet : kClear);\
+   FlagOp carry = getFlagOp(_znhc_[3], (add ? didCarryAdd(initial.cpu.reg._reg_, final.cpu.reg._reg_) : didCarrySub(initial.cpu.reg._reg_, final.cpu.reg._reg_)) ? kSet : kClear);\
+   final.cpu.reg.f = updateFlagRegister(initial.cpu.reg.f, zero, sub, halfCarry, carry);\
 }
 
 bool is16BitOperand(Opr operand) {
@@ -133,24 +133,24 @@ bool usesImm16(Operation operation) {
       || operation.param1 == Opr::kDrefImm16 || operation.param2 == Opr::kDrefImm16;
 }
 
-bool miscFieldsMatch(const CPU& first, const CPU& second) {
-   return first.ime == second.ime && first.cycles == second.cycles && first.halted == second.halted
-      && first.stopped == second.stopped && first.interruptEnableRequested == second.interruptEnableRequested
-      && first.freezePC == second.freezePC;
+bool miscFieldsMatch(const Device& first, const Device& second) {
+   return first.cpu.ime == second.cpu.ime && first.totalCycles == second.totalCycles && first.cpu.halted == second.cpu.halted
+      && first.cpu.stopped == second.cpu.stopped && first.cpu.interruptEnableRequested == second.cpu.interruptEnableRequested
+      && first.cpu.freezePC == second.cpu.freezePC;
 }
 
-void dumpFields(const CPU& cpu, const char* name = nullptr) {
+void dumpFields(const Device& device, const char* name = nullptr) {
    std::ostringstream out;
    out << "Fields";
    if (name) {
       out << "\n" << name;
    }
-   out << "\nIME: " << std::boolalpha << cpu.ime
-      << "\ncycles: " << cpu.cycles
-      << "\nhalted: " << cpu.halted
-      << "\nstopped: " << cpu.stopped
-      << "\ninterruptEnableRequested: " << cpu.interruptEnableRequested
-      << "\nfreezePC: " << cpu.freezePC << "\n";
+   out << "\nIME: " << std::boolalpha << device.cpu.ime
+      << "\ncycles: " << device.totalCycles
+      << "\nhalted: " << device.cpu.halted
+      << "\nstopped: " << device.cpu.stopped
+      << "\ninterruptEnableRequested: " << device.cpu.interruptEnableRequested
+      << "\nfreezePC: " << device.cpu.freezePC << "\n";
    LOG_INFO(out.str());
 }
 
@@ -184,7 +184,7 @@ void dumpMem(const Memory& mem, uint16_t start, uint16_t end, const char* name =
    LOG_INFO(out.str());
 }
 
-void prepareInitial(CPU& cpu, const CPUTestGroup& testGroup, bool randomizeData, uint16_t seed) {
+void prepareInitial(Device& device, const CPUTestGroup& testGroup, bool randomizeData, uint16_t seed) {
    std::default_random_engine engine(seed);
    std::uniform_int_distribution<uint16_t> distribution16;
 
@@ -208,57 +208,63 @@ void prepareInitial(CPU& cpu, const CPUTestGroup& testGroup, bool randomizeData,
    const uint8_t kInitialMem1 = randomizeData ? distribution8(engine) : 0xAB;
    const uint8_t kInitialMem2 = randomizeData ? distribution8(engine) : 0xCD;
 
-   cpu.reg.a = kInitialA;
-   cpu.reg.f = kInitialF; // TODO Should the CPU ensure the low bits are never used?
-   cpu.reg.b = kInitialB;
-   cpu.reg.c = kInitialC;
-   cpu.reg.d = kInitialD;
-   cpu.reg.e = kInitialE;
-   cpu.reg.h = kInitialH;
-   cpu.reg.l = kInitialL;
+   device.cpu.reg.a = kInitialA;
+   device.cpu.reg.f = kInitialF; // TODO Should the CPU ensure the low bits are never used?
+   device.cpu.reg.b = kInitialB;
+   device.cpu.reg.c = kInitialC;
+   device.cpu.reg.d = kInitialD;
+   device.cpu.reg.e = kInitialE;
+   device.cpu.reg.h = kInitialH;
+   device.cpu.reg.l = kInitialL;
 
-   cpu.reg.sp = kInitialSP;
-   cpu.reg.pc = kInitialPC;
+   device.cpu.reg.sp = kInitialSP;
+   device.cpu.reg.pc = kInitialPC;
 
    uint16_t pcOffset = 0;
    for (const CPUTest& test : testGroup) {
       Operation operation = kOperations[test.opcode];
 
-      cpu.mem.write(cpu.reg.pc + pcOffset++, test.opcode);
+      device.memory.write(device.cpu.reg.pc + pcOffset++, test.opcode);
 
       if (usesImm8(operation)) {
-         cpu.mem.write(cpu.reg.pc + pcOffset++, kInitialMem1);
+         device.memory.write(device.cpu.reg.pc + pcOffset++, kInitialMem1);
       } else if (usesImm16(operation)) {
-         cpu.mem.write(cpu.reg.pc + pcOffset++, kInitialMem1);
-         cpu.mem.write(cpu.reg.pc + pcOffset++, kInitialMem2);
+         device.memory.write(device.cpu.reg.pc + pcOffset++, kInitialMem1);
+         device.memory.write(device.cpu.reg.pc + pcOffset++, kInitialMem2);
       }
    }
 }
 
-void prepareFinal(CPU& cpu, const CPUTestGroup& testGroup, size_t testIndex, bool randomizeData, uint16_t seed) {
-   prepareInitial(cpu, testGroup, randomizeData, seed);
+void prepareFinal(Device& device, const CPUTestGroup& testGroup, size_t testIndex, bool randomizeData, uint16_t seed) {
+   prepareInitial(device, testGroup, randomizeData, seed);
 
    for (size_t i = 0; i <= testIndex; ++i) {
       const CPUTest& test = testGroup[i];
 
       Operation operation = kOperations[test.opcode];
-      cpu.cycles += operation.cycles;
+      device.totalCycles += operation.cycles;
 
-      ++cpu.reg.pc;
+      ++device.cpu.reg.pc;
       if (usesImm8(operation)) {
-         ++cpu.reg.pc;
+         ++device.cpu.reg.pc;
       } else if (usesImm16(operation)) {
-         cpu.reg.pc += 2;
+         device.cpu.reg.pc += 2;
       }
    }
 }
 
-uint8_t imm8(CPU& cpu) {
-   return cpu.mem.read(cpu.reg.pc + 1);
+uint16_t read16(Device& device, uint16_t address) {
+   uint8_t low = device.memory.read(address);
+   uint8_t high = device.memory.read(address + 1);
+   return ((high << 8) | low);
 }
 
-uint16_t imm16(CPU& cpu) {
-   return cpu.mem.read(cpu.reg.pc + 1) | (cpu.mem.read(cpu.reg.pc + 2) << 8);
+uint8_t imm8(Device& device) {
+   return device.memory.read(device.cpu.reg.pc + 1);
+}
+
+uint16_t imm16(Device& device) {
+   return read16(device, device.cpu.reg.pc + 1);
 }
 
 } // namespace
@@ -286,31 +292,35 @@ void CPUTester::runTestGroup(const CPUTestGroup& testGroup, bool randomizeData, 
    Device device;
    Device finalDevice;
    device.memory.boot = finalDevice.memory.boot = Boot::kNotBooting; // Don't run the bootstrap program
+   device.memory.dontTriggerCycles = true;
+   finalDevice.memory.dontTriggerCycles = true;
 
-   prepareInitial(device.cpu, testGroup, randomizeData, seed);
+   prepareInitial(device, testGroup, randomizeData, seed);
 
    for (size_t i = 0; i < testGroup.size(); ++i) {
-      prepareFinal(finalDevice.cpu, testGroup, i, randomizeData, seed);
-      runTest(device.cpu, finalDevice.cpu, testGroup[i]);
+      prepareFinal(finalDevice, testGroup, i, randomizeData, seed);
+      runTest(device, finalDevice, testGroup[i]);
    }
 }
 
-void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
-   test.testSetupFunction(cpu, finalCPU);
+void CPUTester::runTest(Device& device, Device& finalDevice, const CPUTest& test) {
+   test.testSetupFunction(device, finalDevice);
 
-   cpu.tick();
+   device.memory.dontTriggerCycles = false;
+   device.cpu.tick();
+   device.memory.dontTriggerCycles = true;
 
-   bool fieldsMatch = miscFieldsMatch(finalCPU, cpu);
-   bool registersMatch = memcmp(&finalCPU.reg, &cpu.reg, sizeof(CPU::Registers)) == 0;
+   bool fieldsMatch = miscFieldsMatch(finalDevice, device);
+   bool registersMatch = memcmp(&finalDevice.cpu.reg, &device.cpu.reg, sizeof(CPU::Registers)) == 0;
    bool memoryMatches = true;
    uint16_t mismatchLocation = 0;
-   for (uint16_t i = 0, j = 0; i >= j; j = i++) {
-      if (cpu.mem.read(i) != finalCPU.mem.read(i)) {
+   /*for (uint16_t i = 0, j = 0; i >= j; j = i++) {
+      if (device.cpu.mem.read(i) != finalDevice.cpu.mem.read(i)) {
          memoryMatches = false;
          mismatchLocation = i;
          break;
       }
-   }
+   }*/
 
    if (!fieldsMatch || !registersMatch || !memoryMatches) {
       std::ostringstream out;
@@ -319,13 +329,13 @@ void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
    }
 
    if (!fieldsMatch) {
-      dumpFields(finalCPU, "Expected");
-      dumpFields(cpu, "Actual");
+      dumpFields(finalDevice, "Expected");
+      dumpFields(device, "Actual");
    }
 
    if (!registersMatch) {
-      dumpRegisters(finalCPU.reg, "Expected");
-      dumpRegisters(cpu.reg, "Actual");
+      dumpRegisters(finalDevice.cpu.reg, "Expected");
+      dumpRegisters(device.cpu.reg, "Actual");
    }
 
    if (!memoryMatches) {
@@ -333,8 +343,8 @@ void CPUTester::runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test) {
       uint16_t previousLine = memoryLine > 0 ? memoryLine - 1 : 0;
       uint16_t nextLine = memoryLine < 8192 ? memoryLine + 1 : 8192;
 
-      dumpMem(finalCPU.mem, previousLine * 8, nextLine * 8 + 8, "Expected");
-      dumpMem(cpu.mem, previousLine * 8, nextLine * 8 + 8, "Actual");
+      dumpMem(finalDevice.memory, previousLine * 8, nextLine * 8 + 8, "Expected");
+      dumpMem(device.memory, previousLine * 8, nextLine * 8 + 8, "Actual");
    }
 
    ASSERT(fieldsMatch && registersMatch && memoryMatches);
@@ -345,39 +355,39 @@ void CPUTester::init() {
       {
          {
             0x00, // NOP
-            [](CPU& initial, CPU& final) {
+            [](Device& initial, Device& final) {
             }
          }
       },
       {
          {
             0x01, // LD BC,d16
-            [](CPU& initial, CPU& final) {
-               final.reg.bc = imm16(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.bc = imm16(initial);
             }
          }
       },
       {
          {
             0x02, // LD (BC),A
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.bc, initial.reg.a);
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.bc, initial.cpu.reg.a);
             }
          }
       },
       {
          {
             0x03, // INC BC
-            [](CPU& initial, CPU& final) {
-               ++final.reg.bc;
+            [](Device& initial, Device& final) {
+               ++final.cpu.reg.bc;
             }
          }
       },
       {
          {
             0x04, // INC B
-            [](CPU& initial, CPU& final) {
-               ++final.reg.b;
+            [](Device& initial, Device& final) {
+               ++final.cpu.reg.b;
 
                UPDATE_FLAGS(b, "Z0H-")
             }
@@ -386,8 +396,8 @@ void CPUTester::init() {
       {
          {
             0x05, // DEC B
-            [](CPU& initial, CPU& final) {
-               --final.reg.b;
+            [](Device& initial, Device& final) {
+               --final.cpu.reg.b;
 
                UPDATE_FLAGS(b, "Z1H-")
             }
@@ -396,23 +406,23 @@ void CPUTester::init() {
       {
          {
             0x06, // LD B,d8
-            [](CPU& initial, CPU& final) {
-               final.reg.b = imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.b = imm8(initial);
             }
          }
       },
       {
          {
             0x07, // RLCA
-            [](CPU& initial, CPU& final) {
-               final.reg.a = (initial.reg.a << 1) | (initial.reg.a >> 7);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = (initial.cpu.reg.a << 1) | (initial.cpu.reg.a >> 7);
 
                UPDATE_FLAGS(c, "000C")
                // Old bit 7 to carry
-               if (initial.reg.a & 0x80) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.a & 0x80) {
+                  final.cpu.reg.f |= CPU::kCarry;
                } else {
-                  final.reg.f &= ~CPU::kCarry;
+                  final.cpu.reg.f &= ~CPU::kCarry;
                }
             }
          }
@@ -420,21 +430,21 @@ void CPUTester::init() {
       {
          {
             0x08, // LD (a16),SP
-            [](CPU& initial, CPU& final) {
-               uint8_t spLow = initial.reg.sp & 0xFF;
-               uint8_t spHigh = (initial.reg.sp >> 8) & 0xFF;
+            [](Device& initial, Device& final) {
+               uint8_t spLow = initial.cpu.reg.sp & 0xFF;
+               uint8_t spHigh = (initial.cpu.reg.sp >> 8) & 0xFF;
                uint16_t a16 = imm16(initial);
 
-               final.mem.write(a16, spLow);
-               final.mem.write(a16 + 1, spHigh);
+               final.memory.write(a16, spLow);
+               final.memory.write(a16 + 1, spHigh);
             }
          }
       },
       {
          {
             0x09, // ADD HL,BC
-            [](CPU& initial, CPU& final) {
-               final.reg.hl = initial.reg.hl + initial.reg.bc;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.hl = initial.cpu.reg.hl + initial.cpu.reg.bc;
 
                UPDATE_FLAGS(hl, "-0HC")
             }
@@ -443,24 +453,24 @@ void CPUTester::init() {
       {
          {
             0x0A, // LD A,(BC)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.read(initial.reg.bc) | (initial.mem.read(initial.reg.bc + 1) << 8);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.memory.read(initial.cpu.reg.bc) | (initial.memory.read(initial.cpu.reg.bc + 1) << 8);
             }
          }
       },
       {
          {
             0x0B, // DEC BC
-            [](CPU& initial, CPU& final) {
-               final.reg.bc = initial.reg.bc - 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.bc = initial.cpu.reg.bc - 1;
             }
          }
       },
       {
          {
             0x0C, // INC C
-            [](CPU& initial, CPU& final) {
-               final.reg.c = initial.reg.c + 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.c = initial.cpu.reg.c + 1;
 
                UPDATE_FLAGS(c, "Z0H-")
             }
@@ -469,8 +479,8 @@ void CPUTester::init() {
       {
          {
             0x0D, // DEC C
-            [](CPU& initial, CPU& final) {
-               final.reg.c = initial.reg.c - 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.c = initial.cpu.reg.c - 1;
 
                UPDATE_FLAGS(c, "Z1H-")
             }
@@ -479,23 +489,23 @@ void CPUTester::init() {
       {
          {
             0x0E, // LD C,d8
-            [](CPU& initial, CPU& final) {
-               final.reg.c = imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.c = imm8(initial);
             }
          }
       },
       {
          {
             0x0F, // RRCA
-            [](CPU& initial, CPU& final) {
-               final.reg.a = (initial.reg.a >> 1) | (initial.reg.a << 7);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = (initial.cpu.reg.a >> 1) | (initial.cpu.reg.a << 7);
 
                UPDATE_FLAGS(c, "000C")
                // Old bit 0 to carry
-               if (initial.reg.a & 0x01) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.a & 0x01) {
+                  final.cpu.reg.f |= CPU::kCarry;
                } else {
-                  final.reg.f &= ~CPU::kCarry;
+                  final.cpu.reg.f &= ~CPU::kCarry;
                }
             }
          }
@@ -504,43 +514,43 @@ void CPUTester::init() {
       {
          {
             0x10, // STOP 0
-            [](CPU& initial, CPU& final) {
-               initial.mem.write(initial.reg.pc + 1, 0x00);
-               final.mem.write(initial.reg.pc + 1, 0x00);
+            [](Device& initial, Device& final) {
+               initial.memory.write(initial.cpu.reg.pc + 1, 0x00);
+               final.memory.write(initial.cpu.reg.pc + 1, 0x00);
 
-               final.stopped = true;
+               final.cpu.stopped = true;
             }
          }
       },
       {
          {
             0x11, // LD DE,d16
-            [](CPU& initial, CPU& final) {
-               final.reg.de = imm16(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.de = imm16(initial);
             }
          }
       },
       {
          {
             0x12, // LD (DE),A
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.de, initial.reg.a);
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.de, initial.cpu.reg.a);
             }
          }
       },
       {
          {
             0x13, // INC DE
-            [](CPU& initial, CPU& final) {
-               ++final.reg.de;
+            [](Device& initial, Device& final) {
+               ++final.cpu.reg.de;
             }
          }
       },
       {
          {
             0x14, // INC D
-            [](CPU& initial, CPU& final) {
-               final.reg.d = initial.reg.d + 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.d = initial.cpu.reg.d + 1;
 
                UPDATE_FLAGS(d, "Z0H-")
             }
@@ -549,8 +559,8 @@ void CPUTester::init() {
       {
          {
             0x15, // DEC D
-            [](CPU& initial, CPU& final) {
-               final.reg.d = initial.reg.d - 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.d = initial.cpu.reg.d - 1;
 
                UPDATE_FLAGS(d, "Z1H-")
             }
@@ -559,23 +569,23 @@ void CPUTester::init() {
       {
          {
             0x16, // LD D,d8
-            [](CPU& initial, CPU& final) {
-               final.reg.d = imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.d = imm8(initial);
             }
          }
       },
       {
          {
             0x17, // RLA
-            [](CPU& initial, CPU& final) {
-               final.reg.a = (initial.reg.a << 1) | ((initial.reg.f & CPU::kCarry) ? 0x01 : 0x00);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = (initial.cpu.reg.a << 1) | ((initial.cpu.reg.f & CPU::kCarry) ? 0x01 : 0x00);
 
                UPDATE_FLAGS(c, "000C")
                // Old bit 7 to carry
-               if (initial.reg.a & 0x80) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.a & 0x80) {
+                  final.cpu.reg.f |= CPU::kCarry;
                } else {
-                  final.reg.f &= ~CPU::kCarry;
+                  final.cpu.reg.f &= ~CPU::kCarry;
                }
             }
          }
@@ -583,18 +593,18 @@ void CPUTester::init() {
       {
          {
             0x18, // JR r8
-            [](CPU& initial, CPU& final) {
+            [](Device& initial, Device& final) {
                uint8_t offset = imm8(initial);
                int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
-               final.reg.pc = initial.reg.pc + 2 + signedOffset;
+               final.cpu.reg.pc = initial.cpu.reg.pc + 2 + signedOffset;
             }
          }
       },
       {
          {
             0x19, // ADD HL,DE
-            [](CPU& initial, CPU& final) {
-               final.reg.hl = initial.reg.hl + initial.reg.de;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.hl = initial.cpu.reg.hl + initial.cpu.reg.de;
 
                UPDATE_FLAGS(hl, "-0HC")
             }
@@ -603,24 +613,24 @@ void CPUTester::init() {
       {
          {
             0x1A, // LD A,(DE)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.read(initial.reg.de);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.memory.read(initial.cpu.reg.de);
             }
          }
       },
       {
          {
             0x1B, // DEC DE
-            [](CPU& initial, CPU& final) {
-               final.reg.de = initial.reg.de - 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.de = initial.cpu.reg.de - 1;
             }
          }
       },
       {
          {
             0x1C, // INC E
-            [](CPU& initial, CPU& final) {
-               final.reg.e = initial.reg.e + 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.e = initial.cpu.reg.e + 1;
 
                UPDATE_FLAGS(e, "Z0H-")
             }
@@ -629,8 +639,8 @@ void CPUTester::init() {
       {
          {
             0x1D, // DEC E
-            [](CPU& initial, CPU& final) {
-               final.reg.e = initial.reg.e - 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.e = initial.cpu.reg.e - 1;
 
                UPDATE_FLAGS(e, "Z1H-")
             }
@@ -639,23 +649,23 @@ void CPUTester::init() {
       {
          {
             0x1E, // LD E,d8
-            [](CPU& initial, CPU& final) {
-               final.reg.e = imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.e = imm8(initial);
             }
          }
       },
       {
          {
             0x1F, // RRA
-            [](CPU& initial, CPU& final) {
-               final.reg.a = (initial.reg.a >> 1) | ((initial.reg.f & CPU::kCarry) ? 0x80 : 0x00);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = (initial.cpu.reg.a >> 1) | ((initial.cpu.reg.f & CPU::kCarry) ? 0x80 : 0x00);
 
                UPDATE_FLAGS(c, "000C")
                // Old bit 0 to carry
-               if (initial.reg.a & 0x01) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.a & 0x01) {
+                  final.cpu.reg.f |= CPU::kCarry;
                } else {
-                  final.reg.f &= ~CPU::kCarry;
+                  final.cpu.reg.f &= ~CPU::kCarry;
                }
             }
          }
@@ -664,13 +674,13 @@ void CPUTester::init() {
       {
          {
             0x20, // JR NZ,r8
-            [](CPU& initial, CPU& final) {
-               if ((initial.reg.f & CPU::kZero) == 0x00) {
+            [](Device& initial, Device& final) {
+               if ((initial.cpu.reg.f & CPU::kZero) == 0x00) {
                   uint8_t offset = imm8(initial);
                   int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
-                  final.reg.pc = initial.reg.pc + 2 + signedOffset;
+                  final.cpu.reg.pc = initial.cpu.reg.pc + 2 + signedOffset;
                } else {
-                  final.cycles -= 4;
+                  final.totalCycles -= 4;
                }
             }
          }
@@ -678,33 +688,33 @@ void CPUTester::init() {
       {
          {
             0x21, // LD HL,d16
-            [](CPU& initial, CPU& final) {
-               final.reg.hl = imm16(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.hl = imm16(initial);
             }
          }
       },
       {
          {
             0x22, // LD (HL+),A
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.hl, initial.reg.a);
-               final.reg.hl = initial.reg.hl + 1;
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.hl, initial.cpu.reg.a);
+               final.cpu.reg.hl = initial.cpu.reg.hl + 1;
             }
          }
       },
       {
          {
             0x23, // INC HL
-            [](CPU& initial, CPU& final) {
-               final.reg.hl = initial.reg.hl + 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.hl = initial.cpu.reg.hl + 1;
             }
          }
       },
       {
          {
             0x24, // INC H
-            [](CPU& initial, CPU& final) {
-               final.reg.h = initial.reg.h + 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.h = initial.cpu.reg.h + 1;
 
                UPDATE_FLAGS(h, "Z0H-")
             }
@@ -713,8 +723,8 @@ void CPUTester::init() {
       {
          {
             0x25, // DEC H
-            [](CPU& initial, CPU& final) {
-               final.reg.h = initial.reg.h - 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.h = initial.cpu.reg.h - 1;
 
                UPDATE_FLAGS(h, "Z1H-")
             }
@@ -723,42 +733,42 @@ void CPUTester::init() {
       {
          {
             0x26, // LD H,d8
-            [](CPU& initial, CPU& final) {
-               final.reg.h = imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.h = imm8(initial);
             }
          }
       },
       {
          {
             0x27, // DAA
-            [](CPU& initial, CPU& final) {
-               uint16_t val = initial.reg.a;
+            [](Device& initial, Device& final) {
+               uint16_t val = initial.cpu.reg.a;
 
-               if (initial.reg.f & CPU::kSub) {
-                  if (initial.reg.f & CPU::kHalfCarry) {
+               if (initial.cpu.reg.f & CPU::kSub) {
+                  if (initial.cpu.reg.f & CPU::kHalfCarry) {
                      val = (val - 0x06) & 0xFF;
                   }
-                  if (initial.reg.f & CPU::kCarry) {
+                  if (initial.cpu.reg.f & CPU::kCarry) {
                      val -= 0x60;
                   }
                } else {
-                  if (initial.reg.f & CPU::kHalfCarry || (val & 0x0F) > 9) {
+                  if (initial.cpu.reg.f & CPU::kHalfCarry || (val & 0x0F) > 9) {
                      val += 0x06;
                   }
-                  if (initial.reg.f & CPU::kCarry || val > 0x9F) {
+                  if (initial.cpu.reg.f & CPU::kCarry || val > 0x9F) {
                      val += 0x60;
                   }
                }
 
-               final.reg.a = static_cast<uint8_t>(val);
+               final.cpu.reg.a = static_cast<uint8_t>(val);
 
-               bool carryWasSet = initial.getFlag(CPU::kCarry);
+               bool carryWasSet = initial.cpu.getFlag(CPU::kCarry);
                UPDATE_FLAGS(a, "Z-0C")
                // See DAA table
                if (carryWasSet || (val & 0x0100) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+                  final.cpu.reg.f |= CPU::kCarry;
                } else {
-                  final.reg.f &= ~CPU::kCarry;
+                  final.cpu.reg.f &= ~CPU::kCarry;
                }
             }
          }
@@ -766,13 +776,13 @@ void CPUTester::init() {
       {
          {
             0x28, // JR Z,r8
-            [](CPU& initial, CPU& final) {
-               if ((initial.reg.f & CPU::kZero) != 0x00) {
+            [](Device& initial, Device& final) {
+               if ((initial.cpu.reg.f & CPU::kZero) != 0x00) {
                   uint8_t offset = imm8(initial);
                   int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
-                  final.reg.pc = initial.reg.pc + 2 + signedOffset;
+                  final.cpu.reg.pc = initial.cpu.reg.pc + 2 + signedOffset;
                } else {
-                  final.cycles -= 4;
+                  final.totalCycles -= 4;
                }
             }
          }
@@ -780,8 +790,8 @@ void CPUTester::init() {
       {
          {
             0x29, // ADD HL,HL
-            [](CPU& initial, CPU& final) {
-               final.reg.hl = initial.reg.hl + initial.reg.hl;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.hl = initial.cpu.reg.hl + initial.cpu.reg.hl;
 
                UPDATE_FLAGS(hl, "-0HC")
             }
@@ -790,25 +800,25 @@ void CPUTester::init() {
       {
          {
             0x2A, // LD A,(HL+)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.read(initial.reg.hl);
-               final.reg.hl = initial.reg.hl + 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.memory.read(initial.cpu.reg.hl);
+               final.cpu.reg.hl = initial.cpu.reg.hl + 1;
             }
          }
       },
       {
          {
             0x2B, // DEC HL
-            [](CPU& initial, CPU& final) {
-               final.reg.hl = initial.reg.hl - 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.hl = initial.cpu.reg.hl - 1;
             }
          }
       },
       {
          {
             0x2C, // INC L
-            [](CPU& initial, CPU& final) {
-               final.reg.l = initial.reg.l + 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.l = initial.cpu.reg.l + 1;
 
                UPDATE_FLAGS(l, "Z0H-")
             }
@@ -817,8 +827,8 @@ void CPUTester::init() {
       {
          {
             0x2D, // DEC L
-            [](CPU& initial, CPU& final) {
-               final.reg.l = initial.reg.l - 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.l = initial.cpu.reg.l - 1;
 
                UPDATE_FLAGS(l, "Z1H-")
             }
@@ -827,16 +837,16 @@ void CPUTester::init() {
       {
          {
             0x2E, // LD L,d8
-            [](CPU& initial, CPU& final) {
-               final.reg.l = imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.l = imm8(initial);
             }
          }
       },
       {
          {
             0x2F, // CPL
-            [](CPU& initial, CPU& final) {
-               final.reg.a = ~initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = ~initial.cpu.reg.a;
 
                UPDATE_FLAGS(a, "-11-")
             }
@@ -846,13 +856,13 @@ void CPUTester::init() {
       {
          {
             0x30, // JR NC,r8
-            [](CPU& initial, CPU& final) {
-               if ((initial.reg.f & CPU::kCarry) == 0x00) {
+            [](Device& initial, Device& final) {
+               if ((initial.cpu.reg.f & CPU::kCarry) == 0x00) {
                   uint8_t offset = imm8(initial);
                   int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
-                  final.reg.pc = initial.reg.pc + 2 + signedOffset;
+                  final.cpu.reg.pc = initial.cpu.reg.pc + 2 + signedOffset;
                } else {
-                  final.cycles -= 4;
+                  final.totalCycles -= 4;
                }
             }
          }
@@ -860,70 +870,70 @@ void CPUTester::init() {
       {
          {
             0x31, // LD SP,d16
-            [](CPU& initial, CPU& final) {
-               final.reg.sp = imm16(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp = imm16(initial);
             }
          }
       },
       {
          {
             0x32, // LD (HL-),A
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.hl, initial.reg.a);
-               final.reg.hl = initial.reg.hl - 1;
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.hl, initial.cpu.reg.a);
+               final.cpu.reg.hl = initial.cpu.reg.hl - 1;
             }
          }
       },
       {
          {
             0x33, // INC SP
-            [](CPU& initial, CPU& final) {
-               final.reg.sp = initial.reg.sp + 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp = initial.cpu.reg.sp + 1;
             }
          }
       },
       {
          {
             0x34, // INC (HL)
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.hl, initial.mem.read(initial.reg.hl) + 1);
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.hl, initial.memory.read(initial.cpu.reg.hl) + 1);
 
                // hacky way to make macro still work - use a to store the result temporarily
-               uint8_t initialA = initial.reg.a;
-               initial.reg.a = initial.mem.read(initial.reg.hl);
-               final.reg.a = initial.mem.read(initial.reg.hl) + 1;
+               uint8_t initialA = initial.cpu.reg.a;
+               initial.cpu.reg.a = initial.memory.read(initial.cpu.reg.hl);
+               final.cpu.reg.a = initial.memory.read(initial.cpu.reg.hl) + 1;
                UPDATE_FLAGS(a, "Z0H-")
-               initial.reg.a = final.reg.a = initialA;
+               initial.cpu.reg.a = final.cpu.reg.a = initialA;
             }
          }
       },
       {
          {
             0x35, // DEC (HL)
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.hl, initial.mem.read(initial.reg.hl) - 1);
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.hl, initial.memory.read(initial.cpu.reg.hl) - 1);
 
                // hacky way to make macro still work - use a to store the result temporarily
-               uint8_t initialA = initial.reg.a;
-               initial.reg.a = initial.mem.read(initial.reg.hl);
-               final.reg.a = initial.mem.read(initial.reg.hl) - 1;
+               uint8_t initialA = initial.cpu.reg.a;
+               initial.cpu.reg.a = initial.memory.read(initial.cpu.reg.hl);
+               final.cpu.reg.a = initial.memory.read(initial.cpu.reg.hl) - 1;
                UPDATE_FLAGS(a, "Z1H-")
-               initial.reg.a = final.reg.a = initialA;
+               initial.cpu.reg.a = final.cpu.reg.a = initialA;
             }
          }
       },
       {
          {
             0x36, // LD (HL),d8
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.hl, imm8(initial));
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.hl, imm8(initial));
             }
          }
       },
       {
          {
             0x37, // SCF
-            [](CPU& initial, CPU& final) {
+            [](Device& initial, Device& final) {
                UPDATE_FLAGS(a, "-001")
             }
          }
@@ -931,13 +941,13 @@ void CPUTester::init() {
       {
          {
             0x38, // JR C,r8
-            [](CPU& initial, CPU& final) {
-               if ((initial.reg.f & CPU::kCarry) != 0x00) {
+            [](Device& initial, Device& final) {
+               if ((initial.cpu.reg.f & CPU::kCarry) != 0x00) {
                   uint8_t offset = imm8(initial);
                   int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
-                  final.reg.pc = initial.reg.pc + 2 + signedOffset;
+                  final.cpu.reg.pc = initial.cpu.reg.pc + 2 + signedOffset;
                } else {
-                  final.cycles -= 4;
+                  final.totalCycles -= 4;
                }
             }
          }
@@ -945,8 +955,8 @@ void CPUTester::init() {
       {
          {
             0x39, // ADD HL,SP
-            [](CPU& initial, CPU& final) {
-               final.reg.hl = initial.reg.hl + initial.reg.sp;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.hl = initial.cpu.reg.hl + initial.cpu.reg.sp;
 
                UPDATE_FLAGS(hl, "-0HC")
             }
@@ -955,25 +965,25 @@ void CPUTester::init() {
       {
          {
             0x3A, // LD A,(HL-)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.read(initial.reg.hl);
-               final.reg.hl = initial.reg.hl - 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.memory.read(initial.cpu.reg.hl);
+               final.cpu.reg.hl = initial.cpu.reg.hl - 1;
             }
          }
       },
       {
          {
             0x3B, // DEC SP
-            [](CPU& initial, CPU& final) {
-               final.reg.sp = initial.reg.sp - 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp = initial.cpu.reg.sp - 1;
             }
          }
       },
       {
          {
             0x3C, // INC A
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + 1;
                UPDATE_FLAGS(a, "Z0H-")
             }
          }
@@ -981,8 +991,8 @@ void CPUTester::init() {
       {
          {
             0x3D, // DEC A
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - 1;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - 1;
                UPDATE_FLAGS(a, "Z1H-")
             }
          }
@@ -990,18 +1000,18 @@ void CPUTester::init() {
       {
          {
             0x3E, // LD A,d8
-            [](CPU& initial, CPU& final) {
-               final.reg.a = imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = imm8(initial);
             }
          }
       },
       {
          {
             0x3F, // CCF
-            [](CPU& initial, CPU& final) {
+            [](Device& initial, Device& final) {
                UPDATE_FLAGS(a, "-00C")
                // Set carry to flipped initial carry
-               final.reg.f = (final.reg.f & 0xE0) | ((initial.reg.f & CPU::kCarry) ^ CPU::kCarry);
+               final.cpu.reg.f = (final.cpu.reg.f & 0xE0) | ((initial.cpu.reg.f & CPU::kCarry) ^ CPU::kCarry);
             }
          }
       },
@@ -1009,128 +1019,128 @@ void CPUTester::init() {
       {
          {
             0x40, // LD B,B
-            [](CPU& initial, CPU& final) {
-               final.reg.b = initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.b = initial.cpu.reg.b;
             }
          }
       },
       {
          {
             0x41, // LD B,C
-            [](CPU& initial, CPU& final) {
-               final.reg.b = initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.b = initial.cpu.reg.c;
             }
          }
       },
       {
          {
             0x42, // LD B,D
-            [](CPU& initial, CPU& final) {
-               final.reg.b = initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.b = initial.cpu.reg.d;
             }
          }
       },
       {
          {
             0x43, // LD B,E
-            [](CPU& initial, CPU& final) {
-               final.reg.b = initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.b = initial.cpu.reg.e;
             }
          }
       },
       {
          {
             0x44, // LD B,H
-            [](CPU& initial, CPU& final) {
-               final.reg.b = initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.b = initial.cpu.reg.h;
             }
          }
       },
       {
          {
             0x45, // LD B,L
-            [](CPU& initial, CPU& final) {
-               final.reg.b = initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.b = initial.cpu.reg.l;
             }
          }
       },
       {
          {
             0x46, // LD B,(HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.b = initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.b = initial.memory.read(initial.cpu.reg.hl);
             }
          }
       },
       {
          {
             0x47, // LD B,A
-            [](CPU& initial, CPU& final) {
-               final.reg.b = initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.b = initial.cpu.reg.a;
             }
          }
       },
       {
          {
             0x48, // LD C,B
-            [](CPU& initial, CPU& final) {
-               final.reg.c = initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.c = initial.cpu.reg.b;
             }
          }
       },
       {
          {
             0x49, // LD C,C
-            [](CPU& initial, CPU& final) {
-               final.reg.c = initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.c = initial.cpu.reg.c;
             }
          }
       },
       {
          {
             0x4A, // LD C,D
-            [](CPU& initial, CPU& final) {
-               final.reg.c = initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.c = initial.cpu.reg.d;
             }
          }
       },
       {
          {
             0x4B, // LD C,E
-            [](CPU& initial, CPU& final) {
-               final.reg.c = initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.c = initial.cpu.reg.e;
             }
          }
       },
       {
          {
             0x4C, // LD C,H
-            [](CPU& initial, CPU& final) {
-               final.reg.c = initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.c = initial.cpu.reg.h;
             }
          }
       },
       {
          {
             0x4D, // LD C,L
-            [](CPU& initial, CPU& final) {
-               final.reg.c = initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.c = initial.cpu.reg.l;
             }
          }
       },
       {
          {
             0x4E, // LD C,(HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.c = initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.c = initial.memory.read(initial.cpu.reg.hl);
             }
          }
       },
       {
          {
             0x4F, // LD C,A
-            [](CPU& initial, CPU& final) {
-               final.reg.c = initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.c = initial.cpu.reg.a;
             }
          }
       },
@@ -1138,128 +1148,128 @@ void CPUTester::init() {
       {
          {
             0x50, // LD D,B
-            [](CPU& initial, CPU& final) {
-               final.reg.d = initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.d = initial.cpu.reg.b;
             }
          }
       },
       {
          {
             0x51, // LD D,C
-            [](CPU& initial, CPU& final) {
-               final.reg.d = initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.d = initial.cpu.reg.c;
             }
          }
       },
       {
          {
             0x52, // LD D,D
-            [](CPU& initial, CPU& final) {
-               final.reg.d = initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.d = initial.cpu.reg.d;
             }
          }
       },
       {
          {
             0x53, // LD D,E
-            [](CPU& initial, CPU& final) {
-               final.reg.d = initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.d = initial.cpu.reg.e;
             }
          }
       },
       {
          {
             0x54, // LD D,H
-            [](CPU& initial, CPU& final) {
-               final.reg.d = initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.d = initial.cpu.reg.h;
             }
          }
       },
       {
          {
             0x55, // LD D,L
-            [](CPU& initial, CPU& final) {
-               final.reg.d = initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.d = initial.cpu.reg.l;
             }
          }
       },
       {
          {
             0x56, // LD D,(HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.d = initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.d = initial.memory.read(initial.cpu.reg.hl);
             }
          }
       },
       {
          {
             0x57, // LD D,A
-            [](CPU& initial, CPU& final) {
-               final.reg.d = initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.d = initial.cpu.reg.a;
             }
          }
       },
       {
          {
             0x58, // LD E,B
-            [](CPU& initial, CPU& final) {
-               final.reg.e = initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.e = initial.cpu.reg.b;
             }
          }
       },
       {
          {
             0x59, // LD E,C
-            [](CPU& initial, CPU& final) {
-               final.reg.e = initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.e = initial.cpu.reg.c;
             }
          }
       },
       {
          {
             0x5A, // LD E,D
-            [](CPU& initial, CPU& final) {
-               final.reg.e = initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.e = initial.cpu.reg.d;
             }
          }
       },
       {
          {
             0x5B, // LD E,E
-            [](CPU& initial, CPU& final) {
-               final.reg.e = initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.e = initial.cpu.reg.e;
             }
          }
       },
       {
          {
             0x5C, // LD E,H
-            [](CPU& initial, CPU& final) {
-               final.reg.e = initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.e = initial.cpu.reg.h;
             }
          }
       },
       {
          {
             0x5D, // LD E,L
-            [](CPU& initial, CPU& final) {
-               final.reg.e = initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.e = initial.cpu.reg.l;
             }
          }
       },
       {
          {
             0x5E, // LD E,(HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.e = initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.e = initial.memory.read(initial.cpu.reg.hl);
             }
          }
       },
       {
          {
             0x5F, // LD E,A
-            [](CPU& initial, CPU& final) {
-               final.reg.e = initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.e = initial.cpu.reg.a;
             }
          }
       },
@@ -1267,128 +1277,128 @@ void CPUTester::init() {
       {
          {
             0x60, // LD H,B
-            [](CPU& initial, CPU& final) {
-               final.reg.h = initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.h = initial.cpu.reg.b;
             }
          }
       },
       {
          {
             0x61, // LD H,C
-            [](CPU& initial, CPU& final) {
-               final.reg.h = initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.h = initial.cpu.reg.c;
             }
          }
       },
       {
          {
             0x62, // LD H,D
-            [](CPU& initial, CPU& final) {
-               final.reg.h = initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.h = initial.cpu.reg.d;
             }
          }
       },
       {
          {
             0x63, // LD H,E
-            [](CPU& initial, CPU& final) {
-               final.reg.h = initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.h = initial.cpu.reg.e;
             }
          }
       },
       {
          {
             0x64, // LD H,H
-            [](CPU& initial, CPU& final) {
-               final.reg.h = initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.h = initial.cpu.reg.h;
             }
          }
       },
       {
          {
             0x65, // LD H,L
-            [](CPU& initial, CPU& final) {
-               final.reg.h = initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.h = initial.cpu.reg.l;
             }
          }
       },
       {
          {
             0x66, // LD H,(HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.h = initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.h = initial.memory.read(initial.cpu.reg.hl);
             }
          }
       },
       {
          {
             0x67, // LD H,A
-            [](CPU& initial, CPU& final) {
-               final.reg.h = initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.h = initial.cpu.reg.a;
             }
          }
       },
       {
          {
             0x68, // LD L,B
-            [](CPU& initial, CPU& final) {
-               final.reg.l = initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.l = initial.cpu.reg.b;
             }
          }
       },
       {
          {
             0x69, // LD L,C
-            [](CPU& initial, CPU& final) {
-               final.reg.l = initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.l = initial.cpu.reg.c;
             }
          }
       },
       {
          {
             0x6A, // LD L,D
-            [](CPU& initial, CPU& final) {
-               final.reg.l = initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.l = initial.cpu.reg.d;
             }
          }
       },
       {
          {
             0x6B, // LD L,E
-            [](CPU& initial, CPU& final) {
-               final.reg.l = initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.l = initial.cpu.reg.e;
             }
          }
       },
       {
          {
             0x6C, // LD L,H
-            [](CPU& initial, CPU& final) {
-               final.reg.l = initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.l = initial.cpu.reg.h;
             }
          }
       },
       {
          {
             0x6D, // LD L,L
-            [](CPU& initial, CPU& final) {
-               final.reg.l = initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.l = initial.cpu.reg.l;
             }
          }
       },
       {
          {
             0x6E, // LD L,(HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.l = initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.l = initial.memory.read(initial.cpu.reg.hl);
             }
          }
       },
       {
          {
             0x6F, // LD L,A
-            [](CPU& initial, CPU& final) {
-               final.reg.l = initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.l = initial.cpu.reg.a;
             }
          }
       },
@@ -1396,128 +1406,128 @@ void CPUTester::init() {
       {
          {
             0x70, // LD (HL),B
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.hl, initial.reg.b);
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.hl, initial.cpu.reg.b);
             }
          }
       },
       {
          {
             0x71, // LD (HL),C
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.hl, initial.reg.c);
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.hl, initial.cpu.reg.c);
             }
          }
       },
       {
          {
             0x72, // LD (HL),D
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.hl, initial.reg.d);
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.hl, initial.cpu.reg.d);
             }
          }
       },
       {
          {
             0x73, // LD (HL),E
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.hl, initial.reg.e);
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.hl, initial.cpu.reg.e);
             }
          }
       },
       {
          {
             0x74, // LD (HL),H
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.hl, initial.reg.h);
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.hl, initial.cpu.reg.h);
             }
          }
       },
       {
          {
             0x75, // LD (HL),L
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.hl, initial.reg.l);
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.hl, initial.cpu.reg.l);
             }
          }
       },
       {
          {
             0x76, // HALT
-            [](CPU& initial, CPU& final) {
-               final.halted = true;
+            [](Device& initial, Device& final) {
+               final.cpu.halted = true;
             }
          }
       },
       {
          {
             0x77, // LD (HL),A
-            [](CPU& initial, CPU& final) {
-               final.mem.write(initial.reg.hl, initial.reg.a);
+            [](Device& initial, Device& final) {
+               final.memory.write(initial.cpu.reg.hl, initial.cpu.reg.a);
             }
          }
       },
       {
          {
             0x78, // LD A,B
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.b;
             }
          }
       },
       {
          {
             0x79, // LD A,C
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.c;
             }
          }
       },
       {
          {
             0x7A, // LD A,D
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.d;
             }
          }
       },
       {
          {
             0x7B, // LD A,E
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.e;
             }
          }
       },
       {
          {
             0x7C, // LD A,H
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.h;
             }
          }
       },
       {
          {
             0x7D, // LD A,L
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.l;
             }
          }
       },
       {
          {
             0x7E, // LD A,(HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.memory.read(initial.cpu.reg.hl);
             }
          }
       },
       {
          {
             0x7F, // LD A,A
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a;
             }
          }
       },
@@ -1525,8 +1535,8 @@ void CPUTester::init() {
       {
          {
             0x80, // ADD A,B
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.b;
 
                UPDATE_FLAGS(a, "Z0HC")
             }
@@ -1535,8 +1545,8 @@ void CPUTester::init() {
       {
          {
             0x81, // ADD A,C
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.c;
 
                UPDATE_FLAGS(a, "Z0HC")
             }
@@ -1545,8 +1555,8 @@ void CPUTester::init() {
       {
          {
             0x82, // ADD A,D
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.d;
 
                UPDATE_FLAGS(a, "Z0HC")
             }
@@ -1555,8 +1565,8 @@ void CPUTester::init() {
       {
          {
             0x83, // ADD A,E
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.e;
 
                UPDATE_FLAGS(a, "Z0HC")
             }
@@ -1565,8 +1575,8 @@ void CPUTester::init() {
       {
          {
             0x84, // ADD A,H
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.h;
 
                UPDATE_FLAGS(a, "Z0HC")
             }
@@ -1575,8 +1585,8 @@ void CPUTester::init() {
       {
          {
             0x85, // ADD A,L
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.l;
 
                UPDATE_FLAGS(a, "Z0HC")
             }
@@ -1585,8 +1595,8 @@ void CPUTester::init() {
       {
          {
             0x86, // ADD A,(HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.memory.read(initial.cpu.reg.hl);
 
                UPDATE_FLAGS(a, "Z0HC")
             }
@@ -1595,8 +1605,8 @@ void CPUTester::init() {
       {
          {
             0x87, // ADD A,A
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.a;
 
                UPDATE_FLAGS(a, "Z0HC")
             }
@@ -1605,17 +1615,17 @@ void CPUTester::init() {
       {
          {
             0x88, // ADC A,B
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.b + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.b + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z0HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.b + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.b + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.b & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.b & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1623,17 +1633,17 @@ void CPUTester::init() {
       {
          {
             0x89, // ADC A,C
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.c + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.c + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z0HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.c + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.c + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.c & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.c & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1641,17 +1651,17 @@ void CPUTester::init() {
       {
          {
             0x8A, // ADC A,D
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.d + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.d + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z0HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.d + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.d + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.d & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.d & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1659,17 +1669,17 @@ void CPUTester::init() {
       {
          {
             0x8B, // ADC A,E
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.e + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.e + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z0HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.e + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.e + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.e & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.e & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1677,17 +1687,17 @@ void CPUTester::init() {
       {
          {
             0x8C, // ADC A,H
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.h + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.h + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z0HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.h + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.h + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.h & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.h & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1695,17 +1705,17 @@ void CPUTester::init() {
       {
          {
             0x8D, // ADC A,L
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.l + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.l + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z0HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.l + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.l + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.l & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.l & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1713,17 +1723,17 @@ void CPUTester::init() {
       {
          {
             0x8E, // ADC A,(HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.mem.read(initial.reg.hl) + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.memory.read(initial.cpu.reg.hl) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z0HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.mem.read(initial.reg.hl) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.memory.read(initial.cpu.reg.hl) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.mem.read(initial.reg.hl) & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.memory.read(initial.cpu.reg.hl) & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1731,17 +1741,17 @@ void CPUTester::init() {
       {
          {
             0x8F, // ADC A,A
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + initial.reg.a + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + initial.cpu.reg.a + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z0HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.a + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.a + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.a & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.a & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1750,8 +1760,8 @@ void CPUTester::init() {
       {
          {
             0x90, // SUB B
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.b;
 
                UPDATE_FLAGS(a, "Z1HC")
             }
@@ -1760,8 +1770,8 @@ void CPUTester::init() {
       {
          {
             0x91, // SUB C
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.c;
 
                UPDATE_FLAGS(a, "Z1HC")
             }
@@ -1770,8 +1780,8 @@ void CPUTester::init() {
       {
          {
             0x92, // SUB D
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.d;
 
                UPDATE_FLAGS(a, "Z1HC")
             }
@@ -1780,8 +1790,8 @@ void CPUTester::init() {
       {
          {
             0x93, // SUB E
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.e;
 
                UPDATE_FLAGS(a, "Z1HC")
             }
@@ -1790,8 +1800,8 @@ void CPUTester::init() {
       {
          {
             0x94, // SUB H
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.h;
 
                UPDATE_FLAGS(a, "Z1HC")
             }
@@ -1800,8 +1810,8 @@ void CPUTester::init() {
       {
          {
             0x95, // SUB L
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.l;
 
                UPDATE_FLAGS(a, "Z1HC")
             }
@@ -1810,8 +1820,8 @@ void CPUTester::init() {
       {
          {
             0x96, // SUB (HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.memory.read(initial.cpu.reg.hl);
 
                UPDATE_FLAGS(a, "Z1HC")
             }
@@ -1820,8 +1830,8 @@ void CPUTester::init() {
       {
          {
             0x97, // SUB A
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.a;
 
                UPDATE_FLAGS(a, "Z1HC")
             }
@@ -1830,17 +1840,17 @@ void CPUTester::init() {
       {
          {
             0x98, // SBC A,B
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.b - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.b - ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z1HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.b + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.b + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.b & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.b & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1848,17 +1858,17 @@ void CPUTester::init() {
       {
          {
             0x99, // SBC A,C
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.c - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.c - ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z1HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.c + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.c + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.c & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.c & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1866,17 +1876,17 @@ void CPUTester::init() {
       {
          {
             0x9A, // SBC A,D
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.d - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.d - ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z1HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.d + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.d + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.d & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.d & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1884,17 +1894,17 @@ void CPUTester::init() {
       {
          {
             0x9B, // SBC A,E
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.e - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.e - ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z1HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.e + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.e + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.e & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.e & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1902,17 +1912,17 @@ void CPUTester::init() {
       {
          {
             0x9C, // SBC A,H
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.h - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.h - ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z1HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.h + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.h + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.h & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.h & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1920,17 +1930,17 @@ void CPUTester::init() {
       {
          {
             0x9D, // SBC A,L
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.l - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.l - ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z1HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.l + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.l + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.l & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.l & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1938,17 +1948,17 @@ void CPUTester::init() {
       {
          {
             0x9E, // SBC A,(HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.mem.read(initial.reg.hl) - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.memory.read(initial.cpu.reg.hl) - ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z1HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.mem.read(initial.reg.hl) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.memory.read(initial.cpu.reg.hl) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.mem.read(initial.reg.hl) & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.memory.read(initial.cpu.reg.hl) & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1956,17 +1966,17 @@ void CPUTester::init() {
       {
          {
             0x9F, // SBC A,A
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.a - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.a - ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z1HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (initial.reg.a + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (initial.cpu.reg.a + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((initial.reg.a & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((initial.cpu.reg.a & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -1975,8 +1985,8 @@ void CPUTester::init() {
       {
          {
             0xA0, // AND B
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a & initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a & initial.cpu.reg.b;
 
                UPDATE_FLAGS(a, "Z010")
             }
@@ -1985,8 +1995,8 @@ void CPUTester::init() {
       {
          {
             0xA1, // AND C
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a & initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a & initial.cpu.reg.c;
 
                UPDATE_FLAGS(a, "Z010")
             }
@@ -1995,8 +2005,8 @@ void CPUTester::init() {
       {
          {
             0xA2, // AND D
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a & initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a & initial.cpu.reg.d;
 
                UPDATE_FLAGS(a, "Z010")
             }
@@ -2005,8 +2015,8 @@ void CPUTester::init() {
       {
          {
             0xA3, // AND E
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a & initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a & initial.cpu.reg.e;
 
                UPDATE_FLAGS(a, "Z010")
             }
@@ -2015,8 +2025,8 @@ void CPUTester::init() {
       {
          {
             0xA4, // AND H
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a & initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a & initial.cpu.reg.h;
 
                UPDATE_FLAGS(a, "Z010")
             }
@@ -2025,8 +2035,8 @@ void CPUTester::init() {
       {
          {
             0xA5, // AND L
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a & initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a & initial.cpu.reg.l;
 
                UPDATE_FLAGS(a, "Z010")
             }
@@ -2035,8 +2045,8 @@ void CPUTester::init() {
       {
          {
             0xA6, // AND (HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a & initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a & initial.memory.read(initial.cpu.reg.hl);
 
                UPDATE_FLAGS(a, "Z010")
             }
@@ -2045,8 +2055,8 @@ void CPUTester::init() {
       {
          {
             0xA7, // AND A
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a & initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a & initial.cpu.reg.a;
 
                UPDATE_FLAGS(a, "Z010")
             }
@@ -2055,8 +2065,8 @@ void CPUTester::init() {
       {
          {
             0xA8, // XOR B
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a ^ initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a ^ initial.cpu.reg.b;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2065,8 +2075,8 @@ void CPUTester::init() {
       {
          {
             0xA9, // XOR C
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a ^ initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a ^ initial.cpu.reg.c;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2075,8 +2085,8 @@ void CPUTester::init() {
       {
          {
             0xAA, // XOR D
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a ^ initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a ^ initial.cpu.reg.d;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2085,8 +2095,8 @@ void CPUTester::init() {
       {
          {
             0xAB, // XOR E
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a ^ initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a ^ initial.cpu.reg.e;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2095,8 +2105,8 @@ void CPUTester::init() {
       {
          {
             0xAC, // XOR H
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a ^ initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a ^ initial.cpu.reg.h;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2105,8 +2115,8 @@ void CPUTester::init() {
       {
          {
             0xAD, // XOR L
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a ^ initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a ^ initial.cpu.reg.l;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2115,8 +2125,8 @@ void CPUTester::init() {
       {
          {
             0xAE, // XOR (HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a ^ initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a ^ initial.memory.read(initial.cpu.reg.hl);
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2125,8 +2135,8 @@ void CPUTester::init() {
       {
          {
             0xAF, // XOR A
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a ^ initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a ^ initial.cpu.reg.a;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2136,8 +2146,8 @@ void CPUTester::init() {
       {
          {
             0xB0, // OR B
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a | initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a | initial.cpu.reg.b;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2146,8 +2156,8 @@ void CPUTester::init() {
       {
          {
             0xB1, // OR C
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a | initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a | initial.cpu.reg.c;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2156,8 +2166,8 @@ void CPUTester::init() {
       {
          {
             0xB2, // OR D
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a | initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a | initial.cpu.reg.d;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2166,8 +2176,8 @@ void CPUTester::init() {
       {
          {
             0xB3, // OR E
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a | initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a | initial.cpu.reg.e;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2176,8 +2186,8 @@ void CPUTester::init() {
       {
          {
             0xB4, // OR H
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a | initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a | initial.cpu.reg.h;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2186,8 +2196,8 @@ void CPUTester::init() {
       {
          {
             0xB5, // OR L
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a | initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a | initial.cpu.reg.l;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2196,8 +2206,8 @@ void CPUTester::init() {
       {
          {
             0xB6, // OR (HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a | initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a | initial.memory.read(initial.cpu.reg.hl);
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2206,8 +2216,8 @@ void CPUTester::init() {
       {
          {
             0xB7, // OR A
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a | initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a | initial.cpu.reg.a;
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2216,96 +2226,96 @@ void CPUTester::init() {
       {
          {
             0xB8, // CP B
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.b;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.b;
 
                UPDATE_FLAGS(a, "Z1HC")
 
-               final.reg.a = initial.reg.a;
+               final.cpu.reg.a = initial.cpu.reg.a;
             }
          }
       },
       {
          {
             0xB9, // CP C
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.c;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.c;
 
                UPDATE_FLAGS(a, "Z1HC")
 
-               final.reg.a = initial.reg.a;
+               final.cpu.reg.a = initial.cpu.reg.a;
             }
          }
       },
       {
          {
             0xBA, // CP D
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.d;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.d;
 
                UPDATE_FLAGS(a, "Z1HC")
 
-               final.reg.a = initial.reg.a;
+               final.cpu.reg.a = initial.cpu.reg.a;
             }
          }
       },
       {
          {
             0xBB, // CP E
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.e;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.e;
 
                UPDATE_FLAGS(a, "Z1HC")
 
-               final.reg.a = initial.reg.a;
+               final.cpu.reg.a = initial.cpu.reg.a;
             }
          }
       },
       {
          {
             0xBC, // CP H
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.h;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.h;
 
                UPDATE_FLAGS(a, "Z1HC")
 
-               final.reg.a = initial.reg.a;
+               final.cpu.reg.a = initial.cpu.reg.a;
             }
          }
       },
       {
          {
             0xBD, // CP L
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.l;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.l;
 
                UPDATE_FLAGS(a, "Z1HC")
 
-               final.reg.a = initial.reg.a;
+               final.cpu.reg.a = initial.cpu.reg.a;
             }
          }
       },
       {
          {
             0xBE, // CP (HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.mem.read(initial.reg.hl);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.memory.read(initial.cpu.reg.hl);
 
                UPDATE_FLAGS(a, "Z1HC")
 
-               final.reg.a = initial.reg.a;
+               final.cpu.reg.a = initial.cpu.reg.a;
             }
          }
       },
       {
          {
             0xBF, // CP A
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - initial.reg.a;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - initial.cpu.reg.a;
 
                UPDATE_FLAGS(a, "Z1HC")
 
-               final.reg.a = initial.reg.a;
+               final.cpu.reg.a = initial.cpu.reg.a;
             }
          }
       },
@@ -2313,12 +2323,12 @@ void CPUTester::init() {
       {
          {
             0xC0, // RET NZ
-            [](CPU& initial, CPU& final) {
-               if (!(initial.reg.f & CPU::kZero)) {
-                  final.reg.pc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
-                  final.reg.sp += 2;
+            [](Device& initial, Device& final) {
+               if (!(initial.cpu.reg.f & CPU::kZero)) {
+                  final.cpu.reg.pc = read16(initial, initial.cpu.reg.sp);
+                  final.cpu.reg.sp += 2;
                } else {
-                  final.cycles -= 12;
+                  final.totalCycles -= 12;
                }
             }
          }
@@ -2326,20 +2336,20 @@ void CPUTester::init() {
       {
          {
             0xC1, // POP BC
-            [](CPU& initial, CPU& final) {
-               final.reg.bc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
-               final.reg.sp += 2;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.bc = read16(initial, initial.cpu.reg.sp);
+               final.cpu.reg.sp += 2;
             }
          }
       },
       {
          {
             0xC2, // JP NZ,a16
-            [](CPU& initial, CPU& final) {
-               if (!(initial.reg.f & CPU::kZero)) {
-                  final.reg.pc = imm16(initial);
+            [](Device& initial, Device& final) {
+               if (!(initial.cpu.reg.f & CPU::kZero)) {
+                  final.cpu.reg.pc = imm16(initial);
                } else {
-                  final.cycles -= 4;
+                  final.totalCycles -= 4;
                }
             }
          }
@@ -2347,22 +2357,22 @@ void CPUTester::init() {
       {
          {
             0xC3, // JP a16
-            [](CPU& initial, CPU& final) {
-               final.reg.pc = imm16(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.pc = imm16(initial);
             }
          }
       },
       {
          {
             0xC4, // CALL NZ,a16
-            [](CPU& initial, CPU& final) {
-               if (!(initial.reg.f & CPU::kZero)) {
-                  final.reg.sp -= 2;
-                  final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-                  final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-                  final.reg.pc = imm16(initial);
+            [](Device& initial, Device& final) {
+               if (!(initial.cpu.reg.f & CPU::kZero)) {
+                  final.cpu.reg.sp -= 2;
+                  final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+                  final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+                  final.cpu.reg.pc = imm16(initial);
                } else {
-                  final.cycles -= 12;
+                  final.totalCycles -= 12;
                }
             }
          }
@@ -2370,18 +2380,18 @@ void CPUTester::init() {
       {
          {
             0xC5, // PUSH BC
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, initial.reg.c);
-               final.mem.write(final.reg.sp + 1, initial.reg.b);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, initial.cpu.reg.c);
+               final.memory.write(final.cpu.reg.sp + 1, initial.cpu.reg.b);
             }
          }
       },
       {
          {
             0xC6, // ADD A,d8
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + imm8(initial);
 
                UPDATE_FLAGS(a, "Z0HC");
             }
@@ -2390,23 +2400,23 @@ void CPUTester::init() {
       {
          {
             0xC7, // RST 00H
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-               final.reg.pc = 0x0000;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+               final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+               final.cpu.reg.pc = 0x0000;
             }
          }
       },
       {
          {
             0xC8, // RET Z
-            [](CPU& initial, CPU& final) {
-               if (initial.reg.f & CPU::kZero) {
-                  final.reg.pc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
-                  final.reg.sp += 2;
+            [](Device& initial, Device& final) {
+               if (initial.cpu.reg.f & CPU::kZero) {
+                  final.cpu.reg.pc = read16(initial, initial.cpu.reg.sp);
+                  final.cpu.reg.sp += 2;
                } else {
-                  final.cycles -= 12;
+                  final.totalCycles -= 12;
                }
             }
          }
@@ -2414,20 +2424,20 @@ void CPUTester::init() {
       {
          {
             0xC9, // RET
-            [](CPU& initial, CPU& final) {
-               final.reg.pc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
-               final.reg.sp += 2;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.pc = read16(initial, initial.cpu.reg.sp);
+               final.cpu.reg.sp += 2;
             }
          }
       },
       {
          {
             0xCA, // JP Z,a16
-            [](CPU& initial, CPU& final) {
-               if (initial.reg.f & CPU::kZero) {
-                  final.reg.pc = imm16(initial);
+            [](Device& initial, Device& final) {
+               if (initial.cpu.reg.f & CPU::kZero) {
+                  final.cpu.reg.pc = imm16(initial);
                } else {
-                  final.cycles -= 4;
+                  final.totalCycles -= 4;
                }
             }
          }
@@ -2435,21 +2445,21 @@ void CPUTester::init() {
       /*{
          {
             0xCB, // PREFIX CB
-            [](CPU& initial, CPU& final) {
+            [](Device& initial, Device& final) {
             }
          }
       },*/
       {
          {
             0xCC, // CALL Z,a16
-            [](CPU& initial, CPU& final) {
-               if (initial.reg.f & CPU::kZero) {
-                  final.reg.sp -= 2;
-                  final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-                  final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-                  final.reg.pc = imm16(initial);
+            [](Device& initial, Device& final) {
+               if (initial.cpu.reg.f & CPU::kZero) {
+                  final.cpu.reg.sp -= 2;
+                  final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+                  final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+                  final.cpu.reg.pc = imm16(initial);
                } else {
-                  final.cycles -= 12;
+                  final.totalCycles -= 12;
                }
             }
          }
@@ -2457,28 +2467,28 @@ void CPUTester::init() {
       {
          {
             0xCD, // CALL a16
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-               final.reg.pc = imm16(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+               final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+               final.cpu.reg.pc = imm16(initial);
             }
          }
       },
       {
          {
             0xCE, // ADC A,d8
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a + imm8(initial) + ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a + imm8(initial) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z0HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (imm8(initial) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (imm8(initial) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((imm8(initial) & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((imm8(initial) & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -2486,11 +2496,11 @@ void CPUTester::init() {
       {
          {
             0xCF, // RST 08H
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-               final.reg.pc = 0x0008;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+               final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+               final.cpu.reg.pc = 0x0008;
             }
          }
       },
@@ -2498,12 +2508,12 @@ void CPUTester::init() {
       {
          {
             0xD0, // RET NC
-            [](CPU& initial, CPU& final) {
-               if (!(initial.reg.f & CPU::kCarry)) {
-                  final.reg.pc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
-                  final.reg.sp += 2;
+            [](Device& initial, Device& final) {
+               if (!(initial.cpu.reg.f & CPU::kCarry)) {
+                  final.cpu.reg.pc = read16(initial, initial.cpu.reg.sp);
+                  final.cpu.reg.sp += 2;
                } else {
-                  final.cycles -= 12;
+                  final.totalCycles -= 12;
                }
             }
          }
@@ -2511,20 +2521,20 @@ void CPUTester::init() {
       {
          {
             0xD1, // POP DE
-            [](CPU& initial, CPU& final) {
-               final.reg.de = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
-               final.reg.sp += 2;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.de = read16(initial, initial.cpu.reg.sp);
+               final.cpu.reg.sp += 2;
             }
          }
       },
       {
          {
             0xD2, // JP NC,a16
-            [](CPU& initial, CPU& final) {
-               if (!(initial.reg.f & CPU::kCarry)) {
-                  final.reg.pc = imm16(initial);
+            [](Device& initial, Device& final) {
+               if (!(initial.cpu.reg.f & CPU::kCarry)) {
+                  final.cpu.reg.pc = imm16(initial);
                } else {
-                  final.cycles -= 4;
+                  final.totalCycles -= 4;
                }
             }
          }
@@ -2532,14 +2542,14 @@ void CPUTester::init() {
       {
          {
             0xD4, // CALL NC,a16
-            [](CPU& initial, CPU& final) {
-               if (!(initial.reg.f & CPU::kCarry)) {
-                  final.reg.sp -= 2;
-                  final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-                  final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-                  final.reg.pc = imm16(initial);
+            [](Device& initial, Device& final) {
+               if (!(initial.cpu.reg.f & CPU::kCarry)) {
+                  final.cpu.reg.sp -= 2;
+                  final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+                  final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+                  final.cpu.reg.pc = imm16(initial);
                } else {
-                  final.cycles -= 12;
+                  final.totalCycles -= 12;
                }
             }
          }
@@ -2547,18 +2557,18 @@ void CPUTester::init() {
       {
          {
             0xD5, // PUSH DE
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, initial.reg.e);
-               final.mem.write(final.reg.sp + 1, initial.reg.d);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, initial.cpu.reg.e);
+               final.memory.write(final.cpu.reg.sp + 1, initial.cpu.reg.d);
             }
          }
       },
       {
          {
             0xD6, // SUB d8
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - imm8(initial);
 
                UPDATE_FLAGS(a, "Z1HC");
             }
@@ -2567,23 +2577,23 @@ void CPUTester::init() {
       {
          {
             0xD7, // RST 10H
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-               final.reg.pc = 0x0010;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+               final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+               final.cpu.reg.pc = 0x0010;
             }
          }
       },
       {
          {
             0xD8, // RET C
-            [](CPU& initial, CPU& final) {
-               if (initial.reg.f & CPU::kCarry) {
-                  final.reg.pc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
-                  final.reg.sp += 2;
+            [](Device& initial, Device& final) {
+               if (initial.cpu.reg.f & CPU::kCarry) {
+                  final.cpu.reg.pc = read16(initial, initial.cpu.reg.sp);
+                  final.cpu.reg.sp += 2;
                } else {
-                  final.cycles -= 12;
+                  final.totalCycles -= 12;
                }
             }
          }
@@ -2591,23 +2601,23 @@ void CPUTester::init() {
       {
          {
             0xD9, // RETI
-            [](CPU& initial, CPU& final) {
-               final.reg.pc = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
-               final.reg.sp += 2;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.pc = read16(initial, initial.cpu.reg.sp);
+               final.cpu.reg.sp += 2;
 
                // RETI doesn't delay enabling the IME like EI does
-               final.ime = true;
+               final.cpu.ime = true;
             }
          }
       },
       {
          {
             0xDA, // JP C,a16
-            [](CPU& initial, CPU& final) {
-               if (initial.reg.f & CPU::kCarry) {
-                  final.reg.pc = imm16(initial);
+            [](Device& initial, Device& final) {
+               if (initial.cpu.reg.f & CPU::kCarry) {
+                  final.cpu.reg.pc = imm16(initial);
                } else {
-                  final.cycles -= 4;
+                  final.totalCycles -= 4;
                }
             }
          }
@@ -2615,14 +2625,14 @@ void CPUTester::init() {
       {
          {
             0xDC, // CALL C,a16
-            [](CPU& initial, CPU& final) {
-               if (initial.reg.f & CPU::kCarry) {
-                  final.reg.sp -= 2;
-                  final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-                  final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-                  final.reg.pc = imm16(initial);
+            [](Device& initial, Device& final) {
+               if (initial.cpu.reg.f & CPU::kCarry) {
+                  final.cpu.reg.sp -= 2;
+                  final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+                  final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+                  final.cpu.reg.pc = imm16(initial);
                } else {
-                  final.cycles -= 12;
+                  final.totalCycles -= 12;
                }
             }
          }
@@ -2630,17 +2640,17 @@ void CPUTester::init() {
       {
          {
             0xDE, // SBC A,d8
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - imm8(initial) - ((initial.reg.f & CPU::kCarry) ? 1 : 0);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - imm8(initial) - ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0);
 
                UPDATE_FLAGS(a, "Z1HC")
 
                // Edge cases not handled by UPDATE_FLAGS macro - value wraps all the way around
-               if (imm8(initial) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
-                  final.reg.f |= CPU::kCarry;
+               if (imm8(initial) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0100) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
-               if ((imm8(initial) & 0x0F) + ((initial.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
-                  final.reg.f |= CPU::kHalfCarry;
+               if ((imm8(initial) & 0x0F) + ((initial.cpu.reg.f & CPU::kCarry) ? 1 : 0) == 0x0010) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
             }
          }
@@ -2648,11 +2658,11 @@ void CPUTester::init() {
       {
          {
             0xDF, // RST 18H
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-               final.reg.pc = 0x0018;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+               final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+               final.cpu.reg.pc = 0x0018;
             }
          }
       },
@@ -2660,43 +2670,43 @@ void CPUTester::init() {
       {
          {
             0xE0, // LDH (a8),A
-            [](CPU& initial, CPU& final) {
-               final.mem.write(0xFF00 + imm8(initial), initial.reg.a);
+            [](Device& initial, Device& final) {
+               final.memory.write(0xFF00 + imm8(initial), initial.cpu.reg.a);
             }
          }
       },
       {
          {
             0xE1, // POP HL
-            [](CPU& initial, CPU& final) {
-               final.reg.hl = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
-               final.reg.sp += 2;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.hl = read16(initial, initial.cpu.reg.sp);
+               final.cpu.reg.sp += 2;
             }
          }
       },
       {
          {
             0xE2, // LD (C),A
-            [](CPU& initial, CPU& final) {
-               final.mem.write(0xFF00 + initial.reg.c, initial.reg.a);
+            [](Device& initial, Device& final) {
+               final.memory.write(0xFF00 + initial.cpu.reg.c, initial.cpu.reg.a);
             }
          }
       },
       {
          {
             0xE5, // PUSH HL
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, initial.reg.l);
-               final.mem.write(final.reg.sp + 1, initial.reg.h);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, initial.cpu.reg.l);
+               final.memory.write(final.cpu.reg.sp + 1, initial.cpu.reg.h);
             }
          }
       },
       {
          {
             0xE6, // AND d8
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a & imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a & imm8(initial);
 
                UPDATE_FLAGS(a, "Z010");
             }
@@ -2705,53 +2715,53 @@ void CPUTester::init() {
       {
          {
             0xE7, // RST 20H
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-               final.reg.pc = 0x0020;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+               final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+               final.cpu.reg.pc = 0x0020;
             }
          }
       },
       {
          {
             0xE8, // ADD SP,r8
-            [](CPU& initial, CPU& final) {
+            [](Device& initial, Device& final) {
                uint8_t offset = imm8(initial);
                int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
-               final.reg.sp = initial.reg.sp + signedOffset;
+               final.cpu.reg.sp = initial.cpu.reg.sp + signedOffset;
 
                // sp is treated as an 8-bit register for the carry and half carry flags (special case)
                // UPDATE_FLAGS(sp, "00HC")
-               uint8_t sp8 = static_cast<uint8_t>(initial.reg.sp);
-               uint8_t finalSp8 = static_cast<uint8_t>(final.reg.sp);
+               uint8_t sp8 = static_cast<uint8_t>(initial.cpu.reg.sp);
+               uint8_t finalSp8 = static_cast<uint8_t>(final.cpu.reg.sp);
                FlagOp halfCarry = didHalfCarryAdd(sp8, finalSp8) ? kSet : kClear;
                FlagOp carry = didCarryAdd(sp8, finalSp8) ? kSet : kClear;
-               final.reg.f = updateFlagRegister(initial.reg.f, kClear, kClear, halfCarry, carry);
+               final.cpu.reg.f = updateFlagRegister(initial.cpu.reg.f, kClear, kClear, halfCarry, carry);
             }
          }
       },
       {
          {
             0xE9, // JP (HL)
-            [](CPU& initial, CPU& final) {
-               final.reg.pc = initial.reg.hl;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.pc = initial.cpu.reg.hl;
             }
          }
       },
       {
          {
             0xEA, // LD (a16),A
-            [](CPU& initial, CPU& final) {
-               final.mem.write(imm16(initial), initial.reg.a);
+            [](Device& initial, Device& final) {
+               final.memory.write(imm16(initial), initial.cpu.reg.a);
             }
          }
       },
       {
          {
             0xEE, // XOR d8
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a ^ imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a ^ imm8(initial);
 
                UPDATE_FLAGS(a, "Z000")
             }
@@ -2760,11 +2770,11 @@ void CPUTester::init() {
       {
          {
             0xEF, // RST 28H
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-               final.reg.pc = 0x0028;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+               final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+               final.cpu.reg.pc = 0x0028;
             }
          }
       },
@@ -2772,52 +2782,52 @@ void CPUTester::init() {
       {
          {
             0xF0, // LDH A,(a8)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.read(0xFF00 + imm8(initial));
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.memory.read(0xFF00 + imm8(initial));
             }
          }
       },
       {
          {
             0xF1, // POP AF
-            [](CPU& initial, CPU& final) {
-               final.reg.af = (initial.mem.read(initial.reg.sp) << 8) | (initial.mem.read(initial.reg.sp + 1));
-               final.reg.f &= 0xF0;
-               final.reg.sp += 2;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.af = read16(initial, initial.cpu.reg.sp);
+               final.cpu.reg.f &= 0xF0;
+               final.cpu.reg.sp += 2;
             }
          }
       },
       {
          {
             0xF2, // LD A,(C)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.read(0xFF00 + initial.reg.c);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.memory.read(0xFF00 + initial.cpu.reg.c);
             }
          }
       },
       {
          {
             0xF3, // DI
-            [](CPU& initial, CPU& final) {
-               final.ime = false;
+            [](Device& initial, Device& final) {
+               final.cpu.ime = false;
             }
          }
       },
       {
          {
             0xF5, // PUSH AF
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, initial.reg.f);
-               final.mem.write(final.reg.sp + 1, initial.reg.a);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, initial.cpu.reg.f);
+               final.memory.write(final.cpu.reg.sp + 1, initial.cpu.reg.a);
             }
          }
       },
       {
          {
             0xF6, // OR d8
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a | imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a | imm8(initial);
 
                UPDATE_FLAGS(a, "Z000");
             }
@@ -2826,30 +2836,30 @@ void CPUTester::init() {
       {
          {
             0xF7, // RST 30H
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-               final.reg.pc = 0x0030;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+               final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+               final.cpu.reg.pc = 0x0030;
             }
          }
       },
       {
          {
             0xF8, // LD HL,SP+r8
-            [](CPU& initial, CPU& final) {
+            [](Device& initial, Device& final) {
                uint8_t offset = imm8(initial);
                int8_t signedOffset = *reinterpret_cast<int8_t*>(&offset);
 
-               final.reg.hl = initial.reg.sp + signedOffset;
+               final.cpu.reg.hl = initial.cpu.reg.sp + signedOffset;
 
                // Special case - treat carry and half carry as if this was an 8 bit add
-               final.reg.f = 0x00;
-               if ((final.reg.hl & 0x000F) < (initial.reg.sp & 0x000F)) {
-                  final.reg.f |= CPU::kHalfCarry;
+               final.cpu.reg.f = 0x00;
+               if ((final.cpu.reg.hl & 0x000F) < (initial.cpu.reg.sp & 0x000F)) {
+                  final.cpu.reg.f |= CPU::kHalfCarry;
                }
-               if ((final.reg.hl & 0x00FF) < (initial.reg.sp & 0x00FF)) {
-                  final.reg.f |= CPU::kCarry;
+               if ((final.cpu.reg.hl & 0x00FF) < (initial.cpu.reg.sp & 0x00FF)) {
+                  final.cpu.reg.f |= CPU::kCarry;
                }
             }
          }
@@ -2857,47 +2867,47 @@ void CPUTester::init() {
       {
          {
             0xF9, // LD SP,HL
-            [](CPU& initial, CPU& final) {
-               final.reg.sp = initial.reg.hl;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp = initial.cpu.reg.hl;
             }
          }
       },
       {
          {
             0xFA, // LD A,(a16)
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.mem.read(imm16(initial));
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.memory.read(imm16(initial));
             }
          }
       },
       {
          {
             0xFB, // EI
-            [](CPU& initial, CPU& final) {
-               final.interruptEnableRequested = true;
+            [](Device& initial, Device& final) {
+               final.cpu.interruptEnableRequested = true;
             }
          }
       },
       {
          {
             0xFE, // CP d8
-            [](CPU& initial, CPU& final) {
-               final.reg.a = initial.reg.a - imm8(initial);
+            [](Device& initial, Device& final) {
+               final.cpu.reg.a = initial.cpu.reg.a - imm8(initial);
 
                UPDATE_FLAGS(a, "Z1HC")
 
-               final.reg.a = initial.reg.a;
+               final.cpu.reg.a = initial.cpu.reg.a;
             }
          }
       },
       {
          {
             0xFF, // RST 38H
-            [](CPU& initial, CPU& final) {
-               final.reg.sp -= 2;
-               final.mem.write(final.reg.sp, final.reg.pc & 0xFF);
-               final.mem.write(final.reg.sp + 1, final.reg.pc >> 8);
-               final.reg.pc = 0x0038;
+            [](Device& initial, Device& final) {
+               final.cpu.reg.sp -= 2;
+               final.memory.write(final.cpu.reg.sp, final.cpu.reg.pc & 0xFF);
+               final.memory.write(final.cpu.reg.sp + 1, final.cpu.reg.pc >> 8);
+               final.cpu.reg.pc = 0x0038;
             }
          }
       },

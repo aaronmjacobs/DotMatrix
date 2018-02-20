@@ -132,7 +132,7 @@ uint8_t SquareWaveChannel::read(uint16_t address) const {
       // TODO trigger?
       break;
    default:
-      ASSERT(false);
+      //ASSERT(false);
       value = Memory::kInvalidAddressByte;
       break;
    }
@@ -174,7 +174,7 @@ void SquareWaveChannel::write(uint16_t address, uint8_t value) {
       }
       break;
    default:
-      ASSERT(false);
+      //ASSERT(false);
       break;
    }
 }
@@ -225,7 +225,7 @@ uint8_t WaveChannel::read(uint16_t address) const {
          uint8_t index = static_cast<uint8_t>(address - 0xFF30);
          value |= waveUnit.readWaveTableValue(index);
       } else {
-         ASSERT(false);
+         //ASSERT(false);
          value = Memory::kInvalidAddressByte;
       }
       break;
@@ -266,7 +266,7 @@ void WaveChannel::write(uint16_t address, uint8_t value) {
          uint8_t index = static_cast<uint8_t>(address - 0xFF30);
          waveUnit.writeWaveTableValue(index, value);
       } else {
-         ASSERT(false);
+         //ASSERT(false);
       }
       break;
    }
@@ -305,7 +305,7 @@ uint8_t NoiseChannel::read(uint16_t address) const {
       value |= lengthUnit.readNrx4();
       break;
    default:
-      ASSERT(false);
+      //ASSERT(false);
       value = Memory::kInvalidAddressByte;
       break;
    }
@@ -337,7 +337,7 @@ void NoiseChannel::write(uint16_t address, uint8_t value) {
       }
       break;
    default:
-      ASSERT(false);
+      //ASSERT(false);
       break;
    }
 }
@@ -522,7 +522,7 @@ uint8_t SoundController::read(uint16_t address) const {
          value = readNr52();
          break;
       default:
-         ASSERT(false, "Trying to read value at invalid address from sound controller: %s", hex(address).c_str());
+         //ASSERT(false, "Trying to read value at invalid address from sound controller: %s", hex(address).c_str());
          break;
       }
    }
@@ -561,7 +561,7 @@ void SoundController::write(uint16_t address, uint8_t value) {
          writeNr52(value);
          break;
       default:
-         ASSERT(false, "Trying to write value at invalid address from sound controller: %s at %s", hex(value).c_str(), hex(address).c_str());
+         //ASSERT(false, "Trying to write value at invalid address from sound controller: %s at %s", hex(value).c_str(), hex(address).c_str());
          break;
       }
    }

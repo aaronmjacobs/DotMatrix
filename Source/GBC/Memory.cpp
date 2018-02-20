@@ -21,83 +21,88 @@ Memory::Memory(Device& dev)
 }
 
 uint8_t Memory::read(uint16_t address) const {
+   uint8_t value = kInvalidAddressByte;
+
    if (boot == Boot::kBooting && address <= 0x00FF) {
-      return kBootstrap[address];
-   }
-
-   if (cart && address < 0x8000) {
-      return cart->read(address);
-   }
-
-   if (cart && address >= 0xA000 && address < 0xC000) {
-      return cart->read(address);
-   }
-
-   if (address >= 0xFF10 && address < 0xFF40) {
+      value = kBootstrap[address];
+   } else if (cart && address < 0x8000) {
+      value = cart->read(address);
+   } else if (cart && address >= 0xA000 && address < 0xC000) {
+      value = cart->read(address);
+   } else if (address >= 0xFF10 && address < 0xFF40) {
       // Sound registers
-      return device.getSoundController().read(address);
+      value = device.getSoundController().read(address);
+   } else {
+      if (address >= 0xE000 && address < 0xFE00) {
+         // Mirror of working ram
+         address -= 0x2000;
+      }
+
+      value = raw[address];
    }
 
-   if (address >= 0xE000 && address < 0xFE00) {
-      // Mirror of working ram
-      address -= 0x2000;
+#if GBC_RUN_TESTS
+   if (!dontTriggerCycles) {
+      device.machineCycle();
    }
+#else
+   device.machineCycle();
+#endif // GBC_RUN_TESTS
 
-   return raw[address];
+   return value;
 }
 
 void Memory::write(uint16_t address, uint8_t value) {
    if (boot == Boot::kBooting && address <= 0x00FF) {
-      return; // Bootstrap is read only
-   }
-
-   if (cart && address < 0x8000) {
+      // Bootstrap is read only
+   } else if (cart && address < 0x8000) {
       cart->write(address, value);
-      return;
-   }
-
-   if (cart && address >= 0xA000 && address < 0xC000) {
+   } else if (cart && address >= 0xA000 && address < 0xC000) {
       cart->write(address, value);
-      return;
-   }
-
-   if (address >= 0xFF10 && address < 0xFF40) {
+   } else if (address >= 0xFF10 && address < 0xFF40) {
       // Sound registers
       device.getSoundController().write(address, value);
-      return;
+   } else {
+      if (address >= 0xE000 && address < 0xFE00) {
+         // Mirror of working ram
+         address -= 0x2000;
+      }
+
+      if (address == 0xFF04) {
+         // Divider register
+         device.onDivWrite();
+      }
+
+      if (address == 0xFF05) {
+         // TIMA
+         device.onTimaWrite();
+      }
+
+      if (address == 0xFF0F) {
+         // IF
+         device.onIfWrite();
+      }
+
+      if (address == 0xFF41) {
+         // LCD status - mode flag should be unaffected by memory writes
+         static const uint8_t kModeFlagMask = 0b00000011;
+         value = (value & ~kModeFlagMask) | (stat & kModeFlagMask);
+      }
+
+      raw[address] = value;
+
+      if (address == 0xFF46) {
+         executeDMATransfer();
+      }
    }
 
-   if (address >= 0xE000 && address < 0xFE00) {
-      // Mirror of working ram
-      address -= 0x2000;
+#if GBC_RUN_TESTS
+   if (!dontTriggerCycles) {
+      device.machineCycle();
    }
-
-   if (address == 0xFF04) {
-      // Divider register
-      device.onDivWrite();
-   }
-
-   if (address == 0xFF05) {
-      // TIMA
-      device.onTimaWrite();
-   }
-
-   if (address == 0xFF0F) {
-      // IF
-      device.onIfWrite();
-   }
-
-   if (address == 0xFF41) {
-      // LCD status - mode flag should be unaffected by memory writes
-      static const uint8_t kModeFlagMask = 0b00000011;
-      value = (value & ~kModeFlagMask) | (stat & kModeFlagMask);
-   }
-
-   raw[address] = value;
-
-   if (address == 0xFF46) {
-      executeDMATransfer();
-   }
+#else
+   device.machineCycle();
+#endif // GBC_RUN_TESTS
 }
 
 void Memory::executeDMATransfer() {

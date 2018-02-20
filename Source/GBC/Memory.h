@@ -138,6 +138,10 @@ private:
 
    class Cartridge* cart;
    class Device& device;
+
+#if GBC_RUN_TESTS
+   bool dontTriggerCycles = false;
+#endif // GBC_RUN_TESTS
 };
 
 } // namespace GBC

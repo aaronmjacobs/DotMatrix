@@ -8,9 +8,9 @@
 
 namespace GBC {
 
-class CPU;
+class Device;
 
-using CPUTestSetupFunc = void (*)(CPU& initialState, CPU& finalState);
+using CPUTestSetupFunc = void (*)(Device& initialState, Device& finalState);
 
 struct CPUTest {
    uint8_t opcode;
@@ -28,7 +28,7 @@ public:
 private:
    void runTestGroup(const CPUTestGroup& testGroup, bool randomizeData, uint16_t seed);
 
-   void runTest(CPU& cpu, CPU& finalCPU, const CPUTest& test);
+   void runTest(Device& device, Device& finalDevice, const CPUTest& test);
 
    void init();
 

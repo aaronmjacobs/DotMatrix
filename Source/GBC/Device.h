@@ -49,6 +49,8 @@ public:
 
    void tick(double dt);
 
+   void machineCycle();
+
    void setCartridge(UPtr<class Cartridge>&& cartridge);
 
    IOUtils::Archive saveCartRAM() const;
@@ -56,6 +58,10 @@ public:
    bool loadCartRAM(IOUtils::Archive& ram);
 
    const char* title() const;
+
+   Memory& getMemory() {
+      return memory;
+   }
 
    const LCDController& getLCDController() const {
       return lcdController;
@@ -106,6 +112,8 @@ private:
    LCDController lcdController;
    SoundController soundController;
    UPtr<class Cartridge> cart;
+
+   uint64_t totalCycles;
 
    bool cartWroteToRam;
 

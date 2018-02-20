@@ -9,6 +9,8 @@
 
 namespace GBC {
 
+class Device;
+
 // Instructions
 enum class Ins : uint8_t {
    kInvalid,
@@ -149,13 +151,9 @@ class CPU {
 public:
    static const uint64_t kClockSpeed = 4194304; // 4.194304 MHz TODO handle GBC / SGB
 
-   CPU(Memory& memory);
+   CPU(Device& owningDevice);
 
    void tick();
-
-   uint64_t getCycles() const {
-      return cycles;
-   }
 
    bool isStopped() const {
       return stopped;
@@ -220,9 +218,7 @@ private:
       kCarry = 1 << 4,     // Carry flag
    };
 
-   uint8_t readPC() {
-      return mem.read(reg.pc++);
-   }
+   uint8_t readPC();
 
    uint16_t readPC16() {
       uint8_t low = readPC();
@@ -267,25 +263,14 @@ private:
 
    void execute16(Operation operation);
 
-   void push(uint16_t value) {
-      reg.sp -= 2;
-      mem.write(reg.sp, value & 0x00FF);
-      mem.write(reg.sp + 1, (value & 0xFF00) >> 8);
-   }
+   void push(uint16_t value);
 
-   uint16_t pop() {
-      uint8_t low = mem.read(reg.sp);
-      uint8_t high = mem.read(reg.sp + 1);
-      reg.sp += 2;
-
-      return (high << 8) | low;
-   }
+   uint16_t pop();
 
    Registers reg;
+   Device& device;
    Memory& mem;
    bool ime;
-
-   uint64_t cycles;
 
    bool halted;
    bool stopped;
