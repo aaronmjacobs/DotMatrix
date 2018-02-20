@@ -147,10 +147,6 @@ private:
    bool dmaInProgress;
    uint8_t dmaIndex;
    uint16_t dmaSource;
-
-#if GBC_RUN_TESTS
-   bool dontTriggerCycles = false;
-#endif // GBC_RUN_TESTS
 };
 
 } // namespace GBC

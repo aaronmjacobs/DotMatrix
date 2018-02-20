@@ -84,6 +84,13 @@ void Device::tick(double dt) {
 }
 
 void Device::machineCycle() {
+#if GBC_RUN_TESTS
+   if (!ignoreMachineCycles) {
+      totalCycles += 4;
+   }
+   return;
+#endif // !GBC_RUN_TESTS
+
    totalCycles += 4;
 
    tickJoypad();

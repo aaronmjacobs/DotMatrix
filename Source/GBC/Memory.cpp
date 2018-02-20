@@ -42,13 +42,7 @@ void Memory::machineCycle() {
 }
 
 uint8_t Memory::read(uint16_t address) const {
-#if GBC_RUN_TESTS
-   if (!dontTriggerCycles) {
-      device.machineCycle();
-   }
-#else
    device.machineCycle();
-#endif // GBC_RUN_TESTS
 
    uint8_t value = kInvalidAddressByte;
 
@@ -76,13 +70,7 @@ uint8_t Memory::read(uint16_t address) const {
 }
 
 void Memory::write(uint16_t address, uint8_t value) {
-#if GBC_RUN_TESTS
-   if (!dontTriggerCycles) {
-      device.machineCycle();
-   }
-#else
    device.machineCycle();
-#endif // GBC_RUN_TESTS
 
    if (boot == Boot::kBooting && address <= 0x00FF) {
       // Bootstrap is read only

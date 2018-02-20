@@ -292,8 +292,7 @@ void CPUTester::runTestGroup(const CPUTestGroup& testGroup, bool randomizeData, 
    Device device;
    Device finalDevice;
    device.memory.boot = finalDevice.memory.boot = Boot::kNotBooting; // Don't run the bootstrap program
-   device.memory.dontTriggerCycles = true;
-   finalDevice.memory.dontTriggerCycles = true;
+   device.ignoreMachineCycles = finalDevice.ignoreMachineCycles = true;
 
    prepareInitial(device, testGroup, randomizeData, seed);
 
@@ -306,21 +305,21 @@ void CPUTester::runTestGroup(const CPUTestGroup& testGroup, bool randomizeData, 
 void CPUTester::runTest(Device& device, Device& finalDevice, const CPUTest& test) {
    test.testSetupFunction(device, finalDevice);
 
-   device.memory.dontTriggerCycles = false;
+   device.ignoreMachineCycles = false;
    device.cpu.tick();
-   device.memory.dontTriggerCycles = true;
+   device.ignoreMachineCycles = true;
 
    bool fieldsMatch = miscFieldsMatch(finalDevice, device);
    bool registersMatch = memcmp(&finalDevice.cpu.reg, &device.cpu.reg, sizeof(CPU::Registers)) == 0;
    bool memoryMatches = true;
    uint16_t mismatchLocation = 0;
-   /*for (uint16_t i = 0, j = 0; i >= j; j = i++) {
+   for (uint16_t i = 0, j = 0; i >= j; j = i++) {
       if (device.cpu.mem.read(i) != finalDevice.cpu.mem.read(i)) {
          memoryMatches = false;
          mismatchLocation = i;
          break;
       }
-   }*/
+   }
 
    if (!fieldsMatch || !registersMatch || !memoryMatches) {
       std::ostringstream out;
