@@ -92,6 +92,7 @@ void Device::machineCycle() {
    tickSerial(4);
    lcdController.tick(totalCycles, cpu.isStopped());
    soundController.tick(4);
+   memory.machineCycle();
 }
 
 void Device::setCartridge(UPtr<Cartridge>&& cartridge) {
