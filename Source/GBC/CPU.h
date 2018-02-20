@@ -163,6 +163,14 @@ public:
       stopped = false;
    }
 
+   uint8_t readPC();
+
+   uint16_t readPC16() {
+      uint8_t low = readPC();
+      uint8_t high = readPC();
+      return (high << 8) | low;
+   }
+
 private:
    class Operand;
 
@@ -217,14 +225,6 @@ private:
       kHalfCarry = 1 << 5, // Half carry flag
       kCarry = 1 << 4,     // Carry flag
    };
-
-   uint8_t readPC();
-
-   uint16_t readPC16() {
-      uint8_t low = readPC();
-      uint8_t high = readPC();
-      return (high << 8) | low;
-   }
 
    void setFlag(Flag flag, bool value) {
       ASSERT(flag == kZero || flag == kSub || flag == kHalfCarry || flag == kCarry, "Invalid flag value: %hhu", flag);

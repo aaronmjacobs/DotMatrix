@@ -165,6 +165,7 @@ uint8_t CPU::Operand::read8() const {
          value = reg.l;
          break;
       case Opr::kImm8:
+      case Opr::kImm8Signed:
          value = imm8;
          break;
       case Opr::kDrefC:
@@ -180,10 +181,10 @@ uint8_t CPU::Operand::read8() const {
          value = mem.read(reg.hl);
          break;
       case Opr::kDrefImm8:
-         value = mem.read(0xFF00 + imm8);
+         value = mem.read(0xFF00 + imm8); // TODO Correct?
          break;
       case Opr::kDrefImm16:
-         value = mem.read(imm16);
+         value = mem.read(imm16); // TODO Correct?
          break;
       default:
          ASSERT(false, "Invalid 8-bit operand: %hhu", opr);
@@ -279,10 +280,10 @@ void CPU::Operand::write8(uint8_t value) {
          mem.write(reg.hl, value);
          break;
       case Opr::kDrefImm8:
-         mem.write(0xFF00 + imm8, value);
+         mem.write(0xFF00 + imm8, value); // TODO Correct?
          break;
       case Opr::kDrefImm16:
-         mem.write(imm16, value);
+         mem.write(imm16, value); // TODO Correct?
          break;
       default:
          ASSERT(false, "Invalid / unwritable 8-bit operand: %hhu", opr);
@@ -308,6 +309,13 @@ void CPU::Operand::write16(uint16_t value) {
          break;
       case Opr::kPC:
          reg.pc = value;
+         break;
+      case Opr::kDrefImm16:
+      {
+         // TODO Correct?
+         mem.write(imm16, value & 0x00FF);
+         mem.write(imm16 + 1, (value >> 8) & 0x00FF);
+      }
          break;
       default:
          ASSERT(false, "Invalid / unwritable 16-bit operand: %hhu", opr);
@@ -943,8 +951,7 @@ void CPU::execute16(Operation operation) {
          if (operation.param1 == Opr::kDrefImm16) {
             ASSERT(operation.param2 == Opr::kSP);
 
-            mem.write(imm16, param2Val & 0x00FF);
-            mem.write(imm16 + 1, (param2Val >> 8) & 0x00FF);
+            param1.write16(param2Val);
          } else {
             param1.write16(param2Val);
 
@@ -958,7 +965,7 @@ void CPU::execute16(Operation operation) {
       {
          ASSERT(operation.param1 == Opr::kSP && operation.param2 == Opr::kImm8Signed);
          // Special case - uses one byte signed immediate value
-         int8_t n = toSigned(imm8);
+         int8_t n = toSigned(param2.read8());
 
          uint16_t param1Val = param1.read16();
          uint32_t result = param1Val + n;
@@ -1009,7 +1016,7 @@ void CPU::execute16(Operation operation) {
             ASSERT(operation.param2 == Opr::kImm8Signed);
 
             // Special case - uses one byte signed immediate value
-            int8_t n = toSigned(imm8);
+            int8_t n = toSigned(param2.read8());
 
             uint16_t param1Val = param1.read16();
             uint32_t result = param1Val + n;
@@ -1063,16 +1070,19 @@ void CPU::execute16(Operation operation) {
       }
       case Ins::kJR:
       {
-         // Special case - uses one byte signed immediate value
-         int8_t n = toSigned(imm8);
-
          if (operation.param2 == Opr::kNone) {
             ASSERT(operation.param1 == Opr::kImm8Signed);
+
+            // Special case - uses one byte signed immediate value
+            int8_t n = toSigned(param1.read8());
 
             reg.pc += n;
             device.machineCycle();
          } else {
             ASSERT(operation.param2 == Opr::kImm8Signed);
+
+            // Special case - uses one byte signed immediate value
+            int8_t n = toSigned(param2.read8());
 
             bool shouldJump = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
             if (shouldJump) {
@@ -1147,8 +1157,8 @@ void CPU::push(uint16_t value) {
    // TODO
 
    reg.sp -= 2;
-   mem.write(reg.sp, value & 0x00FF);
    mem.write(reg.sp + 1, (value & 0xFF00) >> 8);
+   mem.write(reg.sp, value & 0x00FF);
 }
 
 uint16_t CPU::pop() {
