@@ -323,7 +323,7 @@ void CPU::Operand::write16(uint16_t value) {
 }
 
 CPU::CPU(Device& owningDevice)
-   : reg({}), device(owningDevice), mem(owningDevice.getMemory()), ime(false), halted(false), stopped(false), interruptEnableRequested(false) {
+   : reg({}), device(owningDevice), mem(owningDevice.getMemory()), ime(false), halted(false), stopped(false), interruptEnableRequested(false), freezePC(false) {
 }
 
 void CPU::tick() {
@@ -340,6 +340,11 @@ void CPU::tick() {
    }
 
    uint8_t opcode = readPC();
+   if (freezePC) {
+      --reg.pc;
+      freezePC = false;
+   }
+
    Operation operation = kOperations[opcode];
 
    // Handle PREFIX CB
@@ -709,6 +714,10 @@ void CPU::execute(Operation operation) {
          ASSERT(operation.param1 == Opr::kNone && operation.param2 == Opr::kNone);
 
          halted = true;
+         if (!ime && (mem.ie & mem.ifr & 0x1F) != 0) {
+            // HALT bug
+            freezePC = true;
+         }
          break;
       }
       case Ins::kSTOP:
