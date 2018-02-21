@@ -335,8 +335,10 @@ void CPU::tick() {
       return;
    }
 
-   bool goingToEnableInterrupts = interruptEnableRequested;
-   interruptEnableRequested = false;
+   if (interruptEnableRequested) {
+      ime = true;
+      interruptEnableRequested = false;
+   }
 
    uint8_t opcode = readPC();
 
@@ -350,18 +352,11 @@ void CPU::tick() {
 
    // Handle PREFIX CB
    if (operation.ins == Ins::kPREFIX) {
-      //cycles += operation.cycles;
       opcode = readPC();
       operation = kCBOperations[opcode];
    }
 
    execute(operation);
-
-   //cycles += operation.cycles;
-
-   if (goingToEnableInterrupts) {
-      ime = true;
-   }
 }
 
 uint8_t CPU::readPC()
@@ -401,6 +396,7 @@ void CPU::handleInterrupt(Interrupt::Enum interrupt) {
    }
 
    ime = false;
+   interruptEnableRequested = false;
    mem.ifr &= ~interrupt;
    halted = false;
 
