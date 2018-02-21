@@ -70,6 +70,8 @@ void Device::tick(double dt) {
       if (!cpu.isStopped()) {
          cpu.tick();
       } else {
+         tickJoypad();
+
          // Not going to tick any cycles, so break to avoid an infinite loop
          break;
       }
