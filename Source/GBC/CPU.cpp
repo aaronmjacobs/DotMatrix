@@ -984,8 +984,8 @@ void CPU::execute16(Operation operation) {
       }
       case Ins::kPUSH:
       {
-         push(param1.read16());
          device.machineCycle();
+         push(param1.read16());
          break;
       }
       case Ins::kPOP:
@@ -1119,9 +1119,9 @@ void CPU::execute16(Operation operation) {
       // Restarts
       case Ins::kRST:
       {
+         device.machineCycle();
          push(reg.pc);
          reg.pc = 0x0000 + rstOffset(operation.param1);
-         device.machineCycle(); // TODO Before push?
          break;
       }
 
