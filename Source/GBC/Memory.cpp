@@ -64,6 +64,11 @@ uint8_t Memory::read(uint16_t address) const {
       }
 
       value = raw[address];
+
+      if (address == 0xFF0F) {
+         // IF reads are masked (upper 3 bits are unused)
+         value |= 0xE0;
+      }
    }
 
    return value;
