@@ -81,6 +81,8 @@ void Memory::write(uint16_t address, uint8_t value) {
    } else if (address >= 0xFF10 && address < 0xFF40) {
       // Sound registers
       device.getSoundController().write(address, value);
+   } else if (address >= 0xFE00 && address < 0xFF00 && !isSpriteAttributeTableAccessible()) {
+      // Can't write during OAM
    } else {
       if (address >= 0xE000 && address < 0xFE00) {
          // Mirror of working ram

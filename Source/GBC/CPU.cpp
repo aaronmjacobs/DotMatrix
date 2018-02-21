@@ -1099,9 +1099,9 @@ void CPU::execute16(Operation operation) {
       case Ins::kCALL:
       {
          if (operation.param2 == Opr::kNone) {
+            device.machineCycle();
             push(reg.pc);
             reg.pc = param1.read16();
-            device.machineCycle();
          } else {
             uint16_t param2Val = param2.read16();
             bool shouldCall = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
