@@ -323,8 +323,7 @@ void CPU::Operand::write16(uint16_t value) {
 }
 
 CPU::CPU(Device& owningDevice)
-   : reg({}), device(owningDevice), mem(owningDevice.getMemory()), ime(false), halted(false), stopped(false), interruptEnableRequested(false),
-     freezePC(false) {
+   : reg({}), device(owningDevice), mem(owningDevice.getMemory()), ime(false), halted(false), stopped(false), interruptEnableRequested(false) {
 }
 
 void CPU::tick() {
@@ -341,13 +340,6 @@ void CPU::tick() {
    }
 
    uint8_t opcode = readPC();
-
-   // Caused by executing a HALT when the IME is disabled
-   if (freezePC) {
-      freezePC = false;
-      --reg.pc;
-   }
-
    Operation operation = kOperations[opcode];
 
    // Handle PREFIX CB
@@ -388,10 +380,8 @@ void CPU::handleInterrupt(Interrupt::Enum interrupt) {
 
    if (halted && !ime) {
       // The HALT state is left when an enabled interrupt occurs, no matter if the IME is enabled or not.
-      // However, if the IME is disabled the program counter register is frozen for one incrementation process
-      // upon leaving the HALT state.
+      // However, if IME is disabled the interrupt is not serviced.
       halted = false;
-      freezePC = true; // TODO Don't do this for GBC?
       return;
    }
 

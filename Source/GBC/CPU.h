@@ -275,7 +275,6 @@ private:
    bool halted;
    bool stopped;
    bool interruptEnableRequested;
-   bool freezePC;
 };
 
 } // namespace GBC
