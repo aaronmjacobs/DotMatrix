@@ -86,12 +86,12 @@ public:
 
    void onTimaWrite() {
       // Writing to TIMA during the delay will prevent the TMA copy and the interrupt
-      clocksUntilInterrupt = 0;
+      timaOverloaded = false;
    }
 
    void onIfWrite() {
       // Writing to IF during the delay between TIMA overflow and interrupt request overrides the IF change
-      ifOverrideClocks = 4;
+      ifWritten = true;
    }
 
    bool cartWroteToRamThisFrame() const {
@@ -100,12 +100,9 @@ public:
 
 private:
    void tickJoypad();
-
-   void tickDiv(uint64_t cycles);
-
-   void tickTima(uint64_t cycles);
-
-   void tickSerial(uint64_t cycles);
+   void tickDiv();
+   void tickTima();
+   void tickSerial();
 
    Memory memory;
    CPU cpu;
@@ -121,9 +118,8 @@ private:
    uint8_t lastInputVals;
 
    uint16_t counter;
-   uint16_t lastCounter;
-   uint8_t clocksUntilInterrupt;
-   uint8_t ifOverrideClocks;
+   bool timaOverloaded;
+   bool ifWritten;
    bool lastTimerBit;
 
    uint64_t serialCycles;

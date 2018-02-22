@@ -55,8 +55,8 @@ enum Enum {
 
 Device::Device()
    : memory(*this), cpu(*this), lcdController(memory), soundController(),
-     cart(nullptr), totalCycles(0), cartWroteToRam(false), joypad({}), lastInputVals(P1::kInMask), counter(0), lastCounter(0),
-     clocksUntilInterrupt(0), ifOverrideClocks(0), lastTimerBit(false), serialCycles(0), serialCallback(nullptr) {
+     cart(nullptr), totalCycles(0), cartWroteToRam(false), joypad({}), lastInputVals(P1::kInMask), counter(0), timaOverloaded(false),
+     ifWritten(false), lastTimerBit(false), serialCycles(0), serialCallback(nullptr) {
 }
 
 // Need to define destructor in a location where the Cartridge class is defined, so a default deleter can be generated for it
@@ -96,9 +96,9 @@ void Device::machineCycle() {
    totalCycles += 4;
 
    tickJoypad();
-   tickDiv(4);
-   tickTima(4);
-   tickSerial(4);
+   tickDiv();
+   tickTima();
+   tickSerial();
    lcdController.tick(totalCycles, cpu.isStopped());
    soundController.tick(4);
    memory.machineCycle();
@@ -172,60 +172,53 @@ void Device::tickJoypad() {
    memory.p1 = (memory.p1 & P1::kOutMask) | (inputVals & P1::kInMask);
 }
 
-void Device::tickDiv(uint64_t cycles) {
-   lastCounter = counter;
-   counter += static_cast<uint16_t>(cycles);
+void Device::tickDiv() {
+   counter += 4;
 
    // DIV is just the upper 8 bits of the internal counter
    memory.div = (counter & 0xFF00) >> 8;
 }
 
-void Device::tickTima(uint64_t cycles) {
+void Device::tickTima() {
    bool enabled = (memory.tac & TAC::kTimerStartStop) != 0;
    uint16_t mask = TAC::kCounterMasks[memory.tac & TAC::kInputClockSelect];
 
-   for (uint16_t c = lastCounter; c != counter; ++c) {
-      // Handle interrupt / TMA copy delay
-      if (clocksUntilInterrupt > 0) {
-         --clocksUntilInterrupt;
-         if (clocksUntilInterrupt == 0) {
-            memory.tima = memory.tma;
+   // Handle interrupt / TMA copy delay
+   if (timaOverloaded) {
+      timaOverloaded = false;
+      memory.tima = memory.tma;
 
-            // If the IF register was written to during the last cycle, it overrides the value set here
-            if (ifOverrideClocks == 0) {
-               memory.ifr |= Interrupt::kTimer;
-            }
-         }
+      // If the IF register was written to during the last cycle, it overrides the value set here
+      if (!ifWritten) {
+         memory.ifr |= Interrupt::kTimer;
       }
-
-      // Handle IF override
-      if (ifOverrideClocks > 0) {
-         --ifOverrideClocks;
-      }
-
-      // Increase TIMA on falling edge
-      // This can be caused by a counter increase, counter reset, TAC change, TIMA disable, etc.
-      bool timerBit = (c & mask) != 0 && enabled;
-      if (lastTimerBit && !timerBit) {
-         ++memory.tima;
-
-         if (memory.tima == 0) {
-            // Interrupt is delayed by 4 clocks
-            clocksUntilInterrupt = 4;
-         }
-      }
-      lastTimerBit = timerBit;
    }
+
+   // Handle IF override
+   ifWritten = false;
+
+   // Increase TIMA on falling edge
+   // This can be caused by a counter increase, counter reset, TAC change, TIMA disable, etc.
+   bool timerBit = (counter & mask) != 0 && enabled;
+   if (lastTimerBit && !timerBit) {
+      ++memory.tima;
+
+      if (memory.tima == 0) {
+         // Load from TMA and interrupt is delayed by 4 clocks
+         timaOverloaded = true;
+      }
+   }
+   lastTimerBit = timerBit;
 }
 
-void Device::tickSerial(uint64_t cycles) {
+void Device::tickSerial() {
    static const uint64_t kSerialFrequency = 8192; // 8192Hz
    static const uint64_t kCyclesPerSerialBit = CPU::kClockSpeed / kSerialFrequency; // 512
    static const uint64_t kCyclesPerSerialByte = kCyclesPerSerialBit * 8; // 4096
    STATIC_ASSERT(CPU::kClockSpeed % kSerialFrequency == 0); // Should divide evenly
 
    if ((memory.sc & SC::kTransferStartFlag) && (memory.sc & SC::kShiftClock)) {
-      serialCycles += cycles;
+      serialCycles += 4;
 
       if (serialCycles >= kCyclesPerSerialByte) {
          // Transfer done

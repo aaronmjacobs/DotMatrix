@@ -421,7 +421,7 @@ void CPU::handleInterrupt(Interrupt::Enum interrupt) {
          break;
    }
    //++cycles;
-   device.machineCycle(); // TODO Correct?
+   device.machineCycle(); // TODO Correct? https://github.com/Gekkio/mooneye-gb/blob/master/docs/accuracy.markdown suggests it should be grouped with the other 2 above
 }
 
 void CPU::execute(Operation operation) {
