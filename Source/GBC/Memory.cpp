@@ -102,6 +102,18 @@ void Memory::write(uint16_t address, uint8_t value) {
       if (address == 0xFF05) {
          // TIMA
          device.onTimaWrite();
+
+         // If TIMA was reloaded with TMA this machine cycle, the write is ignored
+         if (device.wasTimaReloadedWithTma()) {
+            return;
+         }
+      }
+
+      if (address == 0xFF06 && device.wasTimaReloadedWithTma()) {
+         // TMA
+
+         // If TIMA was reloaded with TMA this machine cycle, then the value written to TMA gets propagated to TIMA as well
+         tima = value;
       }
 
       if (address == 0xFF0F) {

@@ -94,6 +94,10 @@ public:
       ifWritten = true;
    }
 
+   bool wasTimaReloadedWithTma() const {
+      return timaReloadedWithTma;
+   }
+
    bool cartWroteToRamThisFrame() const {
       return cartWroteToRam;
    }
@@ -120,6 +124,7 @@ private:
    uint16_t counter;
    bool timaOverloaded;
    bool ifWritten;
+   bool timaReloadedWithTma;
    bool lastTimerBit;
 
    uint64_t serialCycles;

@@ -56,7 +56,7 @@ enum Enum {
 Device::Device()
    : memory(*this), cpu(*this), lcdController(memory), soundController(),
      cart(nullptr), totalCycles(0), cartWroteToRam(false), joypad({}), lastInputVals(P1::kInMask), counter(0), timaOverloaded(false),
-     ifWritten(false), lastTimerBit(false), serialCycles(0), serialCallback(nullptr) {
+     ifWritten(false), timaReloadedWithTma(false), lastTimerBit(false), serialCycles(0), serialCallback(nullptr) {
 }
 
 // Need to define destructor in a location where the Cartridge class is defined, so a default deleter can be generated for it
@@ -182,13 +182,13 @@ void Device::tickDiv() {
 }
 
 void Device::tickTima() {
-   bool enabled = (memory.tac & TAC::kTimerStartStop) != 0;
-   uint16_t mask = TAC::kCounterMasks[memory.tac & TAC::kInputClockSelect];
+   timaReloadedWithTma = false;
 
    // Handle interrupt / TMA copy delay
    if (timaOverloaded) {
       timaOverloaded = false;
       memory.tima = memory.tma;
+      timaReloadedWithTma = true;
 
       // If the IF register was written to during the last cycle, it overrides the value set here
       if (!ifWritten) {
@@ -201,7 +201,10 @@ void Device::tickTima() {
 
    // Increase TIMA on falling edge
    // This can be caused by a counter increase, counter reset, TAC change, TIMA disable, etc.
+   bool enabled = (memory.tac & TAC::kTimerStartStop) != 0;
+   uint16_t mask = TAC::kCounterMasks[memory.tac & TAC::kInputClockSelect];
    bool timerBit = (counter & mask) != 0 && enabled;
+
    if (lastTimerBit && !timerBit) {
       ++memory.tima;
 
