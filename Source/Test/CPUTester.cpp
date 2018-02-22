@@ -293,6 +293,7 @@ void CPUTester::runTestGroup(const CPUTestGroup& testGroup, bool randomizeData, 
    Device finalDevice;
    device.memory.boot = finalDevice.memory.boot = Boot::kNotBooting; // Don't run the bootstrap program
    device.ignoreMachineCycles = finalDevice.ignoreMachineCycles = true;
+   device.runningCpuTest = finalDevice.runningCpuTest = true;
 
    prepareInitial(device, testGroup, randomizeData, seed);
 

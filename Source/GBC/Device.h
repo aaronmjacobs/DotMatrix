@@ -127,6 +127,7 @@ private:
 
 #if GBC_RUN_TESTS
    bool ignoreMachineCycles = false;
+   bool runningCpuTest = false;
 #endif // GBC_RUN_TESTS
 };
 
