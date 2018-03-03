@@ -327,67 +327,53 @@ CPU::CPU(Device& owningDevice)
 }
 
 void CPU::tick() {
-   handleInterrupts();
-
    if (halted) {
-      device.machineCycle();
-      return;
+      if (hasInterrupt()) {
+         halted = false;
+      } else {
+         device.machineCycle();
+         return;
+      }
    }
+
+   Operation operation = fetch();
 
    if (interruptEnableRequested) {
       ime = true;
       interruptEnableRequested = false;
    }
 
-   uint8_t opcode = readPC();
-   if (freezePC) {
-      --reg.pc;
-      freezePC = false;
-   }
-
-   Operation operation = kOperations[opcode];
-
-   // Handle PREFIX CB
-   if (operation.ins == Ins::kPREFIX) {
-      opcode = readPC();
-      operation = kCBOperations[opcode];
-   }
-
    execute(operation);
 }
 
-uint8_t CPU::readPC()
-{
-   uint8_t value = mem.read(reg.pc++);
-   return value;
-}
-
-void CPU::handleInterrupts() {
+bool CPU::handleInterrupts() {
    if (!ime && !halted) {
-      return;
+      return false;
    }
 
    if ((mem.ie & Interrupt::kVBlank) && (mem.ifr & Interrupt::kVBlank)) {
-      handleInterrupt(Interrupt::kVBlank);
+      return handleInterrupt(Interrupt::kVBlank);
    } else if ((mem.ie & Interrupt::kLCDState) && (mem.ifr & Interrupt::kLCDState)) {
-      handleInterrupt(Interrupt::kLCDState);
+      return handleInterrupt(Interrupt::kLCDState);
    } else if ((mem.ie & Interrupt::kTimer) && (mem.ifr & Interrupt::kTimer)) {
-      handleInterrupt(Interrupt::kTimer);
+      return handleInterrupt(Interrupt::kTimer);
    } else if ((mem.ie & Interrupt::kSerial) && (mem.ifr & Interrupt::kSerial)) {
-      handleInterrupt(Interrupt::kSerial);
+      return handleInterrupt(Interrupt::kSerial);
    } else if ((mem.ie & Interrupt::kJoypad) && (mem.ifr & Interrupt::kJoypad)) {
-      handleInterrupt(Interrupt::kJoypad);
+      return handleInterrupt(Interrupt::kJoypad);
    }
+
+   return false;
 }
 
-void CPU::handleInterrupt(Interrupt::Enum interrupt) {
+bool CPU::handleInterrupt(Interrupt::Enum interrupt) {
    ASSERT((ime || halted) && (mem.ie & interrupt) && (mem.ifr & interrupt));
 
    if (halted && !ime) {
       // The HALT state is left when an enabled interrupt occurs, no matter if the IME is enabled or not.
       // However, if IME is disabled the interrupt is not serviced.
       halted = false;
-      return;
+      return false;
    }
 
    ime = false;
@@ -422,6 +408,33 @@ void CPU::handleInterrupt(Interrupt::Enum interrupt) {
    }
    //++cycles;
    device.machineCycle(); // TODO Correct? https://github.com/Gekkio/mooneye-gb/blob/master/docs/accuracy.markdown suggests it should be grouped with the other 2 above
+
+   return true;
+}
+
+GBC::Operation CPU::fetch() {
+   uint8_t opcode = mem.read(reg.pc);
+
+   bool handledInterrupt = handleInterrupts();
+   if (handledInterrupt) {
+      opcode = mem.read(reg.pc);
+   }
+
+   if (freezePC) {
+      freezePC = false;
+   } else {
+      ++reg.pc;
+   }
+
+   Operation operation = kOperations[opcode];
+
+   // Handle PREFIX CB
+   if (operation.ins == Ins::kPREFIX) {
+      opcode = readPC();
+      operation = kCBOperations[opcode];
+   }
+
+   return operation;
 }
 
 void CPU::execute(Operation operation) {
@@ -714,7 +727,7 @@ void CPU::execute(Operation operation) {
          ASSERT(operation.param1 == Opr::kNone && operation.param2 == Opr::kNone);
 
          halted = true;
-         if (!ime && (mem.ie & mem.ifr & 0x1F) != 0) {
+         if (!ime && hasInterrupt()) {
             // HALT bug
             freezePC = true;
          }

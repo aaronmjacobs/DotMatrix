@@ -163,7 +163,9 @@ public:
       stopped = false;
    }
 
-   uint8_t readPC();
+   uint8_t readPC() {
+      return mem.read(reg.pc++);
+   }
 
    uint16_t readPC16() {
       uint8_t low = readPC();
@@ -255,16 +257,18 @@ private:
       return (reg.f & flag) != 0;
    }
 
-   void handleInterrupts();
+   bool hasInterrupt() const {
+      return (mem.ie & mem.ifr & 0x1F) != 0;
+   }
 
-   void handleInterrupt(Interrupt::Enum interrupt);
+   bool handleInterrupts();
+   bool handleInterrupt(Interrupt::Enum interrupt);
 
+   Operation fetch();
    void execute(Operation operation);
-
    void execute16(Operation operation);
 
    void push(uint16_t value);
-
    uint16_t pop();
 
    Registers reg;
