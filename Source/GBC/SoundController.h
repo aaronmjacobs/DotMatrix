@@ -568,14 +568,16 @@ public:
 
       if (!generateData) {
          cyclesSinceLastSample = 0;
-         data.clear();
-         dataNeedsClear = false;
+         for (std::vector<AudioSample>& buffer : buffers) {
+            buffer.clear();
+         }
       }
    }
 
    const std::vector<AudioSample>& getAudioData() {
-      dataNeedsClear = true;
-      return data;
+      activeBufferIndex = !activeBufferIndex;
+      buffers[activeBufferIndex].clear();
+      return buffers[!activeBufferIndex];
    }
 
    void tick(uint64_t cycles);
@@ -615,8 +617,8 @@ private:
 
    bool generateData;
    uint64_t cyclesSinceLastSample;
-   bool dataNeedsClear;
-   std::vector<AudioSample> data;
+   std::size_t activeBufferIndex;
+   std::array<std::vector<AudioSample>, 2> buffers;
 };
 
 } // namespace GBC

@@ -432,20 +432,17 @@ SoundController::SoundController()
    powerEnabled(false),
    generateData(false),
    cyclesSinceLastSample(0),
-   dataNeedsClear(false) {
+   activeBufferIndex(0) {
    // Try to guess a reasonable amount of data to reserve
    // For now, 1/30th of a second's worth
-   data.reserve(kSampleRate / 30);
+   for (std::vector<AudioSample>& buffer : buffers) {
+      buffer.reserve(kSampleRate / 30);
+   }
 }
 
 void SoundController::tick(uint64_t cycles) {
    static const uint64_t kCyclesPerSample = CPU::kClockSpeed / kSampleRate;
    //static_assert(CPU::kClockSpeed % kSampleRate == 0, "Sample rate does not divide evenly into the CPU clock speed!");
-
-   if (dataNeedsClear) {
-      data.clear();
-      dataNeedsClear = false;
-   }
 
    uint32_t cycles32 = static_cast<uint32_t>(cycles);
 
@@ -462,7 +459,7 @@ void SoundController::tick(uint64_t cycles) {
          cyclesSinceLastSample -= kCyclesPerSample;
 
          AudioSample sample = getCurrentAudioSample();
-         data.push_back(sample);
+         buffers[activeBufferIndex].push_back(sample);
       }
    }
 }

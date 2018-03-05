@@ -24,13 +24,19 @@ int main(int argc, char* argv[]) {
          emulator.setRom(argv[1]);
       }
 
-      static const double kMaxFrameTime = 0.25;
+      static const double kMaxFrameTime = 0.05;
       double lastTime = glfwGetTime();
 
       while (!emulator.shouldExit()) {
          double now = glfwGetTime();
-         double frameTime = std::min(now - lastTime, kMaxFrameTime); // Cap the frame time to prevent spiraling
+         double frameTime = now - lastTime;
          lastTime = now;
+
+         // If the frame time is larger than the allowed max, we assume it was caused by an external event (e.g. the window was dragged)
+         // In this case, it's best to not tick any time to prevent audio from getting behind
+         if (frameTime > kMaxFrameTime) {
+            frameTime = 0.0;
+         }
 
 #if GBC_DEBUG
          frameTime *= emulator.getTimeModifier();

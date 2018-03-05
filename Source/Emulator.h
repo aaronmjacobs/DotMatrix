@@ -57,6 +57,7 @@ public:
    void onFramebufferSizeChanged(int width, int height);
    void onFilesDropped(int count, const char* paths[]);
    void onKeyChanged(int key, int scancode, int action, int mods);
+   void onWindowRefreshRequested();
 
 #if GBC_DEBUG
    double getTimeModifier() const {

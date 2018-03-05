@@ -76,6 +76,12 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
    }
 }
 
+void windowRefreshCallback(GLFWwindow* window) {
+   if (Emulator* emulator = static_cast<Emulator*>(glfwGetWindowUserPointer(window))) {
+      emulator->onWindowRefreshRequested();
+   }
+}
+
 GLFWmonitor* selectFullScreenMonitor(const Bounds& windowBounds) {
    GLFWmonitor* fullScreenMonitor = glfwGetPrimaryMonitor();
 
@@ -216,6 +222,7 @@ bool Emulator::init() {
    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
    glfwSetDropCallback(window, dropCallback);
    glfwSetKeyCallback(window, keyCallback);
+   glfwSetWindowRefreshCallback(window, windowRefreshCallback);
 
    device = std::make_unique<GBC::Device>();
 
@@ -324,6 +331,12 @@ void Emulator::onKeyChanged(int key, int scancode, int action, int mods) {
       }
 #endif // GBC_DEBUG
    }
+}
+
+void Emulator::onWindowRefreshRequested() {
+   // This will get called whenever the window has been dirtied and needs to be refreshed (e.g. when it is being resized)
+   // We just re-render the last frame
+   render();
 }
 
 void Emulator::toggleFullScreen() {
