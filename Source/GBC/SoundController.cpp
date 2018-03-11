@@ -372,7 +372,7 @@ void FrameSequencer::clock() {
    step = (step + 1) % 8;
 }
 
-Mixer::Mixer() : leftVolume(0x00), rightVolume(0x00), vinLeftEnabled(false), vinRightEnabled(false),
+Mixer::Mixer() : leftVolume(0x01), rightVolume(0x01), vinLeftEnabled(false), vinRightEnabled(false),
    square1LeftEnabled(false), square1RightEnabled(false), square2LeftEnabled(false), square2RightEnabled(false), waveLeftEnabled(false), waveRightEnabled(false), noiseLeftEnabled(false), noiseRightEnabled(false) {
 }
 
@@ -406,6 +406,36 @@ AudioSample Mixer::mix(int8_t square1Sample, int8_t square2Sample, int8_t waveSa
       && sample.right <= INT16_MAX && sample.right >= INT16_MIN);
 
    return sample;
+}
+
+uint8_t Mixer::readNr50() const {
+   uint8_t value = 0x00;
+
+   ASSERT(leftVolume > 0 && ((leftVolume - 1) & 0x08) == 0x00);
+   value |= (leftVolume - 1) << 4;
+
+   ASSERT(rightVolume > 0 && ((rightVolume - 1) & 0x08) == 0x00);
+   value |= (rightVolume - 1);
+
+   value |= vinLeftEnabled ? 0x80 : 0x00;
+   value |= vinRightEnabled ? 0x08 : 0x00;
+
+   return value;
+}
+
+uint8_t Mixer::readNr51() const {
+   uint8_t value = 0x00;
+
+   value |= square1LeftEnabled ? 0x10 : 0x00;
+   value |= square1RightEnabled ? 0x01 : 0x00;
+   value |= square2LeftEnabled ? 0x20 : 0x00;
+   value |= square2RightEnabled ? 0x02 : 0x00;
+   value |= waveLeftEnabled ? 0x40 : 0x00;
+   value |= waveRightEnabled ? 0x04 : 0x00;
+   value |= noiseLeftEnabled ? 0x80 : 0x00;
+   value |= noiseRightEnabled ? 0x08 : 0x00;
+
+   return value;
 }
 
 void Mixer::writeNr50(uint8_t value) {
@@ -483,10 +513,13 @@ uint8_t SoundController::read(uint16_t address) const {
       // Control / Status
       switch (address) {
       case 0xFF24:
+         value = mixer.readNr50();
          break;
       case 0xFF25:
+         value = mixer.readNr51();
          break;
       case 0xFF26:
+         value = readNr52();
          break;
       default:
          ASSERT(false, "Trying to read value at invalid address from sound controller: %s", hex(address).c_str());
@@ -498,12 +531,7 @@ uint8_t SoundController::read(uint16_t address) const {
 }
 
 void SoundController::write(uint16_t address, uint8_t value) {
-   if (address == 0xFF26) {
-      setPowerEnabled((value & 0x80) != 0x00);
-      return;
-   }
-
-   if (!powerEnabled) {
+   if (!powerEnabled && address != 0xFF26) {
       // TODO Except length counters?
       return;
    }
@@ -529,11 +557,29 @@ void SoundController::write(uint16_t address, uint8_t value) {
       case 0xFF25:
          mixer.writeNr51(value);
          break;
+      case 0xFF26:
+         writeNr52(value);
+         break;
       default:
          ASSERT(false, "Trying to write value at invalid address from sound controller: %s at %s", hex(value).c_str(), hex(address).c_str());
          break;
       }
    }
+}
+
+uint8_t SoundController::readNr52() const {
+   uint8_t value = powerEnabled ? 0x80 : 0x00;
+
+   value |= squareWaveChannel1.isEnabled() ? 0x01 : 0x00;
+   value |= squareWaveChannel2.isEnabled() ? 0x02 : 0x00;
+   value |= waveChannel.isEnabled() ? 0x03 : 0x00;
+   value |= noiseChannel.isEnabled() ? 0x04 : 0x00;
+
+   return value;
+}
+
+void SoundController::writeNr52(uint8_t value) {
+   setPowerEnabled((value & 0x80) != 0x00);
 }
 
 void SoundController::setPowerEnabled(bool newPowerEnabled) {

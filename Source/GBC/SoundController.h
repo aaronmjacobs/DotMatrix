@@ -537,6 +537,9 @@ public:
 
    AudioSample mix(int8_t square1Sample, int8_t square2Sample, int8_t waveSample, int8_t noiseSample) const;
 
+   uint8_t readNr50() const;
+   uint8_t readNr51() const;
+
    void writeNr50(uint8_t value);
    void writeNr51(uint8_t value);
 
@@ -603,6 +606,8 @@ public:
    }
 
 private:
+   uint8_t readNr52() const;
+   void writeNr52(uint8_t value);
    void setPowerEnabled(bool newPowerEnabled);
    AudioSample getCurrentAudioSample() const;
 
