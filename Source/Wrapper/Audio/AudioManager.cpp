@@ -110,7 +110,7 @@ AudioManager::AudioManager()
 
    alSourcef(source, AL_PITCH, 1.0f);
    checkAlError("setting source pitch");
-   alSourcef(source, AL_GAIN, 1.0f);
+   alSourcef(source, AL_GAIN, 0.5f); // Full volume is pretty loud since our samples use the full range of values, so we lower it here
    checkAlError("setting source gain");
    alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
    checkAlError("setting source position");
