@@ -22,6 +22,7 @@ bool is16BitOperand(Opr operand) {
 
 bool is16BitOperation(Operation operation) {
    return operation.ins == Ins::kRET // Opcode 0xC9 is a RET with no operands
+      || operation.ins == Ins::kRETI // RETI (0xD9) also has no operands
       || is16BitOperand(operation.param1) || is16BitOperand(operation.param2);
 }
 
@@ -447,27 +448,6 @@ void CPU::execute(Operation operation) {
       return;
    }
 
-   // If this is a compound operation, execute each part
-   if (operation.ins == Ins::kLDD) {
-      execute(Operation(Ins::kLD, operation.param1, operation.param2, 0));
-      //execute(Operation(Ins::kDEC, Opr::kHL, Opr::kNone, 0));
-      --reg.hl;
-      return;
-   } else if (operation.ins == Ins::kLDI) {
-      execute(Operation(Ins::kLD, operation.param1, operation.param2, 0));
-      //execute(Operation(Ins::kINC, Opr::kHL, Opr::kNone, 0));
-      ++reg.hl;
-      return;
-   } else if (operation.ins == Ins::kRETI) {
-      execute(Operation(Ins::kRET, Opr::kNone, Opr::kNone, 0));
-      //execute(Operation(Ins::kEI, Opr::kNone, Opr::kNone, 0));
-
-      // RETI doesn't delay enabling the IME like EI does
-      //interruptEnableRequested = false;
-      ime = true;
-      return;
-   }
-
    // Prepare immediate values if necessary
    uint8_t imm8 = 0;
    uint16_t imm16 = 0;
@@ -489,6 +469,20 @@ void CPU::execute(Operation operation) {
             && (operation.param1 != Opr::kDrefC || operation.param2 == Opr::kA));
 
          param1.write8(param2.read8());
+         break;
+      }
+      case Ins::kLDD:
+      {
+         execute(Operation(Ins::kLD, operation.param1, operation.param2, 0));
+
+         --reg.hl;
+         break;
+      }
+      case Ins::kLDI:
+      {
+         execute(Operation(Ins::kLD, operation.param1, operation.param2, 0));
+
+         ++reg.hl;
          break;
       }
       case Ins::kLDH:
@@ -1149,6 +1143,14 @@ void CPU::execute16(Operation operation) {
                //cycles -= 12;
             }
          }
+         break;
+      }
+      case Ins::kRETI:
+      {
+         execute(Operation(Ins::kRET, Opr::kNone, Opr::kNone, 0));
+
+         // RETI doesn't delay enabling the IME like EI does
+         ime = true;
          break;
       }
 
