@@ -176,49 +176,45 @@ public:
 private:
    class Operand;
 
-   union Registers {
-      uint8_t raw[12];
-
-      struct {
-         union {
-            struct {
+   struct Registers {
+      union {
+         struct {
 #if GBC_IS_BIG_ENDIAN
-               uint8_t a;  // accumulator register
-               uint8_t f;  // status register
+            uint8_t a;  // accumulator register
+            uint8_t f;  // status register
 
-               uint8_t b;
-               uint8_t c;
+            uint8_t b;
+            uint8_t c;
 
-               uint8_t d;
-               uint8_t e;
+            uint8_t d;
+            uint8_t e;
 
-               uint8_t h;
-               uint8_t l;
+            uint8_t h;
+            uint8_t l;
 #else
-               uint8_t f;  // status register
-               uint8_t a;  // accumulator register
+            uint8_t f;  // status register
+            uint8_t a;  // accumulator register
 
-               uint8_t c;
-               uint8_t b;
+            uint8_t c;
+            uint8_t b;
 
-               uint8_t e;
-               uint8_t d;
+            uint8_t e;
+            uint8_t d;
 
-               uint8_t l;
-               uint8_t h;
+            uint8_t l;
+            uint8_t h;
 #endif
-            };
-            struct {
-               uint16_t af;
-               uint16_t bc;
-               uint16_t de;
-               uint16_t hl;
-            };
          };
-
-         uint16_t sp;      // stack pointer
-         uint16_t pc;      // program counter
+         struct {
+            uint16_t af;
+            uint16_t bc;
+            uint16_t de;
+            uint16_t hl;
+         };
       };
+
+      uint16_t sp;      // stack pointer
+      uint16_t pc;      // program counter
    };
 
    enum Flag : uint8_t {
@@ -239,16 +235,11 @@ private:
        * } else {
        *    reg.f &= ~flag;
        * }
-      */
+       *
+       * In tests the code below runs ~2x faster
+       */
 
-      uint8_t mask = ~(static_cast<uint8_t>(value) - 1); // 0xFF if true, 0x00 if false
-      ASSERT((value && mask == 0xFF) || (!value && mask == 0x00));
-
-      uint8_t setVal = (reg.f | flag) & mask; // Sets the flag if value is true, otherwise results in 0x00
-      uint8_t clearVal = reg.f & ~(flag | mask); // Clears the flag if value is false, otherwise results in 0x00
-      ASSERT((setVal >= 0x00 && clearVal == 0x00) || (clearVal >= 0x00 && setVal == 0x00));
-
-      reg.f = setVal | clearVal;
+      reg.f ^= (-static_cast<int8_t>(value) ^ reg.f) & flag;
    }
 
    bool getFlag(Flag flag) {
@@ -256,6 +247,9 @@ private:
 
       return (reg.f & flag) != 0;
    }
+
+   void push(uint16_t value);
+   uint16_t pop();
 
    bool hasInterrupt() const {
       return (mem.ie & mem.ifr & 0x1F) != 0;
@@ -267,9 +261,6 @@ private:
    Operation fetch();
    void execute(Operation operation);
    void execute16(Operation operation);
-
-   void push(uint16_t value);
-   uint16_t pop();
 
    Registers reg;
    Device& device;

@@ -182,10 +182,10 @@ uint8_t CPU::Operand::read8() const {
          value = mem.read(reg.hl);
          break;
       case Opr::kDrefImm8:
-         value = mem.read(0xFF00 + imm8); // TODO Correct?
+         value = mem.read(0xFF00 + imm8);
          break;
       case Opr::kDrefImm16:
-         value = mem.read(imm16); // TODO Correct?
+         value = mem.read(imm16);
          break;
       default:
          ASSERT(false, "Invalid 8-bit operand: %hhu", opr);
@@ -281,10 +281,10 @@ void CPU::Operand::write8(uint8_t value) {
          mem.write(reg.hl, value);
          break;
       case Opr::kDrefImm8:
-         mem.write(0xFF00 + imm8, value); // TODO Correct?
+         mem.write(0xFF00 + imm8, value);
          break;
       case Opr::kDrefImm16:
-         mem.write(imm16, value); // TODO Correct?
+         mem.write(imm16, value);
          break;
       default:
          ASSERT(false, "Invalid / unwritable 8-bit operand: %hhu", opr);
@@ -312,11 +312,8 @@ void CPU::Operand::write16(uint16_t value) {
          reg.pc = value;
          break;
       case Opr::kDrefImm16:
-      {
-         // TODO Correct?
          mem.write(imm16, value & 0x00FF);
          mem.write(imm16 + 1, (value >> 8) & 0x00FF);
-      }
          break;
       default:
          ASSERT(false, "Invalid / unwritable 16-bit operand: %hhu", opr);
@@ -345,6 +342,19 @@ void CPU::tick() {
    }
 
    execute(operation);
+}
+
+void CPU::push(uint16_t value) {
+   reg.sp -= 2;
+   mem.write(reg.sp + 1, (value & 0xFF00) >> 8);
+   mem.write(reg.sp, value & 0x00FF);
+}
+
+uint16_t CPU::pop() {
+   uint8_t low = mem.read(reg.sp);
+   uint8_t high = mem.read(reg.sp + 1);
+   reg.sp += 2;
+   return (high << 8) | low;
 }
 
 bool CPU::handleInterrupts() {
@@ -407,7 +417,7 @@ bool CPU::handleInterrupt(Interrupt::Enum interrupt) {
          reg.pc = 0x0060;
          break;
    }
-   //++cycles;
+
    device.machineCycle(); // TODO Correct? https://github.com/Gekkio/mooneye-gb/blob/master/docs/accuracy.markdown suggests it should be grouped with the other 2 above
 
    return true;
@@ -1060,12 +1070,9 @@ void CPU::execute16(Operation operation) {
                device.machineCycle();
             }
          } else {
-            bool shouldJump = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
-            if (shouldJump) {
+            if (evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry))) {
                reg.pc = param2.read16();
                device.machineCycle();
-            } else {
-               //cycles -= 4;
             }
          }
          break;
@@ -1086,12 +1093,9 @@ void CPU::execute16(Operation operation) {
             // Special case - uses one byte signed immediate value
             int8_t n = toSigned(param2.read8());
 
-            bool shouldJump = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
-            if (shouldJump) {
+            if (evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry))) {
                reg.pc += n;
                device.machineCycle();
-            } else {
-               //cycles -= 4;
             }
          }
          break;
@@ -1106,13 +1110,10 @@ void CPU::execute16(Operation operation) {
             reg.pc = param1.read16();
          } else {
             uint16_t param2Val = param2.read16();
-            bool shouldCall = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
-            if (shouldCall) {
+            if (evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry))) {
                device.machineCycle();
                push(reg.pc);
                reg.pc = param2Val;
-            } else {
-               //cycles -= 12;
             }
          }
          break;
@@ -1135,12 +1136,9 @@ void CPU::execute16(Operation operation) {
             device.machineCycle();
          } else {
             device.machineCycle();
-            bool shouldReturn = evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry));
-            if (shouldReturn) {
+            if (evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry))) {
                reg.pc = pop();
                device.machineCycle();
-            } else {
-               //cycles -= 12;
             }
          }
          break;
@@ -1161,23 +1159,6 @@ void CPU::execute16(Operation operation) {
          break;
       }
    }
-}
-
-void CPU::push(uint16_t value) {
-   // TODO
-
-   reg.sp -= 2;
-   mem.write(reg.sp + 1, (value & 0xFF00) >> 8);
-   mem.write(reg.sp, value & 0x00FF);
-}
-
-uint16_t CPU::pop() {
-   // TODO
-
-   uint8_t low = mem.read(reg.sp);
-   uint8_t high = mem.read(reg.sp + 1);
-   reg.sp += 2;
-   return (high << 8) | low;
 }
 
 } // namespace GBC
