@@ -106,8 +106,8 @@ bool evalJumpCondition(Opr operand, bool zero, bool carry) {
 
 class CPU::Operand {
 public:
-   Operand(Device& device, CPU::Registers& registers, Memory& memory, Opr op, uint8_t immediate8, uint16_t immediate16)
-      : dev(device), reg(registers), mem(memory), opr(op), imm8(immediate8), imm16(immediate16) {
+   Operand(CPU::Registers& registers, Memory& memory, Opr op, uint8_t immediate8, uint16_t immediate16)
+      : reg(registers), mem(memory), opr(op), imm8(immediate8), imm16(immediate16) {
    }
 
    uint8_t read8() const;
@@ -117,7 +117,6 @@ public:
    void write16(uint16_t value);
 
 private:
-   Device& dev;
    CPU::Registers& reg;
    Memory& mem;
 
@@ -467,8 +466,8 @@ void CPU::execute(Operation operation) {
       imm16 = readPC16();
    }
 
-   Operand param1(device, reg, mem, operation.param1, imm8, imm16);
-   Operand param2(device, reg, mem, operation.param2, imm8, imm16);
+   Operand param1(reg, mem, operation.param1, imm8, imm16);
+   Operand param2(reg, mem, operation.param2, imm8, imm16);
 
    switch (operation.ins) {
       // Loads
@@ -951,8 +950,8 @@ void CPU::execute16(Operation operation) {
       imm16 = readPC16();
    }
 
-   Operand param1(device, reg, mem, operation.param1, imm8, imm16);
-   Operand param2(device, reg, mem, operation.param2, imm8, imm16);
+   Operand param1(reg, mem, operation.param1, imm8, imm16);
+   Operand param2(reg, mem, operation.param2, imm8, imm16);
 
    switch (operation.ins) {
       // Loads

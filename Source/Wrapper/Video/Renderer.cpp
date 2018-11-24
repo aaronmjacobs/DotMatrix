@@ -63,8 +63,8 @@ Mat4 ortho(float left, float right, float bottom, float top) {
 } // namespace
 
 Renderer::Renderer(int width, int height)
-   : texture(GL_TEXTURE_2D),
-     model(Mesh(kVertices.data(), static_cast<unsigned int>(kVertices.size()), kIndices.data(), static_cast<unsigned int>(kIndices.size()), 2), ShaderProgram()) {
+   : model(Mesh(kVertices.data(), static_cast<unsigned int>(kVertices.size()), kIndices.data(), static_cast<unsigned int>(kIndices.size()), 2), ShaderProgram()),
+     texture(GL_TEXTURE_2D) {
    // Back face culling
    glEnable(GL_CULL_FACE);
    glCullFace(GL_BACK);

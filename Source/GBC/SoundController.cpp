@@ -503,7 +503,7 @@ uint8_t SoundController::read(uint16_t address) const {
    } else if (address >= 0xFF15 && address <= 0xFF19) {
       // Channel 2
       value = squareWaveChannel2.read(address);
-   } else if (address >= 0xFF1A && address <= 0xFF1E || address >= 0xFF30 && address <= 0xFF3F) {
+   } else if ((address >= 0xFF1A && address <= 0xFF1E) || (address >= 0xFF30 && address <= 0xFF3F)) {
       // Channel 3
       value = waveChannel.read(address);
    } else if (address >= 0xFF1F && address <= 0xFF23) {
@@ -542,7 +542,7 @@ void SoundController::write(uint16_t address, uint8_t value) {
    } else if (address >= 0xFF15 && address <= 0xFF19) {
       // Channel 2
       squareWaveChannel2.write(address, value);
-   } else if (address >= 0xFF1A && address <= 0xFF1E || address >= 0xFF30 && address <= 0xFF3F) {
+   } else if ((address >= 0xFF1A && address <= 0xFF1E) || (address >= 0xFF30 && address <= 0xFF3F)) {
       // Channel 3
       waveChannel.write(address, value);
    } else if (address >= 0xFF1F && address <= 0xFF23) {

@@ -148,19 +148,6 @@ std::string getSaveName(const char* title) {
    return saveName;
 }
 
-// TODO
-uint8_t onSerial(uint8_t receivedVal) {
-   static std::vector<char> vals;
-
-   vals.push_back((char)receivedVal);
-
-   vals.push_back('\0');
-   LOG_DEBUG("serial:\n" << vals.data());
-   vals.pop_back();
-
-   return 0xFF;
-}
-
 } // namespace
 
 Emulator::~Emulator() {
