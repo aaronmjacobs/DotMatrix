@@ -2,64 +2,66 @@ set(SOURCE_NAMES
    Emulator.cpp
    Main.cpp
 
+   Core/Log.cpp
+
    GBC/Cartridge.cpp
    GBC/CPU.cpp
-   GBC/Device.cpp
+   GBC/GameBoy.cpp
    GBC/LCDController.cpp
    GBC/Memory.cpp
    GBC/SoundController.cpp
 
+   Platform/Audio/AudioManager.cpp
+
+   Platform/Input/ControllerInputDevice.cpp
+   Platform/Input/KeyboardInputDevice.cpp
+
+   Platform/Utils/IOUtils.cpp
+   Platform/Utils/OSUtils.cpp
+
+   Platform/Video/Mesh.cpp
+   Platform/Video/Model.cpp
+   Platform/Video/Renderer.cpp
+   Platform/Video/Shader.cpp
+   Platform/Video/ShaderProgram.cpp
+   Platform/Video/Texture.cpp
+
    Test/CPUTester.cpp
    Test/TestMain.cpp
-
-   Wrapper/Audio/AudioManager.cpp
-
-   Wrapper/Input/ControllerInputDevice.cpp
-   Wrapper/Input/KeyboardInputDevice.cpp
-
-   Wrapper/Platform/IOUtils.cpp
-   Wrapper/Platform/OSUtils.cpp
-
-   Wrapper/Video/Mesh.cpp
-   Wrapper/Video/Model.cpp
-   Wrapper/Video/Renderer.cpp
-   Wrapper/Video/Shader.cpp
-   Wrapper/Video/ShaderProgram.cpp
-   Wrapper/Video/Texture.cpp
 )
 
 set(HEADER_NAMES
    Emulator.h
-   FancyAssert.h
-   GLIncludes.h
-   Log.h
-   Pointers.h
+
+   Core/Archive.h
+   Core/Assert.h
+   Core/Log.h
+   Core/Pointers.h
 
    GBC/Bootstrap.h
    GBC/Cartridge.h
    GBC/CPU.h
-   GBC/Debug.h
-   GBC/Device.h
+   GBC/GameBoy.h
    GBC/LCDController.h
    GBC/Memory.h
    GBC/Operations.h
    GBC/SoundController.h
 
+   Platform/Audio/AudioManager.h
+
+   Platform/Input/InputDevice.h
+   Platform/Input/ControllerInputDevice.h
+   Platform/Input/KeyboardInputDevice.h
+
+   Platform/Utils/IOUtils.h
+   Platform/Utils/OSUtils.h
+
+   Platform/Video/Mesh.h
+   Platform/Video/Model.h
+   Platform/Video/Renderer.h
+   Platform/Video/Shader.h
+   Platform/Video/ShaderProgram.h
+   Platform/Video/Texture.h
+
    Test/CPUTester.h
-
-   Wrapper/Audio/AudioManager.h
-
-   Wrapper/Input/InputDevice.h
-   Wrapper/Input/ControllerInputDevice.h
-   Wrapper/Input/KeyboardInputDevice.h
-
-   Wrapper/Platform/IOUtils.h
-   Wrapper/Platform/OSUtils.h
-
-   Wrapper/Video/Mesh.h
-   Wrapper/Video/Model.h
-   Wrapper/Video/Renderer.h
-   Wrapper/Video/Shader.h
-   Wrapper/Video/ShaderProgram.h
-   Wrapper/Video/Texture.h
 )

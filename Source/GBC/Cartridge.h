@@ -1,23 +1,27 @@
-#ifndef GBC_CARTRIDGE_H
-#define GBC_CARTRIDGE_H
+#pragma once
 
-#include "FancyAssert.h"
-#include "Pointers.h"
+#include "Core/Archive.h"
+#include "Core/Assert.h"
+#include "Core/Pointers.h"
 
 #include "GBC/Memory.h"
-
-#include "Wrapper/Platform/IOUtils.h"
 
 #include <array>
 #include <cstdint>
 #include <vector>
 
-namespace GBC {
+namespace GBC
+{
 
-class MemoryBankController {
+class Cartridge;
+
+class MemoryBankController
+{
 public:
-   MemoryBankController(const class Cartridge& cartridge)
-      : cart(cartridge), wroteToRam(false) {
+   MemoryBankController(const Cartridge& cartridge)
+      : cart(cartridge)
+      , wroteToRam(false)
+   {
    }
 
    virtual ~MemoryBankController() = default;
@@ -25,102 +29,123 @@ public:
    virtual uint8_t read(uint16_t address) const = 0;
    virtual void write(uint16_t address, uint8_t value) = 0;
 
-   virtual void tick(double dt) {
+   virtual void tick(double dt)
+   {
       wroteToRam = false;
    }
 
-   virtual IOUtils::Archive saveRAM() const {
+   virtual Archive saveRAM() const
+   {
       return {};
    }
 
-   virtual bool loadRAM(IOUtils::Archive& ramData) {
+   virtual bool loadRAM(Archive& ramData)
+   {
       return false;
    }
 
-   bool wroteToRamThisFrame() const {
+   bool wroteToRamThisFrame() const
+   {
       return wroteToRam;
    }
 
 protected:
-   const class Cartridge& cart;
+   const Cartridge& cart;
    bool wroteToRam;
 };
 
-class Cartridge {
+class Cartridge
+{
 public:
    static UPtr<Cartridge> fromData(std::vector<uint8_t>&& data);
 
-   const char* title() const {
+   const char* title() const
+   {
       return cartTitle.data();
    }
 
-   uint8_t data(size_t address) const {
+   uint8_t data(size_t address) const
+   {
       ASSERT(address < cartData.size());
 
-      if (address >= cartData.size()) {
+      if (address >= cartData.size())
+      {
          return Memory::kInvalidAddressByte;
       }
 
       return cartData[address];
    }
 
-   uint8_t read(uint16_t address) const {
+   uint8_t read(uint16_t address) const
+   {
       ASSERT(controller);
       return controller->read(address);
    }
 
-   void write(uint16_t address, uint8_t value) {
+   void write(uint16_t address, uint8_t value)
+   {
       ASSERT(controller);
       controller->write(address, value);
    }
 
-   void tick(double dt) {
+   void tick(double dt)
+   {
       ASSERT(controller);
       controller->tick(dt);
    }
 
-   IOUtils::Archive saveRAM() const {
+   Archive saveRAM() const
+   {
       ASSERT(controller);
       return controller->saveRAM();
    }
 
-   bool loadRAM(IOUtils::Archive& ramData) {
+   bool loadRAM(Archive& ramData)
+   {
       ASSERT(controller);
       return controller->loadRAM(ramData);
    }
 
-   bool wroteToRamThisFrame() const {
+   bool wroteToRamThisFrame() const
+   {
       ASSERT(controller);
       return controller->wroteToRamThisFrame();
    }
 
-   bool hasRAM() const {
+   bool hasRAM() const
+   {
       return ramPresent;
    }
 
-   bool hasBattery() const {
+   bool hasBattery() const
+   {
       return batteryPresent;
    }
 
-   bool hasTimer() const {
+   bool hasTimer() const
+   {
       return timerPresent;
    }
 
-   bool hasRumble() const {
+   bool hasRumble() const
+   {
       return rumblePresent;
    }
 
-   enum CGBFlag : uint8_t {
+   enum CGBFlag : uint8_t
+   {
       kCBGSupported = 0x80,
       kCGBRequired = 0xC0
    };
 
-   enum SGBFlag : uint8_t {
+   enum SGBFlag : uint8_t
+   {
       kNoSGBFunctions = 0x00,
       kSupportsSGBFunctions = 0x03
    };
 
-   enum CartridgeType : uint8_t {
+   enum CartridgeType : uint8_t
+   {
       kROMOnly = 0x00,
 
       kMBC1 = 0x01,
@@ -164,7 +189,8 @@ public:
       kHuC1PlusRAMPlusBattery = 0xFF
    };
 
-   enum ROMSize : uint8_t {
+   enum ROMSize : uint8_t
+   {
       kROM32KBytes = 0x00,       // no ROM banking
       kROM64KBytes = 0x01,       // 4 banks
       kROM128KBytes = 0x02,      // 8 banks
@@ -178,7 +204,8 @@ public:
       kROM1Point5MBytes = 0x54   // 96 banks
    };
 
-   enum RAMSize : uint8_t {
+   enum RAMSize : uint8_t
+   {
       kRAMNone = 0x00,
       kRAM2KBytes = 0x01,
       kRAM8KBytes = 0x02,
@@ -187,12 +214,14 @@ public:
       kRAM64KBytes = 0x05        // 8 banks of 8 KBytes each
    };
 
-   enum DestinationCode : uint8_t {
+   enum DestinationCode : uint8_t
+   {
       kDestJapanese = 0x00,
       kDestNonJapanese = 0x01
    };
 
-   struct Header {
+   struct Header
+   {
       std::array<uint8_t, 4> entryPoint;
       std::array<uint8_t, 48> nintendoLogo;
       std::array<uint8_t, 11> title;
@@ -213,7 +242,8 @@ public:
 private:
    Cartridge(std::vector<uint8_t>&& data, const Header& headerData);
 
-   void setController(UPtr<MemoryBankController> mbc) {
+   void setController(UPtr<MemoryBankController> mbc)
+   {
       controller = std::move(mbc);
    }
 
@@ -230,5 +260,3 @@ private:
 };
 
 } // namespace GBC
-
-#endif

@@ -26,7 +26,7 @@ option(GBC_LOG_MSVC_STYLE "Format logs for MSVC" ${GBC_LOG_MSVC_STYLE_DEFAULT})
 option(GBC_RUN_TESTS "Run emulator tests" OFF)
 
 # Generated content
-configure_file("${SRC_DIR}/Constants.h.in" "${BIN_INCLUDE_DIR}/Constants.h")
+configure_file("${SRC_DIR}/Core/Constants.h.in" "${BIN_INCLUDE_DIR}/Core/Constants.h")
 
 # Source content
 include(Sources.cmake)
@@ -60,7 +60,7 @@ elseif(WIN32)
    )
 endif(APPLE)
 
-list(APPEND HEADERS "${BIN_INCLUDE_DIR}/Constants.h")
+list(APPEND HEADERS "${BIN_INCLUDE_DIR}/Core/Constants.h")
 
 set(INCLUDES)
 list(APPEND INCLUDES

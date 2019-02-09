@@ -1,66 +1,87 @@
-#include "Log.h"
+#include "Core/Log.h"
 
 #include "GBC/CPU.h"
 #include "GBC/SoundController.h"
 
 #include <cmath>
 
-namespace GBC {
+namespace GBC
+{
 
-void EnvelopeUnit::clock() {
-   if (counter == 0) {
+void EnvelopeUnit::clock()
+{
+   if (counter == 0)
+   {
       // The volume envelope and sweep timers treat a period of 0 as 8
       counter = period == 0 ? 8 : period;
 
-      if (period != 0 && enabled) {
+      if (period != 0 && enabled)
+      {
          uint8_t newVolume = addMode ? volume + 1 : volume - 1;
-         if (newVolume < 16) {
+         if (newVolume < 16)
+         {
             volume = newVolume;
-         } else {
+         }
+         else
+         {
             enabled = false;
          }
       }
-   } else {
+   }
+   else
+   {
       --counter;
    }
 }
 
-void SweepUnit::clock() {
-   if (counter == 0) {
+void SweepUnit::clock()
+{
+   if (counter == 0)
+   {
       counter = period == 0 ? 8 : period; // TODO Correct?
 
-      if (enabled && period != 0) {
+      if (enabled && period != 0)
+      {
          uint16_t newFrequency = calculateNewFrequency();
 
-         if (newFrequency < 2048 && shift != 0) {
+         if (newFrequency < 2048 && shift != 0)
+         {
             shadowFrequency = newFrequency;
             owner.setFrequency(newFrequency);
 
             calculateNewFrequency();
          }
       }
-   } else {
+   }
+   else
+   {
       --counter;
    }
 }
 
-uint16_t SweepUnit::calculateNewFrequency() {
+uint16_t SweepUnit::calculateNewFrequency()
+{
    uint16_t newFrequency = shadowFrequency >> shift;
 
-   if (negate) {
+   if (negate)
+   {
       newFrequency = shadowFrequency - newFrequency;
-   } else {
+   }
+   else
+   {
       newFrequency = shadowFrequency + newFrequency;
    }
 
-   if (newFrequency >= 2048) {
+   if (newFrequency >= 2048)
+   {
       owner.disable();
    }
 
    return newFrequency;
 }
 
-int8_t WaveUnit::getCurrentAudioSample() const {
+int8_t WaveUnit::getCurrentAudioSample() const
+{
    uint8_t sampleIndex = position / 2;
    uint8_t value = waveTable[sampleIndex];
    uint8_t sample = position % 2 == 0 ? ((value & 0xF0) >> 4) : (value & 0x0F);
@@ -72,26 +93,34 @@ int8_t WaveUnit::getCurrentAudioSample() const {
    return (shiftedSample - 0x08);
 }
 
-void LFSRUnit::clock() {
+void LFSRUnit::clock()
+{
    uint8_t bit0 = lfsr & 0x01;
    lfsr >>= 1;
    uint8_t bit1 = lfsr & 0x01;
    uint8_t xorResult = bit0 ^ bit1;
 
    lfsr = (lfsr & 0b1011111111111111) | (xorResult << 14);
-   if (widthMode) {
+   if (widthMode)
+   {
       lfsr = (lfsr & 0b1111111110111111) | (xorResult << 6);
    }
 }
 
 SquareWaveChannel::SquareWaveChannel()
-   : timer(*this), frequency(0), lengthUnit(*this, 64), sweepUnit(*this) {
+   : timer(*this)
+   , frequency(0)
+   , lengthUnit(*this, 64)
+   , sweepUnit(*this)
+{
 }
 
-int8_t SquareWaveChannel::getCurrentAudioSample() const {
+int8_t SquareWaveChannel::getCurrentAudioSample() const
+{
    int8_t sample = 0;
 
-   if (isEnabled()) {
+   if (isEnabled())
+   {
       uint8_t volume = envelopeUnit.getVolume();
       sample = dutyUnit.isHigh() ? volume : -volume;
    }
@@ -99,10 +128,12 @@ int8_t SquareWaveChannel::getCurrentAudioSample() const {
    return sample;
 }
 
-uint8_t SquareWaveChannel::read(uint16_t address) const {
+uint8_t SquareWaveChannel::read(uint16_t address) const
+{
    uint8_t value = 0x00;
 
-   switch (address) {
+   switch (address)
+   {
    case 0xFF10:
       value |= 0x80;
       value |= sweepUnit.readNrx0();
@@ -140,8 +171,10 @@ uint8_t SquareWaveChannel::read(uint16_t address) const {
    return value;
 }
 
-void SquareWaveChannel::write(uint16_t address, uint8_t value) {
-   switch (address) {
+void SquareWaveChannel::write(uint16_t address, uint8_t value)
+{
+   switch (address)
+   {
    case 0xFF10:
       // Sweep period, negate, shift
       sweepUnit.writeNrx0(value);
@@ -168,7 +201,8 @@ void SquareWaveChannel::write(uint16_t address, uint8_t value) {
       lengthUnit.writeNrx4(value);
 
       // Trigger, Length enable, Frequency MSB
-      if ((value & 0x80) != 0x00) {
+      if ((value & 0x80) != 0x00)
+      {
          sweepUnit.setShadowFrequency(frequency);
          trigger();
       }
@@ -179,23 +213,31 @@ void SquareWaveChannel::write(uint16_t address, uint8_t value) {
    }
 }
 
-WaveChannel::WaveChannel() : timer(*this), frequency(0), lengthUnit(*this, 256) {
+WaveChannel::WaveChannel()
+   : timer(*this)
+   , frequency(0)
+   , lengthUnit(*this, 256)
+{
 }
 
-int8_t WaveChannel::getCurrentAudioSample() const {
+int8_t WaveChannel::getCurrentAudioSample() const
+{
    int8_t sample = 0;
 
-   if (isEnabled() && waveUnit.isDacPowered()) {
+   if (isEnabled() && waveUnit.isDacPowered())
+   {
       sample = waveUnit.getCurrentAudioSample();
    }
 
    return sample;
 }
 
-uint8_t WaveChannel::read(uint16_t address) const {
+uint8_t WaveChannel::read(uint16_t address) const
+{
    uint8_t value = 0x00;
 
-   switch (address) {
+   switch (address)
+   {
    case 0xFF1A:
       value |= 0x7F;
       value |= waveUnit.readNrx0();
@@ -221,10 +263,13 @@ uint8_t WaveChannel::read(uint16_t address) const {
       // TODO trigger?
       break;
    default:
-      if (address >= 0xFF30 && address <= 0xFF3F) {
+      if (address >= 0xFF30 && address <= 0xFF3F)
+      {
          uint8_t index = static_cast<uint8_t>(address - 0xFF30);
          value |= waveUnit.readWaveTableValue(index);
-      } else {
+      }
+      else
+      {
          //ASSERT(false);
          value = Memory::kInvalidAddressByte;
       }
@@ -234,8 +279,10 @@ uint8_t WaveChannel::read(uint16_t address) const {
    return value;
 }
 
-void WaveChannel::write(uint16_t address, uint8_t value) {
-   switch (address) {
+void WaveChannel::write(uint16_t address, uint8_t value)
+{
+   switch (address)
+   {
    case 0xFF1A:
       // DAC power
       waveUnit.writeNrx0(value);
@@ -257,28 +304,37 @@ void WaveChannel::write(uint16_t address, uint8_t value) {
       setFrequency(((value << 8) & 0x0700) | (frequency & 0x00FF));
       lengthUnit.writeNrx4(value);
 
-      if ((value & 0x80) != 0x00) {
+      if ((value & 0x80) != 0x00)
+      {
          trigger();
       }
       break;
    default:
-      if (address >= 0xFF30 && address <= 0xFF3F) {
+      if (address >= 0xFF30 && address <= 0xFF3F)
+      {
          uint8_t index = static_cast<uint8_t>(address - 0xFF30);
          waveUnit.writeWaveTableValue(index, value);
-      } else {
+      }
+      else
+      {
          //ASSERT(false);
       }
       break;
    }
 }
 
-NoiseChannel::NoiseChannel() : timer(*this), lengthUnit(*this, 64) {
+NoiseChannel::NoiseChannel()
+   : timer(*this)
+   , lengthUnit(*this, 64)
+{
 }
 
-int8_t NoiseChannel::getCurrentAudioSample() const {
+int8_t NoiseChannel::getCurrentAudioSample() const
+{
    int8_t sample = 0;
 
-   if (isEnabled()) {
+   if (isEnabled())
+   {
       uint8_t volume = envelopeUnit.getVolume();
       sample = lfsrUnit.isHigh() ? volume : -volume;
    }
@@ -286,10 +342,12 @@ int8_t NoiseChannel::getCurrentAudioSample() const {
    return sample;
 }
 
-uint8_t NoiseChannel::read(uint16_t address) const {
+uint8_t NoiseChannel::read(uint16_t address) const
+{
    uint8_t value = 0x00;
 
-   switch (address) {
+   switch (address)
+   {
    case 0xFF20:
       value |= 0xFF;
       value |= lengthUnit.readNrx1();
@@ -313,8 +371,10 @@ uint8_t NoiseChannel::read(uint16_t address) const {
    return value;
 }
 
-void NoiseChannel::write(uint16_t address, uint8_t value) {
-   switch (address) {
+void NoiseChannel::write(uint16_t address, uint8_t value)
+{
+   switch (address)
+   {
    case 0xFF20:
       // Length load (64-L)
       lengthUnit.writeNrx1(value);
@@ -332,7 +392,8 @@ void NoiseChannel::write(uint16_t address, uint8_t value) {
       // Trigger, Length enable
       lengthUnit.writeNrx4(value);
 
-      if ((value & 0x80) != 0x00) {
+      if ((value & 0x80) != 0x00)
+      {
          trigger();
       }
       break;
@@ -342,8 +403,10 @@ void NoiseChannel::write(uint16_t address, uint8_t value) {
    }
 }
 
-void FrameSequencer::clock() {
-   switch (step) {
+void FrameSequencer::clock()
+{
+   switch (step)
+   {
    case 0:
       owner.lengthClock();
       break;
@@ -372,11 +435,24 @@ void FrameSequencer::clock() {
    step = (step + 1) % 8;
 }
 
-Mixer::Mixer() : leftVolume(0x01), rightVolume(0x01), vinLeftEnabled(false), vinRightEnabled(false),
-   square1LeftEnabled(false), square1RightEnabled(false), square2LeftEnabled(false), square2RightEnabled(false), waveLeftEnabled(false), waveRightEnabled(false), noiseLeftEnabled(false), noiseRightEnabled(false) {
+Mixer::Mixer()
+   : leftVolume(0x01)
+   , rightVolume(0x01)
+   , vinLeftEnabled(false)
+   , vinRightEnabled(false)
+   , square1LeftEnabled(false)
+   , square1RightEnabled(false)
+   , square2LeftEnabled(false)
+   , square2RightEnabled(false)
+   , waveLeftEnabled(false)
+   , waveRightEnabled(false)
+   , noiseLeftEnabled(false)
+   , noiseRightEnabled(false)
+{
 }
 
-AudioSample Mixer::mix(int8_t square1Sample, int8_t square2Sample, int8_t waveSample, int8_t noiseSample) const {
+AudioSample Mixer::mix(int8_t square1Sample, int8_t square2Sample, int8_t waveSample, int8_t noiseSample) const
+{
    // All samples should be in the range [-16, 16)
    ASSERT(square1Sample >= -16 && square1Sample < 16
       && square2Sample >= -16 && square2Sample < 16
@@ -408,7 +484,8 @@ AudioSample Mixer::mix(int8_t square1Sample, int8_t square2Sample, int8_t waveSa
    return sample;
 }
 
-uint8_t Mixer::readNr50() const {
+uint8_t Mixer::readNr50() const
+{
    uint8_t value = 0x00;
 
    ASSERT(leftVolume > 0 && ((leftVolume - 1) & 0x08) == 0x00);
@@ -423,7 +500,8 @@ uint8_t Mixer::readNr50() const {
    return value;
 }
 
-uint8_t Mixer::readNr51() const {
+uint8_t Mixer::readNr51() const
+{
    uint8_t value = 0x00;
 
    value |= square1LeftEnabled ? 0x10 : 0x00;
@@ -438,7 +516,8 @@ uint8_t Mixer::readNr51() const {
    return value;
 }
 
-void Mixer::writeNr50(uint8_t value) {
+void Mixer::writeNr50(uint8_t value)
+{
    leftVolume = ((value >> 4) & 0x07) + 1;
    rightVolume = (value & 0x07) + 1;
 
@@ -446,7 +525,8 @@ void Mixer::writeNr50(uint8_t value) {
    vinRightEnabled = (value & 0x08) != 0x00;
 }
 
-void Mixer::writeNr51(uint8_t value) {
+void Mixer::writeNr51(uint8_t value)
+{
    square1LeftEnabled = (value & 0x10) != 0x00;
    square1RightEnabled = (value & 0x01) != 0x00;
    square2LeftEnabled = (value & 0x20) != 0x00;
@@ -458,19 +538,22 @@ void Mixer::writeNr51(uint8_t value) {
 }
 
 SoundController::SoundController()
-   : frameSequencer(*this),
-   powerEnabled(false),
-   generateData(false),
-   cyclesSinceLastSample(0),
-   activeBufferIndex(0) {
+   : frameSequencer(*this)
+   , powerEnabled(false)
+   , generateData(false)
+   , cyclesSinceLastSample(0)
+   , activeBufferIndex(0)
+{
    // Try to guess a reasonable amount of data to reserve
    // For now, 1/30th of a second's worth
-   for (std::vector<AudioSample>& buffer : buffers) {
+   for (std::vector<AudioSample>& buffer : buffers)
+   {
       buffer.reserve(kSampleRate / 30);
    }
 }
 
-void SoundController::tick(uint64_t cycles) {
+void SoundController::tick(uint64_t cycles)
+{
    static const uint64_t kCyclesPerSample = CPU::kClockSpeed / kSampleRate;
    //static_assert(CPU::kClockSpeed % kSampleRate == 0, "Sample rate does not divide evenly into the CPU clock speed!");
 
@@ -483,9 +566,11 @@ void SoundController::tick(uint64_t cycles) {
    waveChannel.tick(cycles32);
    noiseChannel.tick(cycles32);
 
-   if (generateData) {
+   if (generateData)
+   {
       cyclesSinceLastSample += cycles;
-      while (cyclesSinceLastSample >= kCyclesPerSample) {
+      while (cyclesSinceLastSample >= kCyclesPerSample)
+      {
          cyclesSinceLastSample -= kCyclesPerSample;
 
          AudioSample sample = getCurrentAudioSample();
@@ -494,24 +579,35 @@ void SoundController::tick(uint64_t cycles) {
    }
 }
 
-uint8_t SoundController::read(uint16_t address) const {
+uint8_t SoundController::read(uint16_t address) const
+{
    uint8_t value = Memory::kInvalidAddressByte;
 
-   if (address >= 0xFF10 && address <= 0xFF14) {
+   if (address >= 0xFF10 && address <= 0xFF14)
+   {
       // Channel 1
       value = squareWaveChannel1.read(address);
-   } else if (address >= 0xFF15 && address <= 0xFF19) {
+   }
+   else if (address >= 0xFF15 && address <= 0xFF19)
+   {
       // Channel 2
       value = squareWaveChannel2.read(address);
-   } else if ((address >= 0xFF1A && address <= 0xFF1E) || (address >= 0xFF30 && address <= 0xFF3F)) {
+   }
+   else if ((address >= 0xFF1A && address <= 0xFF1E) || (address >= 0xFF30 && address <= 0xFF3F))
+   {
       // Channel 3
       value = waveChannel.read(address);
-   } else if (address >= 0xFF1F && address <= 0xFF23) {
+   }
+   else if (address >= 0xFF1F && address <= 0xFF23)
+   {
       // Channel 4
       value = noiseChannel.read(address);
-   } else {
+   }
+   else
+   {
       // Control / Status
-      switch (address) {
+      switch (address)
+      {
       case 0xFF24:
          value = mixer.readNr50();
          break;
@@ -530,27 +626,39 @@ uint8_t SoundController::read(uint16_t address) const {
    return value;
 }
 
-void SoundController::write(uint16_t address, uint8_t value) {
-   if (!powerEnabled && address != 0xFF26) {
+void SoundController::write(uint16_t address, uint8_t value)
+{
+   if (!powerEnabled && address != 0xFF26)
+   {
       // TODO Except length counters?
       return;
    }
 
-   if (address >= 0xFF10 && address <= 0xFF14) {
+   if (address >= 0xFF10 && address <= 0xFF14)
+   {
       // Channel 1
       squareWaveChannel1.write(address, value);
-   } else if (address >= 0xFF15 && address <= 0xFF19) {
+   }
+   else if (address >= 0xFF15 && address <= 0xFF19)
+   {
       // Channel 2
       squareWaveChannel2.write(address, value);
-   } else if ((address >= 0xFF1A && address <= 0xFF1E) || (address >= 0xFF30 && address <= 0xFF3F)) {
+   }
+   else if ((address >= 0xFF1A && address <= 0xFF1E) || (address >= 0xFF30 && address <= 0xFF3F))
+   {
       // Channel 3
       waveChannel.write(address, value);
-   } else if (address >= 0xFF1F && address <= 0xFF23) {
+   }
+   else if (address >= 0xFF1F && address <= 0xFF23)
+   {
       // Channel 4
       noiseChannel.write(address, value);
-   } else {
+   }
+   else
+   {
       // Control / Status
-      switch (address) {
+      switch (address)
+      {
       case 0xFF24:
          mixer.writeNr50(value);
          break;
@@ -567,7 +675,8 @@ void SoundController::write(uint16_t address, uint8_t value) {
    }
 }
 
-uint8_t SoundController::readNr52() const {
+uint8_t SoundController::readNr52() const
+{
    uint8_t value = powerEnabled ? 0x80 : 0x00;
 
    value |= squareWaveChannel1.isEnabled() ? 0x01 : 0x00;
@@ -578,18 +687,24 @@ uint8_t SoundController::readNr52() const {
    return value;
 }
 
-void SoundController::writeNr52(uint8_t value) {
+void SoundController::writeNr52(uint8_t value)
+{
    setPowerEnabled((value & 0x80) != 0x00);
 }
 
-void SoundController::setPowerEnabled(bool newPowerEnabled) {
-   if (powerEnabled && !newPowerEnabled) {
+void SoundController::setPowerEnabled(bool newPowerEnabled)
+{
+   if (powerEnabled && !newPowerEnabled)
+   {
       // Write 0x00 to all memory
       // TODO Except length counters?
-      for (uint16_t address = 0xFF10; address < 0xFF26; ++address) {
+      for (uint16_t address = 0xFF10; address < 0xFF26; ++address)
+      {
          write(address, 0x00);
       }
-   } else if (!powerEnabled && newPowerEnabled) {
+   }
+   else if (!powerEnabled && newPowerEnabled)
+   {
       frameSequencer.reset();
       squareWaveChannel1.resetDutyUnit();
       squareWaveChannel2.resetDutyUnit();
@@ -599,7 +714,8 @@ void SoundController::setPowerEnabled(bool newPowerEnabled) {
    powerEnabled = newPowerEnabled;
 }
 
-AudioSample SoundController::getCurrentAudioSample() const {
+AudioSample SoundController::getCurrentAudioSample() const
+{
    int8_t square1Sample = squareWaveChannel1.getCurrentAudioSample();
    int8_t square2Sample = squareWaveChannel2.getCurrentAudioSample();
    int8_t waveSample = waveChannel.getCurrentAudioSample();

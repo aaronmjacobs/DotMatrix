@@ -1,15 +1,17 @@
-#ifndef GBC_OPERATIONS_H
-#define GBC_OPERATIONS_H
+#pragma once
 
 #include "GBC/CPU.h"
 
 #include <array>
 
-namespace GBC {
+namespace GBC
+{
 
-namespace {
+namespace
+{
 
-const std::array<Operation, 256> kOperations = {
+const std::array<Operation, 256> kOperations =
+{
    /* 0x00 */ Operation(Ins::kNOP, Opr::kNone, Opr::kNone, 4),
    /* 0x01 */ Operation(Ins::kLD, Opr::kBC, Opr::kImm16, 12),
    /* 0x02 */ Operation(Ins::kLD, Opr::kDrefBC, Opr::kA, 8),
@@ -268,7 +270,8 @@ const std::array<Operation, 256> kOperations = {
    /* 0xFF */ Operation(Ins::kRST, Opr::k38H, Opr::kNone, 16),
 };
 
-const std::array<Operation, 256> kCBOperations = {
+const std::array<Operation, 256> kCBOperations =
+{
    /* 0x00 */ Operation(Ins::kRLC, Opr::kB, Opr::kNone, 8),
    /* 0x01 */ Operation(Ins::kRLC, Opr::kC, Opr::kNone, 8),
    /* 0x02 */ Operation(Ins::kRLC, Opr::kD, Opr::kNone, 8),
@@ -530,5 +533,3 @@ const std::array<Operation, 256> kCBOperations = {
 } // namespace
 
 } // namespace GBC
-
-#endif

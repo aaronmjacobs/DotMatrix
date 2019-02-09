@@ -1,18 +1,19 @@
-#ifndef GBC_CPU_H
-#define GBC_CPU_H
+#pragma once
 
-#include "FancyAssert.h"
+#include "Core/Assert.h"
 
 #include "GBC/Memory.h"
 
 #include <cstdint>
 
-namespace GBC {
+namespace GBC
+{
 
-class Device;
+class GameBoy;
 
 // Instructions
-enum class Ins : uint8_t {
+enum class Ins : uint8_t
+{
    kInvalid,
 
    kLD,
@@ -75,7 +76,8 @@ enum class Ins : uint8_t {
 };
 
 // Operands
-enum class Opr : uint8_t {
+enum class Opr : uint8_t
+{
    kNone,
 
    kA,
@@ -136,38 +138,48 @@ enum class Opr : uint8_t {
    k38H
 };
 
-struct Operation {
+struct Operation
+{
    Ins ins;
    Opr param1;
    Opr param2;
    uint8_t cycles;
 
    Operation(Ins i, Opr p1, Opr p2, uint8_t c)
-      : ins(i), param1(p1), param2(p2), cycles(c) {
+      : ins(i)
+      , param1(p1)
+      , param2(p2)
+      , cycles(c)
+   {
    }
 };
 
-class CPU {
+class CPU
+{
 public:
    static const uint64_t kClockSpeed = 4194304; // 4.194304 MHz TODO handle GBC / SGB
 
-   CPU(Device& owningDevice);
+   CPU(GameBoy& owningGameBoy);
 
    void tick();
 
-   bool isStopped() const {
+   bool isStopped() const
+   {
       return stopped;
    }
 
-   void resume() {
+   void resume()
+   {
       stopped = false;
    }
 
-   uint8_t readPC() {
+   uint8_t readPC()
+   {
       return mem.read(reg.pc++);
    }
 
-   uint16_t readPC16() {
+   uint16_t readPC16()
+   {
       uint8_t low = readPC();
       uint8_t high = readPC();
       return (high << 8) | low;
@@ -176,9 +188,12 @@ public:
 private:
    class Operand;
 
-   struct Registers {
-      union {
-         struct {
+   struct Registers
+   {
+      union
+      {
+         struct
+         {
 #if GBC_IS_BIG_ENDIAN
             uint8_t a;  // accumulator register
             uint8_t f;  // status register
@@ -205,7 +220,8 @@ private:
             uint8_t h;
 #endif
          };
-         struct {
+         struct
+         {
             uint16_t af;
             uint16_t bc;
             uint16_t de;
@@ -217,14 +233,16 @@ private:
       uint16_t pc;      // program counter
    };
 
-   enum Flag : uint8_t {
+   enum Flag : uint8_t
+   {
       kZero = 1 << 7,      // Zero flag
       kSub = 1 << 6,       // Subtract flag
       kHalfCarry = 1 << 5, // Half carry flag
       kCarry = 1 << 4,     // Carry flag
    };
 
-   void setFlag(Flag flag, bool value) {
+   void setFlag(Flag flag, bool value)
+   {
       ASSERT(flag == kZero || flag == kSub || flag == kHalfCarry || flag == kCarry, "Invalid flag value: %hhu", flag);
 
       /*
@@ -242,7 +260,8 @@ private:
       reg.f ^= (-static_cast<int8_t>(value) ^ reg.f) & flag;
    }
 
-   bool getFlag(Flag flag) {
+   bool getFlag(Flag flag)
+   {
       ASSERT(flag == kZero || flag == kSub || flag == kHalfCarry || flag == kCarry, "Invalid flag value: %hhu", flag);
 
       return (reg.f & flag) != 0;
@@ -251,7 +270,8 @@ private:
    void push(uint16_t value);
    uint16_t pop();
 
-   bool hasInterrupt() const {
+   bool hasInterrupt() const
+   {
       return (mem.ie & mem.ifr & 0x1F) != 0;
    }
 
@@ -263,7 +283,7 @@ private:
    void execute16(Operation operation);
 
    Registers reg;
-   Device& device;
+   GameBoy& gameBoy;
    Memory& mem;
    bool ime;
 
@@ -274,5 +294,3 @@ private:
 };
 
 } // namespace GBC
-
-#endif

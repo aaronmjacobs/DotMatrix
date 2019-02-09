@@ -1,4 +1,4 @@
-#include "Log.h"
+#include "Core/Log.h"
 
 #include "GBC/CPU.h"
 #include "GBC/LCDController.h"
@@ -6,13 +6,17 @@
 
 #include <array>
 
-namespace GBC {
+namespace GBC
+{
 
-namespace {
+namespace
+{
 
-namespace Mode {
+namespace Mode
+{
 
-enum Enum : uint8_t {
+enum Enum : uint8_t
+{
    kHBlank = 0,
    kVBlank = 1,
    kSearchOAM = 2,
@@ -21,9 +25,11 @@ enum Enum : uint8_t {
 
 } // namespace Mode
 
-namespace LCDC {
+namespace LCDC
+{
 
-enum Enum : uint8_t {
+enum Enum : uint8_t
+{
    kDisplayEnable = 1 << 7,
    kWindowTileMapDisplaySelect = 1 << 6,
    kWindowDisplayEnable = 1 << 5,
@@ -36,9 +42,11 @@ enum Enum : uint8_t {
 
 } // namespace LCDC
 
-namespace STAT {
+namespace STAT
+{
 
-enum Enum : uint8_t {
+enum Enum : uint8_t
+{
    kLycLyCoincidence = 1 << 6,
    kMode2OAMInterrupt = 1 << 5,
    kMode1VBlankInterrupt = 1 << 4,
@@ -49,9 +57,11 @@ enum Enum : uint8_t {
 
 } // namespace STAT
 
-namespace Attrib {
+namespace Attrib
+{
 
-enum Enum : uint8_t {
+enum Enum : uint8_t
+{
    kObjToBgPriority = 1 << 7,
    kYFlip = 1 << 6,
    kXFlip = 1 << 5,
@@ -62,9 +72,11 @@ enum Enum : uint8_t {
 
 } // namespace Attrib
 
-namespace ColorIndex {
+namespace ColorIndex
+{
 
-enum Enum : uint8_t {
+enum Enum : uint8_t
+{
    kWhite = 0,
    kLightGray = 1,
    kDarkGray = 2,
@@ -73,7 +85,8 @@ enum Enum : uint8_t {
 
 } // namespace ColorIndex
 
-namespace Color {
+namespace Color
+{
 
 // Green / blue (trying to approximate original Game Boy screen colors)
 const Pixel kWhite(0xAC, 0xCD, 0x4A);
@@ -90,30 +103,40 @@ static const uint32_t kCyclesPerLine = kSearchOAMCycles + kDataTransferCycles + 
 static const uint32_t kVBlankCycles = kCyclesPerLine * 10; // Lines 144 through 153
 static const uint32_t kCyclesPerScreen = kCyclesPerLine * 154; // All 154 lines
 
-Mode::Enum getCurrentMode(uint64_t cycles) {
-   if (cycles < kVBlankCycles) {
+Mode::Enum getCurrentMode(uint64_t cycles)
+{
+   if (cycles < kVBlankCycles)
+   {
       // Still in initial V-blank
       return Mode::kVBlank;
    }
 
    uint32_t cyclesOnScreen = (cycles - kVBlankCycles) % kCyclesPerScreen;
    uint32_t lineNumber = cyclesOnScreen / kCyclesPerLine;
-   if (lineNumber >= 144) {
+   if (lineNumber >= 144)
+   {
       return Mode::kVBlank;
    }
 
    uint32_t cyclesOnLine = cyclesOnScreen % kCyclesPerLine;
-   if (cyclesOnLine < kSearchOAMCycles) {
+   if (cyclesOnLine < kSearchOAMCycles)
+   {
       return Mode::kSearchOAM;
-   } else if (cyclesOnLine < kSearchOAMCycles + kDataTransferCycles) {
+   }
+   else if (cyclesOnLine < kSearchOAMCycles + kDataTransferCycles)
+   {
       return Mode::kDataTransfer;
-   } else { // if (cyclesOnLine < kSearchOAMCycles + kDataTransferCycles + kHBlankCycles)
+   }
+   else // if (cyclesOnLine < kSearchOAMCycles + kDataTransferCycles + kHBlankCycles)
+   {
       return Mode::kHBlank;
    }
 }
 
-uint8_t calcLY(uint64_t cycles) {
-   if (cycles < kVBlankCycles) {
+uint8_t calcLY(uint64_t cycles)
+{
+   if (cycles < kVBlankCycles)
+   {
       // Still in initial V-blank
       cycles += kCyclesPerScreen;
    }
@@ -122,8 +145,10 @@ uint8_t calcLY(uint64_t cycles) {
    return cyclesOnScreen / kCyclesPerLine;
 }
 
-std::array<Pixel, 4> extractPaletteColors(uint8_t palette) {
-   static const std::array<Pixel, 4> kColorValues = {
+std::array<Pixel, 4> extractPaletteColors(uint8_t palette)
+{
+   static const std::array<Pixel, 4> kColorValues =
+   {
       Color::kWhite,
       Color::kLightGray,
       Color::kDarkGray,
@@ -132,7 +157,8 @@ std::array<Pixel, 4> extractPaletteColors(uint8_t palette) {
    static const uint8_t kMask = 0x03;
 
    std::array<Pixel, 4> colors;
-   for (size_t i = 0; i < colors.size(); ++i) {
+   for (size_t i = 0; i < colors.size(); ++i)
+   {
       size_t shift = i * 2;
       colors[i] = kColorValues[(palette & (kMask << shift)) >> shift];
    }
@@ -143,10 +169,13 @@ std::array<Pixel, 4> extractPaletteColors(uint8_t palette) {
 } // namespace
 
 LCDController::LCDController(Memory& memory)
-   : mem(memory), bgPaletteIndices({}) {
+   : mem(memory)
+   , bgPaletteIndices({})
+{
 }
 
-void LCDController::tick(uint64_t totalCycles, bool cpuStopped) {
+void LCDController::tick(uint64_t totalCycles, bool cpuStopped)
+{
    Mode::Enum lastMode = static_cast<Mode::Enum>(mem.stat & STAT::kModeFlag);
    Mode::Enum currentMode = getCurrentMode(totalCycles);
    // Update the mode
@@ -158,17 +187,21 @@ void LCDController::tick(uint64_t totalCycles, bool cpuStopped) {
    // ly compare
    bool coincident = mem.ly == mem.lyc;
    mem.stat = (mem.stat & ~STAT::kCoincidenceFlag) | (coincident ? STAT::kCoincidenceFlag : 0);
-   if ((mem.stat & STAT::kLycLyCoincidence) && coincident && (mem.ly != oldLY)) {
+   if ((mem.stat & STAT::kLycLyCoincidence) && coincident && (mem.ly != oldLY))
+   {
       mem.ifr |= Interrupt::kLCDState;
    }
 
-   switch (currentMode) {
+   switch (currentMode)
+   {
       case Mode::kHBlank:
       {
          ASSERT(lastMode == Mode::kHBlank || lastMode == Mode::kDataTransfer);
 
-         if (lastMode != Mode::kHBlank) {
-            if (mem.stat & STAT::kMode0HBlankInterrupt) {
+         if (lastMode != Mode::kHBlank)
+         {
+            if (mem.stat & STAT::kMode0HBlankInterrupt)
+            {
                mem.ifr |= Interrupt::kLCDState;
             }
          }
@@ -178,10 +211,12 @@ void LCDController::tick(uint64_t totalCycles, bool cpuStopped) {
       {
          ASSERT(lastMode == Mode::kVBlank || lastMode == Mode::kHBlank);
 
-         if (lastMode != Mode::kVBlank) {
+         if (lastMode != Mode::kVBlank)
+         {
             mem.ifr |= Interrupt::kVBlank;
 
-            if (mem.stat & STAT::kMode1VBlankInterrupt) {
+            if (mem.stat & STAT::kMode1VBlankInterrupt)
+            {
                mem.ifr |= Interrupt::kLCDState;
             }
 
@@ -194,8 +229,10 @@ void LCDController::tick(uint64_t totalCycles, bool cpuStopped) {
       {
          ASSERT(lastMode == Mode::kSearchOAM || lastMode == Mode::kHBlank || lastMode == Mode::kVBlank);
 
-         if (lastMode != Mode::kSearchOAM) {
-            if (mem.stat & STAT::kMode2OAMInterrupt) {
+         if (lastMode != Mode::kSearchOAM)
+         {
+            if (mem.stat & STAT::kMode2OAMInterrupt)
+            {
                mem.ifr |= Interrupt::kLCDState;
             }
          }
@@ -205,7 +242,8 @@ void LCDController::tick(uint64_t totalCycles, bool cpuStopped) {
       {
          ASSERT(lastMode == Mode::kDataTransfer || lastMode == Mode::kSearchOAM);
 
-         if (lastMode != Mode::kDataTransfer) {
+         if (lastMode != Mode::kDataTransfer)
+         {
             ASSERT(mem.ly < 144);
             scan(framebuffers.writeBuffer(), mem.ly, extractPaletteColors(mem.bgp));
          }
@@ -216,35 +254,45 @@ void LCDController::tick(uint64_t totalCycles, bool cpuStopped) {
    }
 
    // When stopped, fill the screen with white
-   if (cpuStopped) {
+   if (cpuStopped)
+   {
       framebuffers.writeBuffer().fill(Color::kWhite);
       framebuffers.flip();
    }
 }
 
-void LCDController::scan(Framebuffer& framebuffer, uint8_t line, const std::array<Pixel, 4>& colors) {
-   if (mem.lcdc & LCDC::kDisplayEnable) {
-      if (mem.lcdc & LCDC::kBGDisplay) {
+void LCDController::scan(Framebuffer& framebuffer, uint8_t line, const std::array<Pixel, 4>& colors)
+{
+   if (mem.lcdc & LCDC::kDisplayEnable)
+   {
+      if (mem.lcdc & LCDC::kBGDisplay)
+      {
          scanBackgroundOrWindow(framebuffer, line, colors, false);
       }
 
-      if (mem.lcdc & LCDC::kWindowDisplayEnable) {
+      if (mem.lcdc & LCDC::kWindowDisplayEnable)
+      {
          scanBackgroundOrWindow(framebuffer, line, colors, true);
       }
 
-      if (mem.lcdc & LCDC::kObjSpriteDisplayEnable) {
+      if (mem.lcdc & LCDC::kObjSpriteDisplayEnable)
+      {
          scanSprites(framebuffer, line);
       }
-   } else {
+   }
+   else
+   {
       size_t lineOffset = line * kScreenWidth;
-      for (size_t x = 0; x < kScreenWidth; ++x) {
+      for (size_t x = 0; x < kScreenWidth; ++x)
+      {
          framebuffer[lineOffset + x] = colors[ColorIndex::kWhite];
       }
    }
 }
 
 void LCDController::scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t line, const std::array<Pixel, 4>& colors,
-                                           bool isWindow) {
+                                           bool isWindow)
+{
    // 32x32 tiles, 8x8 pixels each
    static const uint16_t kTileWidth = 8;
    static const uint16_t kTileHeight = 8;
@@ -252,28 +300,37 @@ void LCDController::scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t lin
    static const uint16_t kWindowXOffset = 7;
 
    uint8_t y = line;
-   if (isWindow && y < mem.wy) {
+   if (isWindow && y < mem.wy)
+   {
       // Haven't reached the window yet
       return;
    }
 
    uint8_t adjustedY;
-   if (isWindow) {
+   if (isWindow)
+   {
       adjustedY = y - mem.wy;
-   } else {
+   }
+   else
+   {
       adjustedY = y + mem.scy;
    }
 
-   for (uint8_t x = 0; x < kScreenWidth; ++x) {
-      if (isWindow && x < mem.wx - kWindowXOffset) {
+   for (uint8_t x = 0; x < kScreenWidth; ++x)
+   {
+      if (isWindow && x < mem.wx - kWindowXOffset)
+      {
          // Haven't reached the window yet
          continue;
       }
 
       uint8_t adjustedX;
-      if (isWindow) {
+      if (isWindow)
+      {
          adjustedX = x - (mem.wx - kWindowXOffset);
-      } else {
+      }
+      else
+      {
          adjustedX = x + mem.scx;
       }
 
@@ -289,19 +346,22 @@ void LCDController::scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t lin
       uint8_t paletteIndex = fetchPaletteIndex(tileNum, row, col, signedTileOffset, false);
 
       framebuffer[x + (kScreenWidth * y)] = colors[paletteIndex];
-      if (!isWindow) {
+      if (!isWindow)
+      {
          bgPaletteIndices[x + (kScreenWidth * y)] = paletteIndex;
       }
    }
 }
 
-void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line) {
+void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line)
+{
    static const uint16_t kSpriteWidth = 8;
    static const uint16_t kShortSpriteHeight = 8;
    static const uint16_t kTallSpriteHeight = 16;
    static const uint16_t kNumSprites = 40;
 
-   struct SpriteAttributes {
+   struct SpriteAttributes
+   {
       uint8_t yPos;
       uint8_t xPos;
       uint8_t tileNum;
@@ -311,13 +371,15 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line) {
    uint8_t y = line;
    uint8_t spriteHeight = (mem.lcdc & LCDC::kObjSpriteSize) ? kTallSpriteHeight : kShortSpriteHeight;
 
-   for (int8_t sprite = kNumSprites - 1; sprite >= 0; --sprite) {
+   for (int8_t sprite = kNumSprites - 1; sprite >= 0; --sprite)
+   {
       SpriteAttributes attributes;
       memcpy(&attributes, &mem.sat[sprite * sizeof(SpriteAttributes)], sizeof(SpriteAttributes));
 
       int16_t spriteY = attributes.yPos - kTallSpriteHeight;
       if (spriteY > y || spriteY + spriteHeight <= y
-         || attributes.xPos == 0 || attributes.xPos >= kScreenWidth + kSpriteWidth) {
+         || attributes.xPos == 0 || attributes.xPos >= kScreenWidth + kSpriteWidth)
+      {
          continue;
       }
 
@@ -325,14 +387,17 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line) {
       std::array<Pixel, 4> colors = extractPaletteColors(useObp1 ? mem.obp1 : mem.obp0);
 
       uint8_t row = y - spriteY;
-      if (attributes.flags & Attrib::kYFlip) {
+      if (attributes.flags & Attrib::kYFlip)
+      {
          row = (kTallSpriteHeight - 1) - row;
       }
       row %= spriteHeight;
 
-      for (uint8_t col = 0; col < kSpriteWidth; ++col) {
+      for (uint8_t col = 0; col < kSpriteWidth; ++col)
+      {
          int16_t x = attributes.xPos - kSpriteWidth + col;
-         if (x < 0 || x > kScreenWidth) {
+         if (x < 0 || x > kScreenWidth)
+         {
             continue;
          }
 
@@ -343,12 +408,14 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line) {
          bool aboveBackground = paletteIndex != 0;
 
          // If the OBJ-to-BG priority bit is set, the sprite is behind background palette colors 1-3
-         if (attributes.flags & Attrib::kObjToBgPriority) {
+         if (attributes.flags & Attrib::kObjToBgPriority)
+         {
             ASSERT(bgPaletteIndices[x + (kScreenWidth * y)] <= 3);
             aboveBackground = aboveBackground && bgPaletteIndices[x + (kScreenWidth * y)] == 0;
          }
 
-         if (aboveBackground) {
+         if (aboveBackground)
+         {
             framebuffer[x + (kScreenWidth * y)] = colors[paletteIndex];
          }
       }
@@ -356,7 +423,8 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line) {
 }
 
 uint8_t LCDController::fetchPaletteIndex(uint8_t tileNum, uint8_t row, uint8_t col, bool signedTileOffset,
-                                         bool flipX) const {
+                                         bool flipX) const
+{
    static const uint16_t kBytesPerTile = 16;
    static const uint8_t kBytesPerLine = 2;
    static const uint16_t kSignedTileDataAddr = 0x0800;
@@ -364,10 +432,13 @@ uint8_t LCDController::fetchPaletteIndex(uint8_t tileNum, uint8_t row, uint8_t c
 
    uint16_t tileDataBase = signedTileOffset ? kSignedTileDataAddr : kUnsignedTileDataAddr;
    uint16_t tileDataTileOffset;
-   if (signedTileOffset) {
+   if (signedTileOffset)
+   {
       // treat the tile number as a signed offset
       tileDataTileOffset = (*reinterpret_cast<int8_t*>(&tileNum) + 128) * kBytesPerTile;
-   } else {
+   }
+   else
+   {
       tileDataTileOffset = tileNum * kBytesPerTile;
    }
    uint8_t tileDataLineOffset = row * kBytesPerLine;
@@ -375,16 +446,19 @@ uint8_t LCDController::fetchPaletteIndex(uint8_t tileNum, uint8_t row, uint8_t c
    uint8_t tileLineSecondByte = mem.vram[tileDataBase + tileDataTileOffset + tileDataLineOffset + 1];
 
    uint8_t bit = col % 8;
-   if (!flipX) {
+   if (!flipX)
+   {
       bit = 7 - bit; // bit 7 is the leftmost pixel, bit 0 is the rightmost pixel
    }
    uint8_t mask = 1 << bit;
 
    uint8_t paletteIndex = 0;
-   if (tileLineFirstByte & mask) {
+   if (tileLineFirstByte & mask)
+   {
       paletteIndex += 1;
    }
-   if (tileLineSecondByte & mask) {
+   if (tileLineSecondByte & mask)
+   {
       paletteIndex += 2;
    }
 

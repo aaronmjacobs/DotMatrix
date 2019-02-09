@@ -1,18 +1,17 @@
-#include "Log.h"
+#include "Core/Log.h"
 
 #include "GBC/CPU.h"
-#include "GBC/Device.h"
+#include "GBC/GameBoy.h"
 #include "GBC/Operations.h"
 
-#if GBC_DEBUG
-#  include "Debug.h"
-#endif // GBC_DEBUG
+namespace GBC
+{
 
-namespace GBC {
+namespace
+{
 
-namespace {
-
-bool is16BitOperand(Opr operand) {
+bool is16BitOperand(Opr operand)
+{
    return operand == Opr::kImm8Signed || operand == Opr::kAF || operand == Opr::kBC || operand == Opr::kDE
        || operand == Opr::kHL || operand == Opr::kSP || operand == Opr::kPC || operand == Opr::kImm16
        || operand == Opr::kFlagC || operand == Opr::kFlagNC || operand == Opr::kFlagZ || operand == Opr::kFlagNZ
@@ -20,37 +19,43 @@ bool is16BitOperand(Opr operand) {
        || operand == Opr::k20H || operand == Opr::k28H || operand == Opr::k30H || operand == Opr::k38H;
 }
 
-bool is16BitOperation(Operation operation) {
+bool is16BitOperation(Operation operation)
+{
    return operation.ins == Ins::kRET // Opcode 0xC9 is a RET with no operands
       || operation.ins == Ins::kRETI // RETI (0xD9) also has no operands
       || is16BitOperand(operation.param1) || is16BitOperand(operation.param2);
 }
 
-bool usesImm8(Operation operation) {
+bool usesImm8(Operation operation)
+{
    return operation.param1 == Opr::kImm8 || operation.param2 == Opr::kImm8
       || operation.param1 == Opr::kDrefImm8 || operation.param2 == Opr::kDrefImm8
       || operation.param1 == Opr::kImm8Signed || operation.param2 == Opr::kImm8Signed;
 }
 
-bool usesImm16(Operation operation) {
+bool usesImm16(Operation operation)
+{
    return operation.param1 == Opr::kImm16 || operation.param2 == Opr::kImm16
       || operation.param1 == Opr::kDrefImm16 || operation.param2 == Opr::kDrefImm16;
 }
 
 // Interpret a uint8_t as an int8_t
 // static_cast<int8_t> behavior is platform dependent, memcpy is not
-int8_t toSigned(uint8_t value) {
+int8_t toSigned(uint8_t value)
+{
    int8_t signedVal;
    std::memcpy(&signedVal, &value, sizeof(signedVal));
    return signedVal;
 }
 
-constexpr bool checkBitOperand(Opr operand, uint8_t value) {
+constexpr bool checkBitOperand(Opr operand, uint8_t value)
+{
    return static_cast<uint8_t>(operand) - value == static_cast<uint8_t>(Opr::k0);
 }
 
 // Determine the BIT value from the operand
-uint8_t bitOprMask(Opr operand) {
+uint8_t bitOprMask(Opr operand)
+{
    STATIC_ASSERT(checkBitOperand(Opr::k1, 1) && checkBitOperand(Opr::k2, 2) && checkBitOperand(Opr::k3, 3)
               && checkBitOperand(Opr::k4, 4) && checkBitOperand(Opr::k5, 5) && checkBitOperand(Opr::k6, 6)
               && checkBitOperand(Opr::k7, 7), "Number operands are in an incorrect order");
@@ -61,8 +66,10 @@ uint8_t bitOprMask(Opr operand) {
 }
 
 // Calculate the restart offset from the operand
-uint8_t rstOffset(Opr operand) {
-   switch (operand) {
+uint8_t rstOffset(Opr operand)
+{
+   switch (operand)
+   {
       case Opr::k00H:
          return 0x00;
       case Opr::k08H:
@@ -86,8 +93,10 @@ uint8_t rstOffset(Opr operand) {
 }
 
 // Evaluate whether a jump / call / return should be executed
-bool evalJumpCondition(Opr operand, bool zero, bool carry) {
-   switch (operand) {
+bool evalJumpCondition(Opr operand, bool zero, bool carry)
+{
+   switch (operand)
+   {
       case Opr::kFlagC:
          return carry;
       case Opr::kFlagNC:
@@ -104,10 +113,16 @@ bool evalJumpCondition(Opr operand, bool zero, bool carry) {
 
 } // namespace
 
-class CPU::Operand {
+class CPU::Operand
+{
 public:
    Operand(CPU::Registers& registers, Memory& memory, Opr op, uint8_t immediate8, uint16_t immediate16)
-      : reg(registers), mem(memory), opr(op), imm8(immediate8), imm16(immediate16) {
+      : reg(registers)
+      , mem(memory)
+      , opr(op)
+      , imm8(immediate8)
+      , imm16(immediate16)
+   {
    }
 
    uint8_t read8() const;
@@ -125,10 +140,12 @@ private:
    uint16_t imm16;
 };
 
-uint8_t CPU::Operand::read8() const {
+uint8_t CPU::Operand::read8() const
+{
    uint8_t value = Memory::kInvalidAddressByte;
 
-   switch (opr) {
+   switch (opr)
+   {
       case Opr::kNone:
       case Opr::kCB:
       case Opr::k0:
@@ -193,10 +210,12 @@ uint8_t CPU::Operand::read8() const {
    return value;
 }
 
-uint16_t CPU::Operand::read16() const {
+uint16_t CPU::Operand::read16() const
+{
    uint16_t value = 0xFFFF;
 
-   switch (opr) {
+   switch (opr)
+   {
       case Opr::kNone:
       case Opr::kImm8Signed: // 8 bit signed value used with 16 bit values - needs to be handled as a special case
       case Opr::kFlagC:
@@ -241,8 +260,10 @@ uint16_t CPU::Operand::read16() const {
    return value;
 }
 
-void CPU::Operand::write8(uint8_t value) {
-   switch (opr) {
+void CPU::Operand::write8(uint8_t value)
+{
+   switch (opr)
+   {
       case Opr::kA:
          reg.a = value;
          break;
@@ -290,8 +311,10 @@ void CPU::Operand::write8(uint8_t value) {
    }
 }
 
-void CPU::Operand::write16(uint16_t value) {
-   switch (opr) {
+void CPU::Operand::write16(uint16_t value)
+{
+   switch (opr)
+   {
       case Opr::kAF:
          reg.af = value & 0xFFF0; // Don't allow any bits in the lower nibble
          break;
@@ -319,23 +342,37 @@ void CPU::Operand::write16(uint16_t value) {
    }
 }
 
-CPU::CPU(Device& owningDevice)
-   : reg({}), device(owningDevice), mem(owningDevice.getMemory()), ime(false), halted(false), stopped(false), interruptEnableRequested(false), freezePC(false) {
+CPU::CPU(GameBoy& owningGameBoy)
+   : reg({})
+   , gameBoy(owningGameBoy)
+   , mem(gameBoy.getMemory())
+   , ime(false)
+   , halted(false)
+   , stopped(false)
+   , interruptEnableRequested(false)
+   , freezePC(false)
+{
 }
 
-void CPU::tick() {
-   if (halted) {
-      if (hasInterrupt()) {
+void CPU::tick()
+{
+   if (halted)
+   {
+      if (hasInterrupt())
+      {
          halted = false;
-      } else {
-         device.machineCycle();
+      }
+      else
+      {
+         gameBoy.machineCycle();
          return;
       }
    }
 
    Operation operation = fetch();
 
-   if (interruptEnableRequested) {
+   if (interruptEnableRequested)
+   {
       ime = true;
       interruptEnableRequested = false;
    }
@@ -343,43 +380,58 @@ void CPU::tick() {
    execute(operation);
 }
 
-void CPU::push(uint16_t value) {
+void CPU::push(uint16_t value)
+{
    reg.sp -= 2;
    mem.write(reg.sp + 1, (value & 0xFF00) >> 8);
    mem.write(reg.sp, value & 0x00FF);
 }
 
-uint16_t CPU::pop() {
+uint16_t CPU::pop()
+{
    uint8_t low = mem.read(reg.sp);
    uint8_t high = mem.read(reg.sp + 1);
    reg.sp += 2;
    return (high << 8) | low;
 }
 
-bool CPU::handleInterrupts() {
-   if (!ime && !halted) {
+bool CPU::handleInterrupts()
+{
+   if (!ime && !halted)
+   {
       return false;
    }
 
-   if ((mem.ie & Interrupt::kVBlank) && (mem.ifr & Interrupt::kVBlank)) {
+   if ((mem.ie & Interrupt::kVBlank) && (mem.ifr & Interrupt::kVBlank))
+   {
       return handleInterrupt(Interrupt::kVBlank);
-   } else if ((mem.ie & Interrupt::kLCDState) && (mem.ifr & Interrupt::kLCDState)) {
+   }
+   else if ((mem.ie & Interrupt::kLCDState) && (mem.ifr & Interrupt::kLCDState))
+   {
       return handleInterrupt(Interrupt::kLCDState);
-   } else if ((mem.ie & Interrupt::kTimer) && (mem.ifr & Interrupt::kTimer)) {
+   }
+   else if ((mem.ie & Interrupt::kTimer) && (mem.ifr & Interrupt::kTimer))
+   {
       return handleInterrupt(Interrupt::kTimer);
-   } else if ((mem.ie & Interrupt::kSerial) && (mem.ifr & Interrupt::kSerial)) {
+   }
+   else if ((mem.ie & Interrupt::kSerial) && (mem.ifr & Interrupt::kSerial))
+   {
       return handleInterrupt(Interrupt::kSerial);
-   } else if ((mem.ie & Interrupt::kJoypad) && (mem.ifr & Interrupt::kJoypad)) {
+   }
+   else if ((mem.ie & Interrupt::kJoypad) && (mem.ifr & Interrupt::kJoypad))
+   {
       return handleInterrupt(Interrupt::kJoypad);
    }
 
    return false;
 }
 
-bool CPU::handleInterrupt(Interrupt::Enum interrupt) {
+bool CPU::handleInterrupt(Interrupt::Enum interrupt)
+{
    ASSERT((ime || halted) && (mem.ie & interrupt) && (mem.ifr & interrupt));
 
-   if (halted && !ime) {
+   if (halted && !ime)
+   {
       // The HALT state is left when an enabled interrupt occurs, no matter if the IME is enabled or not.
       // However, if IME is disabled the interrupt is not serviced.
       halted = false;
@@ -392,14 +444,15 @@ bool CPU::handleInterrupt(Interrupt::Enum interrupt) {
    halted = false;
 
    // two wait states
-   device.machineCycle();
-   device.machineCycle();
+   gameBoy.machineCycle();
+   gameBoy.machineCycle();
 
    // PC is pushed onto the stack
    push(reg.pc);
 
    // PC is set to the interrupt handler
-   switch (interrupt) {
+   switch (interrupt)
+   {
       case Interrupt::kVBlank:
          reg.pc = 0x0040;
          break;
@@ -417,29 +470,35 @@ bool CPU::handleInterrupt(Interrupt::Enum interrupt) {
          break;
    }
 
-   device.machineCycle(); // TODO Correct? https://github.com/Gekkio/mooneye-gb/blob/master/docs/accuracy.markdown suggests it should be grouped with the other 2 above
+   gameBoy.machineCycle(); // TODO Correct? https://github.com/Gekkio/mooneye-gb/blob/master/docs/accuracy.markdown suggests it should be grouped with the other 2 above
 
    return true;
 }
 
-GBC::Operation CPU::fetch() {
+GBC::Operation CPU::fetch()
+{
    uint8_t opcode = mem.read(reg.pc);
 
    bool handledInterrupt = handleInterrupts();
-   if (handledInterrupt) {
+   if (handledInterrupt)
+   {
       opcode = mem.read(reg.pc);
    }
 
-   if (freezePC) {
+   if (freezePC)
+   {
       freezePC = false;
-   } else {
+   }
+   else
+   {
       ++reg.pc;
    }
 
    Operation operation = kOperations[opcode];
 
    // Handle PREFIX CB
-   if (operation.ins == Ins::kPREFIX) {
+   if (operation.ins == Ins::kPREFIX)
+   {
       opcode = readPC();
       operation = kCBOperations[opcode];
    }
@@ -447,12 +506,14 @@ GBC::Operation CPU::fetch() {
    return operation;
 }
 
-void CPU::execute(Operation operation) {
+void CPU::execute(Operation operation)
+{
    static const uint16_t kHalfCaryMask = 0x0010;
    static const uint16_t kCaryMask = 0x0100;
 
    // Check if the operation deals with 16-bit values
-   if (is16BitOperation(operation)) {
+   if (is16BitOperation(operation))
+   {
       execute16(operation);
       return;
    }
@@ -460,16 +521,20 @@ void CPU::execute(Operation operation) {
    // Prepare immediate values if necessary
    uint8_t imm8 = 0;
    uint16_t imm16 = 0;
-   if (usesImm8(operation)) {
+   if (usesImm8(operation))
+   {
       imm8 = readPC();
-   } else if (usesImm16(operation)) {
+   }
+   else if (usesImm16(operation))
+   {
       imm16 = readPC16();
    }
 
    Operand param1(reg, mem, operation.param1, imm8, imm16);
    Operand param2(reg, mem, operation.param2, imm8, imm16);
 
-   switch (operation.ins) {
+   switch (operation.ins)
+   {
       // Loads
       case Ins::kLD:
       {
@@ -665,20 +730,27 @@ void CPU::execute(Operation operation) {
 
          uint16_t temp = reg.a;
 
-         if (!getFlag(kSub)) {
-            if (getFlag(kHalfCarry) || (temp & 0x0F) > 9) {
+         if (!getFlag(kSub))
+         {
+            if (getFlag(kHalfCarry) || (temp & 0x0F) > 9)
+            {
                temp += 0x06;
             }
 
-            if (getFlag(kCarry) || (temp > 0x9F)) {
+            if (getFlag(kCarry) || (temp > 0x9F))
+            {
                temp += 0x60;
             }
-         } else {
-            if (getFlag(kHalfCarry)) {
+         }
+         else
+         {
+            if (getFlag(kHalfCarry))
+            {
                temp = (temp - 6) & 0xFF;
             }
 
-            if (getFlag(kCarry)) {
+            if (getFlag(kCarry))
+            {
                temp -= 0x60;
             }
          }
@@ -730,7 +802,8 @@ void CPU::execute(Operation operation) {
          ASSERT(operation.param1 == Opr::kNone && operation.param2 == Opr::kNone);
 
          halted = true;
-         if (!ime && hasInterrupt()) {
+         if (!ime && hasInterrupt())
+         {
             // HALT bug
             freezePC = true;
          }
@@ -937,37 +1010,46 @@ void CPU::execute(Operation operation) {
    }
 }
 
-void CPU::execute16(Operation operation) {
+void CPU::execute16(Operation operation)
+{
    static const uint32_t kHalfCaryMask = 0x00001000;
    static const uint32_t kCaryMask = 0x00010000;
 
    // Prepare immediate values if necessary
    uint8_t imm8 = 0;
    uint16_t imm16 = 0;
-   if (usesImm8(operation)) {
+   if (usesImm8(operation))
+   {
       imm8 = readPC();
-   } else if (usesImm16(operation)) {
+   }
+   else if (usesImm16(operation))
+   {
       imm16 = readPC16();
    }
 
    Operand param1(reg, mem, operation.param1, imm8, imm16);
    Operand param2(reg, mem, operation.param2, imm8, imm16);
 
-   switch (operation.ins) {
+   switch (operation.ins)
+   {
       // Loads
       case Ins::kLD:
       {
          uint16_t param2Val = param2.read16();
 
-         if (operation.param1 == Opr::kDrefImm16) {
+         if (operation.param1 == Opr::kDrefImm16)
+         {
             ASSERT(operation.param2 == Opr::kSP);
 
             param1.write16(param2Val);
-         } else {
+         }
+         else
+         {
             param1.write16(param2Val);
 
-            if (operation.param2 == Opr::kHL) {
-               device.machineCycle();
+            if (operation.param2 == Opr::kHL)
+            {
+               gameBoy.machineCycle();
             }
          }
          break;
@@ -990,12 +1072,12 @@ void CPU::execute16(Operation operation) {
          setFlag(kHalfCarry, (carryBits & 0x0010) != 0);
          setFlag(kCarry, (carryBits & 0x0100) != 0);
 
-         device.machineCycle();
+         gameBoy.machineCycle();
          break;
       }
       case Ins::kPUSH:
       {
-         device.machineCycle();
+         gameBoy.machineCycle();
          push(param1.read16());
          break;
       }
@@ -1010,7 +1092,8 @@ void CPU::execute16(Operation operation) {
       {
          ASSERT(operation.param1 == Opr::kHL || operation.param1 == Opr::kSP);
 
-         if (operation.param1 == Opr::kHL) {
+         if (operation.param1 == Opr::kHL)
+         {
             uint16_t param1Val = param1.read16();
             uint16_t param2Val = param2.read16();
             uint32_t result = param1Val + param2Val;
@@ -1022,8 +1105,10 @@ void CPU::execute16(Operation operation) {
             setFlag(kHalfCarry, (carryBits & kHalfCaryMask) != 0);
             setFlag(kCarry, (carryBits & kCaryMask) != 0);
 
-            device.machineCycle();
-         } else {
+            gameBoy.machineCycle();
+         }
+         else
+         {
             ASSERT(operation.param2 == Opr::kImm8Signed);
 
             // Special case - uses one byte signed immediate value
@@ -1040,61 +1125,70 @@ void CPU::execute16(Operation operation) {
             setFlag(kHalfCarry, (carryBits & 0x0010) != 0);
             setFlag(kCarry, (carryBits & 0x0100) != 0);
 
-            device.machineCycle();
-            device.machineCycle();
+            gameBoy.machineCycle();
+            gameBoy.machineCycle();
          }
          break;
       }
       case Ins::kINC:
       {
          param1.write16(param1.read16() + 1);
-         device.machineCycle();
+         gameBoy.machineCycle();
          break;
       }
       case Ins::kDEC:
       {
          param1.write16(param1.read16() - 1);
-         device.machineCycle();
+         gameBoy.machineCycle();
          break;
       }
 
       // Jumps
       case Ins::kJP:
       {
-         if (operation.param2 == Opr::kNone) {
+         if (operation.param2 == Opr::kNone)
+         {
             ASSERT(operation.param1 == Opr::kImm16 || operation.param1 == Opr::kHL);
 
             reg.pc = param1.read16();
-            if (operation.param1 == Opr::kImm16) {
-               device.machineCycle();
+            if (operation.param1 == Opr::kImm16)
+            {
+               gameBoy.machineCycle();
             }
-         } else {
-            if (evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry))) {
+         }
+         else
+         {
+            if (evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry)))
+            {
                reg.pc = param2.read16();
-               device.machineCycle();
+               gameBoy.machineCycle();
             }
          }
          break;
       }
       case Ins::kJR:
       {
-         if (operation.param2 == Opr::kNone) {
+         if (operation.param2 == Opr::kNone)
+         {
             ASSERT(operation.param1 == Opr::kImm8Signed);
 
             // Special case - uses one byte signed immediate value
             int8_t n = toSigned(param1.read8());
 
             reg.pc += n;
-            device.machineCycle();
-         } else {
+            gameBoy.machineCycle();
+         }
+         else
+         {
             ASSERT(operation.param2 == Opr::kImm8Signed);
 
             // Special case - uses one byte signed immediate value
             int8_t n = toSigned(param2.read8());
 
-            if (evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry))) {
+            if (evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry)))
+            {
                reg.pc += n;
-               device.machineCycle();
+               gameBoy.machineCycle();
             }
          }
          break;
@@ -1103,14 +1197,18 @@ void CPU::execute16(Operation operation) {
       // Calls
       case Ins::kCALL:
       {
-         if (operation.param2 == Opr::kNone) {
-            device.machineCycle();
+         if (operation.param2 == Opr::kNone)
+         {
+            gameBoy.machineCycle();
             push(reg.pc);
             reg.pc = param1.read16();
-         } else {
+         }
+         else
+         {
             uint16_t param2Val = param2.read16();
-            if (evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry))) {
-               device.machineCycle();
+            if (evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry)))
+            {
+               gameBoy.machineCycle();
                push(reg.pc);
                reg.pc = param2Val;
             }
@@ -1121,7 +1219,7 @@ void CPU::execute16(Operation operation) {
       // Restarts
       case Ins::kRST:
       {
-         device.machineCycle();
+         gameBoy.machineCycle();
          push(reg.pc);
          reg.pc = 0x0000 + rstOffset(operation.param1);
          break;
@@ -1130,14 +1228,18 @@ void CPU::execute16(Operation operation) {
       // Returns
       case Ins::kRET:
       {
-         if (operation.param1 == Opr::kNone) {
+         if (operation.param1 == Opr::kNone)
+         {
             reg.pc = pop();
-            device.machineCycle();
-         } else {
-            device.machineCycle();
-            if (evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry))) {
+            gameBoy.machineCycle();
+         }
+         else
+         {
+            gameBoy.machineCycle();
+            if (evalJumpCondition(operation.param1, getFlag(kZero), getFlag(kCarry)))
+            {
                reg.pc = pop();
-               device.machineCycle();
+               gameBoy.machineCycle();
             }
          }
          break;

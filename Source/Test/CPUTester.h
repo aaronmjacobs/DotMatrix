@@ -1,25 +1,27 @@
-#ifndef CPUTESTER_H
-#define CPUTESTER_H
+#pragma once
 
 #if GBC_RUN_TESTS
 
 #include <cstdint>
 #include <vector>
 
-namespace GBC {
+namespace GBC
+{
 
-class Device;
+class GameBoy;
 
-using CPUTestSetupFunc = void (*)(Device& initialState, Device& finalState);
+using CPUTestSetupFunc = void (*)(GameBoy& initialState, GameBoy& finalState);
 
-struct CPUTest {
+struct CPUTest
+{
    uint8_t opcode;
    CPUTestSetupFunc testSetupFunction;
 };
 
 using CPUTestGroup = std::vector<CPUTest>;
 
-class CPUTester {
+class CPUTester
+{
 public:
    CPUTester();
 
@@ -28,7 +30,7 @@ public:
 private:
    void runTestGroup(const CPUTestGroup& testGroup, bool randomizeData, uint16_t seed);
 
-   void runTest(Device& device, Device& finalDevice, const CPUTest& test);
+   void runTest(GameBoy& gameBoy, GameBoy& finalGameBoy, const CPUTest& test);
 
    void init();
 
@@ -38,5 +40,3 @@ private:
 } // namespace GBC
 
 #endif // GBC_RUN_TESTS
-
-#endif

@@ -1,14 +1,16 @@
-#ifndef GBC_BOOTSTRAP_H
-#define GBC_BOOTSTRAP_H
+#pragma once
 
 #include <array>
 #include <cstdint>
 
-namespace GBC {
+namespace GBC
+{
 
-namespace {
+namespace
+{
 
-const std::array<uint8_t, 256> kBootstrap = {
+const std::array<uint8_t, 256> kBootstrap =
+{
    0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32,
    0xCB, 0x7C, 0x20, 0xFB, 0x21, 0x26, 0xFF, 0x0E,
    0x11, 0x3E, 0x80, 0x32, 0xE2, 0x0C, 0x3E, 0xF3,
@@ -46,5 +48,3 @@ const std::array<uint8_t, 256> kBootstrap = {
 } // namespace
 
 } // namespace GBC
-
-#endif

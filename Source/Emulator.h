@@ -1,12 +1,12 @@
-#ifndef EMULATOR_H
-#define EMULATOR_H
+#pragma once
 
-#include "Pointers.h"
+#include "Core/Archive.h"
+#include "Core/Pointers.h"
 
-#include "Wrapper/Audio/AudioManager.h"
-#include "Wrapper/Input/ControllerInputDevice.h"
-#include "Wrapper/Input/KeyboardInputDevice.h"
-#include "Wrapper/Video/Renderer.h"
+#include "Platform/Audio/AudioManager.h"
+#include "Platform/Input/ControllerInputDevice.h"
+#include "Platform/Input/KeyboardInputDevice.h"
+#include "Platform/Video/Renderer.h"
 
 #include "readerwriterqueue.h"
 
@@ -15,25 +15,29 @@
 #include <mutex>
 #include <thread>
 
-namespace GBC {
-class Device;
+namespace GBC
+{
+class GameBoy;
 } // namespace GBC
 
 struct GLFWwindow;
 
-struct SaveData {
-   IOUtils::Archive archive;
+struct SaveData
+{
+   Archive archive;
    std::string gameTitle;
 };
 
-struct Bounds {
+struct Bounds
+{
    int x = 0;
    int y = 0;
    int width = 0;
    int height = 0;
 };
 
-class Emulator {
+class Emulator
+{
 public:
    Emulator()
       : window(nullptr)
@@ -60,7 +64,8 @@ public:
    void onWindowRefreshRequested();
 
 #if GBC_DEBUG
-   double getTimeModifier() const {
+   double getTimeModifier() const
+   {
       return timeModifier;
    }
 #endif // GBC_DEBUG
@@ -72,7 +77,7 @@ private:
    void saveThreadMain();
 
    GLFWwindow* window;
-   UPtr<GBC::Device> device;
+   UPtr<GBC::GameBoy> gameBoy;
    UPtr<Renderer> renderer;
    AudioManager audioManager;
 
@@ -93,5 +98,3 @@ private:
    double timeModifier;
 #endif // GBC_DEBUG
 };
-
-#endif

@@ -1,27 +1,24 @@
-#include "FancyAssert.h"
-#include "Log.h"
+#include "Core/Assert.h"
+#include "Core/Log.h"
 
 #include "GBC/Cartridge.h"
 #include "GBC/Memory.h"
 
-#include "Wrapper/Platform/IOUtils.h"
-#include "Wrapper/Platform/OSUtils.h"
-
-#if GBC_DEBUG
-#  include "Debug.h"
-#endif // GBC_DEBUG
-
 #include <cstring>
+#include <ctime>
 #include <memory>
 
-namespace GBC {
+namespace GBC
+{
 
-namespace {
+namespace
+{
 
 const uint16_t kHeaderOffset = 0x0100;
 const uint16_t kHeaderSize = 0x0050;
 
-Cartridge::Header parseHeader(const std::vector<uint8_t>& data) {
+Cartridge::Header parseHeader(const std::vector<uint8_t>& data)
+{
    STATIC_ASSERT(sizeof(Cartridge::Header) == kHeaderSize);
    ASSERT(data.size() >= kHeaderOffset + kHeaderSize);
 
@@ -31,26 +28,30 @@ Cartridge::Header parseHeader(const std::vector<uint8_t>& data) {
    return header;
 }
 
-bool performHeaderChecksum(const Cartridge::Header& header, const std::vector<uint8_t>& data) {
+bool performHeaderChecksum(const Cartridge::Header& header, const std::vector<uint8_t>& data)
+{
    // Complement check, program will not run if incorrect
    // x=0:FOR i=0134h TO 014Ch:x=x-MEM[i]-1:NEXT
    const uint8_t* mem = data.data();
 
    uint8_t x = 0;
-   for (uint16_t i = 0x0134; i <= 0x014C; ++i) {
+   for (uint16_t i = 0x0134; i <= 0x014C; ++i)
+   {
       x = x - mem[i] - 1;
    }
 
    return x == header.headerChecksum;
 }
 
-bool performGlobalChecksum(const Cartridge::Header& header, const std::vector<uint8_t>& data) {
+bool performGlobalChecksum(const Cartridge::Header& header, const std::vector<uint8_t>& data)
+{
    // Checksum (higher byte first) produced by adding all bytes of a cartridge except for two checksum bytes and taking
    // two lower bytes of the result. (GameBoy ignores this value.)
    const uint8_t* mem = data.data();
 
    uint16_t x = 0;
-   for (size_t i = 0; i < data.size(); ++i) {
+   for (size_t i = 0; i < data.size(); ++i)
+   {
       x += mem[i];
    }
 
@@ -63,8 +64,10 @@ bool performGlobalChecksum(const Cartridge::Header& header, const std::vector<ui
    return header.globalChecksum[0] == high && header.globalChecksum[1] == low;
 }
 
-bool cartHasRAM(Cartridge::CartridgeType type) {
-   switch (type) {
+bool cartHasRAM(Cartridge::CartridgeType type)
+{
+   switch (type)
+   {
       case Cartridge::kMBC1PlusRAM:
       case Cartridge::kMBC1PlusRAMPlusBattery:
       case Cartridge::kMBC2:
@@ -90,8 +93,10 @@ bool cartHasRAM(Cartridge::CartridgeType type) {
    }
 }
 
-bool cartHasBattery(Cartridge::CartridgeType type) {
-   switch (type) {
+bool cartHasBattery(Cartridge::CartridgeType type)
+{
+   switch (type)
+   {
       case Cartridge::kMBC1PlusRAMPlusBattery:
       case Cartridge::kMBC2PlusBattery:
       case Cartridge::kROMPlusRAMPlusBattery:
@@ -110,8 +115,10 @@ bool cartHasBattery(Cartridge::CartridgeType type) {
    }
 }
 
-bool cartHasTimer(Cartridge::CartridgeType type) {
-   switch (type) {
+bool cartHasTimer(Cartridge::CartridgeType type)
+{
+   switch (type)
+   {
       case Cartridge::kMBC3PlusTimerPlusBattery:
       case Cartridge::kMBC3PlusTimerPlusRAMPlusBattery:
          return true;
@@ -120,8 +127,10 @@ bool cartHasTimer(Cartridge::CartridgeType type) {
    }
 }
 
-bool cartHasRumble(Cartridge::CartridgeType type) {
-   switch (type) {
+bool cartHasRumble(Cartridge::CartridgeType type)
+{
+   switch (type)
+   {
       case Cartridge::kMBC5PlusRumble:
       case Cartridge::kMBC5PlusRumblePlusRAM:
       case Cartridge::kMBC5PlusRumblePlusRAMPlusBattery:
@@ -132,40 +141,60 @@ bool cartHasRumble(Cartridge::CartridgeType type) {
    }
 }
 
+int64_t getPlatformTime()
+{
+   static_assert(sizeof(std::time_t) <= sizeof(int64_t), "std::time_t will not fit in an int64_t");
+
+   return static_cast<int64_t>(std::time(nullptr));
+}
+
 } // namespace
 
-class ROMOnly : public MemoryBankController {
+class ROMOnly : public MemoryBankController
+{
 public:
    ROMOnly(const Cartridge& cartridge)
-      : MemoryBankController(cartridge) {
+      : MemoryBankController(cartridge)
+   {
    }
 
-   uint8_t read(uint16_t address) const override {
-      if (address < 0x8000) {
+   uint8_t read(uint16_t address) const override
+   {
+      if (address < 0x8000)
+      {
          return cart.data(address);
       }
 
-      LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
+      LOG_WARNING("Trying to read invalid cartridge location: " << Log::hex(address));
       return Memory::kInvalidAddressByte;
    }
 
-   void write(uint16_t address, uint8_t value) override {
+   void write(uint16_t address, uint8_t value) override
+   {
       // No writable memory
-      LOG_WARNING("Trying to write to read-only cartridge at location " << hex(address) << ": " << hex(value));
+      LOG_WARNING("Trying to write to read-only cartridge at location " << Log::hex(address) << ": " << Log::hex(value));
    }
 };
 
-class MBC1 : public MemoryBankController {
+class MBC1 : public MemoryBankController
+{
 public:
    MBC1(const Cartridge& cartridge)
-      : MemoryBankController(cartridge), ramEnabled(false), romBankNumber(0x01), ramBankNumber(0x00),
-        bankingMode(kROMBankingMode), ramBanks({}) {
+      : MemoryBankController(cartridge)
+      , ramEnabled(false)
+      , romBankNumber(0x01)
+      , ramBankNumber(0x00)
+      ,  bankingMode(kROMBankingMode)
+      , ramBanks({})
+   {
    }
 
-   uint8_t read(uint16_t address) const override {
+   uint8_t read(uint16_t address) const override
+   {
       uint8_t value = Memory::kInvalidAddressByte;
 
-      switch (address & 0xF000) {
+      switch (address & 0xF000)
+      {
          case 0x0000:
          case 0x1000:
          case 0x2000:
@@ -191,17 +220,20 @@ public:
             ASSERT(cart.hasRAM(), "Trying to read from MBC1 cartridge RAM when it doesn't have any!");
 
             // Switchable RAM bank
-            if (ramEnabled) {
+            if (ramEnabled)
+            {
                uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
                value = ramBanks[ramBank][address - 0xA000];
-            } else {
+            }
+            else
+            {
                LOG_WARNING("Trying to read from RAM when not enabled");
             }
             break;
          }
          default:
          {
-            LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
+            LOG_WARNING("Trying to read invalid cartridge location: " << Log::hex(address));
             break;
          }
       }
@@ -209,8 +241,10 @@ public:
       return value;
    }
 
-   void write(uint16_t address, uint8_t value) override {
-      switch (address & 0xF000) {
+   void write(uint16_t address, uint8_t value) override
+   {
+      switch (address & 0xF000)
+      {
          case 0x0000:
          case 0x1000:
          {
@@ -223,7 +257,8 @@ public:
          {
             // ROM bank number
             romBankNumber = value & 0x1F;
-            if (romBankNumber == 0x00 || romBankNumber == 0x20 || romBankNumber == 0x40 || romBankNumber == 0x60) {
+            if (romBankNumber == 0x00 || romBankNumber == 0x20 || romBankNumber == 0x40 || romBankNumber == 0x60)
+            {
                // Handle banks 0x00, 0x20, 0x40, 0x60
                romBankNumber += 0x01;
             }
@@ -234,7 +269,8 @@ public:
          {
             // RAM bank number or upper bits of ROM bank number
             uint8_t bankNumber = value & 0x03;
-            switch (bankingMode) {
+            switch (bankingMode)
+            {
                case kROMBankingMode:
                   romBankNumber = (romBankNumber & 0x1F) | (bankNumber << 5);
                   break;
@@ -259,36 +295,44 @@ public:
             ASSERT(cart.hasRAM(), "Trying to write to MBC1 cartridge RAM when it doesn't have any!");
 
             // Switchable RAM bank
-            if (ramEnabled) {
+            if (ramEnabled)
+            {
                uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
                ramBanks[ramBank][address - 0xA000] = value;
                wroteToRam = true;
-            } else {
-               LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(value));
+            }
+            else
+            {
+               LOG_WARNING("Trying to write to disabled RAM " << Log::hex(address) << ": " << Log::hex(value));
             }
             break;
          }
          default:
          {
-            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(value));
+            LOG_WARNING("Trying to write to read-only cartridge location " << Log::hex(address) << ": " << Log::hex(value));
             break;
          }
       };
    }
 
-   IOUtils::Archive saveRAM() const override {
-      IOUtils::Archive ramData;
+   Archive saveRAM() const override
+   {
+      Archive ramData;
 
-      for (const auto& bank : ramBanks) {
+      for (const auto& bank : ramBanks)
+      {
          ramData.write(bank);
       }
 
       return ramData;
    }
 
-   bool loadRAM(IOUtils::Archive& ramData) override {
-      for (auto& bank : ramBanks) {
-         if (!ramData.read(bank)) {
+   bool loadRAM(Archive& ramData) override
+   {
+      for (auto& bank : ramBanks)
+      {
+         if (!ramData.read(bank))
+         {
             return false;
          }
       }
@@ -297,7 +341,8 @@ public:
    }
 
 private:
-   enum BankingMode : uint8_t {
+   enum BankingMode : uint8_t
+   {
       kROMBankingMode = 0x00,
       kRAMBankingMode = 0x01
    };
@@ -310,17 +355,23 @@ private:
    std::array<std::array<uint8_t, 0x2000>, 4> ramBanks;
 };
 
-class MBC2 : public MemoryBankController {
+class MBC2 : public MemoryBankController
+{
 public:
    MBC2(const Cartridge& cartridge)
-      : MemoryBankController(cartridge), ramEnabled(false), romBankNumber(0x01) {
+      : MemoryBankController(cartridge)
+      , ramEnabled(false)
+      , romBankNumber(0x01)
+   {
       ram.fill(0xFF);
    }
 
-   uint8_t read(uint16_t address) const override {
+   uint8_t read(uint16_t address) const override
+   {
       uint8_t value = Memory::kInvalidAddressByte;
 
-      switch (address & 0xF000) {
+      switch (address & 0xF000)
+      {
          case 0x0000:
          case 0x1000:
          case 0x2000:
@@ -342,21 +393,25 @@ public:
          }
          case 0xA000:
          {
-            if (address > 0xA1FF) {
+            if (address > 0xA1FF)
+            {
                break;
             }
 
             // Switchable RAM bank
-            if (ramEnabled) {
+            if (ramEnabled)
+            {
                value = ram[address - 0xA000];
-            } else {
+            }
+            else
+            {
                LOG_WARNING("Trying to read from RAM when not enabled");
             }
             break;
          }
          default:
          {
-            LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
+            LOG_WARNING("Trying to read invalid cartridge location: " << Log::hex(address));
             break;
          }
       }
@@ -364,14 +419,17 @@ public:
       return value;
    }
 
-   void write(uint16_t address, uint8_t value) override {
-      switch (address & 0xF000) {
+   void write(uint16_t address, uint8_t value) override
+   {
+      switch (address & 0xF000)
+      {
          case 0x0000:
          case 0x1000:
          {
             // RAM enable
             // The least significant bit of the upper address byte must be zero to enable/disable cart RAM
-            if ((address & 0x0100) == 0x0000) {
+            if ((address & 0x0100) == 0x0000)
+            {
                ramEnabled = (value & 0x0A) != 0x00;
             }
             break;
@@ -381,7 +439,8 @@ public:
          {
             // ROM bank number
             // The least significant bit of the upper address byte must be one to select a ROM bank
-            if ((address & 0x0100) != 0x0000) {
+            if ((address & 0x0100) != 0x0000)
+            {
                romBankNumber = value & 0x0F;
             }
             break;
@@ -391,37 +450,43 @@ public:
             ASSERT(cart.hasRAM(), "Trying to write to MBC2 cartridge RAM when it doesn't have any!");
             ASSERT(false);
 
-            if (address > 0xA1FF) {
+            if (address > 0xA1FF)
+            {
                break;
             }
 
             // Switchable RAM bank
-            if (ramEnabled) {
+            if (ramEnabled)
+            {
                // only the lower 4 bits of the "bytes" in this memory area are used
                ram[address - 0xA000] = 0xF0 | (value & 0x0F);
                wroteToRam = true;
-            } else {
-               LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(value));
+            }
+            else
+            {
+               LOG_WARNING("Trying to write to disabled RAM " << Log::hex(address) << ": " << Log::hex(value));
             }
             break;
          }
          default:
          {
-            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(value));
+            LOG_WARNING("Trying to write to read-only cartridge location " << Log::hex(address) << ": " << Log::hex(value));
             break;
          }
       };
    }
 
-   IOUtils::Archive saveRAM() const override {
-      IOUtils::Archive ramData;
+   Archive saveRAM() const override
+   {
+      Archive ramData;
 
       ramData.write(ram);
 
       return ramData;
    }
 
-   bool loadRAM(IOUtils::Archive& ramData) override {
+   bool loadRAM(Archive& ramData) override
+   {
       return ramData.read(ram);
    }
 
@@ -432,18 +497,30 @@ private:
    std::array<uint8_t, 0x0200> ram;
 };
 
-class MBC3 : public MemoryBankController {
+class MBC3 : public MemoryBankController
+{
 public:
    MBC3(const Cartridge& cartridge)
-      : MemoryBankController(cartridge), ramRTCEnabled(false), rtcLatched(false), latchData(0xFF), romBankNumber(0x01),
-        bankRegisterMode(kBankZero), rtc({}), rtcLatchedCopy({}), tickTime(0.0), ramBanks({}) {
+      : MemoryBankController(cartridge)
+      , ramRTCEnabled(false)
+      , rtcLatched(false)
+      , latchData(0xFF)
+      , romBankNumber(0x01)
+      , bankRegisterMode(kBankZero)
+      , rtc({})
+      , rtcLatchedCopy({})
+      , tickTime(0.0)
+      , ramBanks({})
+   {
       STATIC_ASSERT(sizeof(RTC) == 5, "Invalid RTC size (check bitfields)");
    }
 
-   uint8_t read(uint16_t address) const override {
+   uint8_t read(uint16_t address) const override
+   {
       uint8_t value = Memory::kInvalidAddressByte;
 
-      switch (address & 0xF000) {
+      switch (address & 0xF000)
+      {
          case 0x0000:
          case 0x1000:
          case 0x2000:
@@ -471,8 +548,10 @@ public:
             const RTC& readRTC = rtcLatched ? rtcLatchedCopy : rtc;
 
             // Switchable RAM bank / RTC
-            if (ramRTCEnabled) {
-               switch (bankRegisterMode) {
+            if (ramRTCEnabled)
+            {
+               switch (bankRegisterMode)
+               {
                   case kBankZero:
                   case kBankOne:
                   case kBankTwo:
@@ -498,14 +577,16 @@ public:
                      ASSERT(false, "Invalid RAM bank / RTC selection value: %hhu", bankRegisterMode);
                      break;
                }
-            } else {
+            }
+            else
+            {
                LOG_WARNING("Trying to read from RAM / RTC when not enabled");
             }
             break;
          }
          default:
          {
-            LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
+            LOG_WARNING("Trying to read invalid cartridge location: " << Log::hex(address));
             break;
          }
       }
@@ -513,8 +594,10 @@ public:
       return value;
    }
 
-   void write(uint16_t address, uint8_t value) override {
-      switch (address & 0xF000) {
+   void write(uint16_t address, uint8_t value) override
+   {
+      switch (address & 0xF000)
+      {
          case 0x0000:
          case 0x1000:
          {
@@ -527,7 +610,8 @@ public:
          {
             // ROM bank number
             romBankNumber = value & 0x7F;
-            if (romBankNumber == 0x00) {
+            if (romBankNumber == 0x00)
+            {
                // Handle bank 0x00
                romBankNumber += 0x01;
             }
@@ -545,10 +629,12 @@ public:
          case 0x7000:
          {
             // Latch clock data
-            if (latchData == 0x00 && value == 0x01) {
+            if (latchData == 0x00 && value == 0x01)
+            {
                rtcLatched = !rtcLatched;
 
-               if (rtcLatched) {
+               if (rtcLatched)
+               {
                   rtcLatchedCopy = rtc;
                }
             }
@@ -561,8 +647,10 @@ public:
             ASSERT(cart.hasRAM(), "Trying to write to MBC3 cartridge RAM when it doesn't have any!");
 
             // Switchable RAM bank
-            if (ramRTCEnabled) {
-               switch (bankRegisterMode) {
+            if (ramRTCEnabled)
+            {
+               switch (bankRegisterMode)
+               {
                   case kBankZero:
                   case kBankOne:
                   case kBankTwo:
@@ -589,23 +677,27 @@ public:
                      break;
                }
                wroteToRam = true;
-            } else {
-               LOG_WARNING("Trying to write to disabled RAM / RTC " << hex(address) << ": " << hex(value));
+            }
+            else
+            {
+               LOG_WARNING("Trying to write to disabled RAM / RTC " << Log::hex(address) << ": " << Log::hex(value));
             }
             break;
          }
          default:
          {
-            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(value));
+            LOG_WARNING("Trying to write to read-only cartridge location " << Log::hex(address) << ": " << Log::hex(value));
             break;
          }
       };
    }
 
-   void tick(double dt) override {
+   void tick(double dt) override
+   {
       MemoryBankController::tick(dt);
 
-      if (rtc.halt || dt < 0.0) {
+      if (rtc.halt || dt < 0.0)
+      {
          return;
       }
 
@@ -634,37 +726,44 @@ public:
       rtc.daysCarry = daysMsb > 1; // Carry bit set on overflow, stays until the program resets it
    }
 
-   IOUtils::Archive saveRAM() const override {
-      IOUtils::Archive ramData;
+   Archive saveRAM() const override
+   {
+      Archive ramData;
 
-      for (const auto& bank : ramBanks) {
+      for (const auto& bank : ramBanks)
+      {
          ramData.write(bank);
       }
 
       ramData.write(rtc);
-      ramData.write(OSUtils::getTime());
+      ramData.write(getPlatformTime());
 
       return ramData;
    }
 
-   bool loadRAM(IOUtils::Archive& ramData) override {
-      for (auto& bank : ramBanks) {
-         if (!ramData.read(bank)) {
+   bool loadRAM(Archive& ramData) override
+   {
+      for (auto& bank : ramBanks)
+      {
+         if (!ramData.read(bank))
+         {
             return false;
          }
       }
 
-      if (!ramData.read(rtc)) {
+      if (!ramData.read(rtc))
+      {
          return false;
       }
 
       int64_t saveTime = 0;
-      if (!ramData.read(saveTime)) {
+      if (!ramData.read(saveTime))
+      {
          return false;
       }
 
       // Update the RTC with the time between the last save and now
-      int64_t now = OSUtils::getTime();
+      int64_t now = getPlatformTime();
       double timeDiff = static_cast<double>(now - saveTime);
       tick(timeDiff);
 
@@ -672,7 +771,8 @@ public:
    }
 
 private:
-   enum BankRegisterMode : uint8_t {
+   enum BankRegisterMode : uint8_t
+   {
       kBankZero = 0x00,
       kBankOne = 0x01,
       kBankTwo = 0x02,
@@ -685,14 +785,17 @@ private:
    };
 
    // Real time clock
-   struct RTC {
+   struct RTC
+   {
       uint8_t seconds;
       uint8_t minutes;
       uint8_t hours;
       uint8_t daysLow;
-      union {
+      union
+      {
          uint8_t daysHigh;
-         struct {
+         struct
+         {
             uint8_t daysMsb : 1;
             uint8_t pad : 5;
             uint8_t halt : 1;
@@ -713,16 +816,24 @@ private:
    std::array<std::array<uint8_t, 0x2000>, 4> ramBanks;
 };
 
-class MBC5 : public MemoryBankController {
+class MBC5 : public MemoryBankController
+{
 public:
    MBC5(const Cartridge& cartridge)
-      : MemoryBankController(cartridge), ramEnabled(false), romBankNumber(0x0001), ramBankNumber(0x00), ramBanks({}) {
+      : MemoryBankController(cartridge)
+      , ramEnabled(false)
+      , romBankNumber(0x0001)
+      , ramBankNumber(0x00)
+      , ramBanks({})
+   {
    }
 
-   uint8_t read(uint16_t address) const override {
+   uint8_t read(uint16_t address) const override
+   {
       uint8_t value = Memory::kInvalidAddressByte;
 
-      switch (address & 0xF000) {
+      switch (address & 0xF000)
+      {
          case 0x0000:
          case 0x1000:
          case 0x2000:
@@ -748,16 +859,19 @@ public:
             ASSERT(cart.hasRAM(), "Trying to read from MBC5 cartridge RAM when it doesn't have any!");
 
             // Switchable RAM bank
-            if (ramEnabled) {
+            if (ramEnabled)
+            {
                value = ramBanks[ramBankNumber][address - 0xA000];
-            } else {
+            }
+            else
+            {
                LOG_WARNING("Trying to read from RAM when not enabled");
             }
             break;
          }
          default:
          {
-            LOG_WARNING("Trying to read invalid cartridge location: " << hex(address));
+            LOG_WARNING("Trying to read invalid cartridge location: " << Log::hex(address));
             break;
          }
       }
@@ -765,8 +879,10 @@ public:
       return value;
    }
 
-   void write(uint16_t address, uint8_t value) override {
-      switch (address & 0xF000) {
+   void write(uint16_t address, uint8_t value) override
+   {
+      switch (address & 0xF000)
+      {
          case 0x0000:
          case 0x1000:
          {
@@ -799,35 +915,43 @@ public:
             ASSERT(cart.hasRAM(), "Trying to write to MBC5 cartridge RAM when it doesn't have any!");
 
             // Switchable RAM bank
-            if (ramEnabled) {
+            if (ramEnabled)
+            {
                ramBanks[ramBankNumber][address - 0xA000] = value;
                wroteToRam = true;
-            } else {
-               LOG_WARNING("Trying to write to disabled RAM " << hex(address) << ": " << hex(value));
+            }
+            else
+            {
+               LOG_WARNING("Trying to write to disabled RAM " << Log::hex(address) << ": " << Log::hex(value));
             }
             break;
          }
          default:
          {
-            LOG_WARNING("Trying to write to read-only cartridge location " << hex(address) << ": " << hex(value));
+            LOG_WARNING("Trying to write to read-only cartridge location " << Log::hex(address) << ": " << Log::hex(value));
             break;
          }
       };
    }
 
-   IOUtils::Archive saveRAM() const override {
-      IOUtils::Archive ramData;
+   Archive saveRAM() const override
+   {
+      Archive ramData;
 
-      for (const auto& bank : ramBanks) {
+      for (const auto& bank : ramBanks)
+      {
          ramData.write(bank);
       }
 
       return ramData;
    }
 
-   bool loadRAM(IOUtils::Archive& ramData) override {
-      for (auto& bank : ramBanks) {
-         if (!ramData.read(bank)) {
+   bool loadRAM(Archive& ramData) override
+   {
+      for (auto& bank : ramBanks)
+      {
+         if (!ramData.read(bank))
+         {
             return false;
          }
       }
@@ -844,25 +968,30 @@ private:
 };
 
 // static
-UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data) {
-   if (data.size() < kHeaderOffset + kHeaderSize) {
+UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data)
+{
+   if (data.size() < kHeaderOffset + kHeaderSize)
+   {
       LOG_ERROR("Cartridge provided insufficient data");
       return nullptr;
    }
 
    Header header = parseHeader(data);
-   if (!performHeaderChecksum(header, data)) {
+   if (!performHeaderChecksum(header, data))
+   {
       LOG_ERROR("Cartridge data failed header checksum");
       return nullptr;
    }
-   if (!performGlobalChecksum(header, data)) {
+   if (!performGlobalChecksum(header, data))
+   {
       LOG_WARNING("Cartridge data failed global checksum");
    }
 
    UPtr<Cartridge> cart(new Cartridge(std::move(data), header));
 
    UPtr<MemoryBankController> mbc;
-   switch (header.type) {
+   switch (header.type)
+   {
       case kROMOnly:
          LOG_INFO("ROM only");
          mbc = std::make_unique<ROMOnly>(*cart);
@@ -896,7 +1025,7 @@ UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data) {
          mbc = std::make_unique<MBC5>(*cart);
          break;
       default:
-         LOG_ERROR("Invalid cartridge type: " << hex(static_cast<uint8_t>(header.type)));
+         LOG_ERROR("Invalid cartridge type: " << Log::hex(static_cast<uint8_t>(header.type)));
          return nullptr;
    }
 
@@ -905,9 +1034,15 @@ UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data) {
 }
 
 Cartridge::Cartridge(std::vector<uint8_t>&& data, const Header& headerData)
-   : cartData(std::move(data)), header(headerData), cartTitle({}), ramPresent(cartHasRAM(header.type)),
-     batteryPresent(cartHasBattery(header.type)), timerPresent(cartHasTimer(header.type)),
-     rumblePresent(cartHasRumble(header.type)), controller(nullptr) {
+   : cartData(std::move(data))
+   , header(headerData)
+   , cartTitle({})
+   , ramPresent(cartHasRAM(header.type))
+   , batteryPresent(cartHasBattery(header.type))
+   , timerPresent(cartHasTimer(header.type))
+   , rumblePresent(cartHasRumble(header.type))
+   , controller(nullptr)
+{
    // Copy title into separate array to ensure there is a null terminator
    memcpy(cartTitle.data(), header.title.data(), header.title.size());
 }

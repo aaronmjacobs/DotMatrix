@@ -1,35 +1,42 @@
-#ifndef GBC_SOUND_CONTROLLER_H
-#define GBC_SOUND_CONTROLLER_H
+#pragma once
 
 #include "GBC/CPU.h"
 
 #include <cstdint>
 #include <vector>
 
-namespace GBC {
+namespace GBC
+{
 
 class SoundController;
 class SquareWaveChannel;
 
-struct AudioSample {
+struct AudioSample
+{
    int16_t left = 0;
    int16_t right = 0;
 };
 
-class SoundChannel {
+class SoundChannel
+{
 public:
-   SoundChannel() : enabled(true) {
+   SoundChannel()
+      : enabled(true)
+   {
    }
 
-   void trigger() {
+   void trigger()
+   {
       enabled = true;
    }
 
-   void disable() {
+   void disable()
+   {
       enabled = false;
    }
 
-   bool isEnabled() const {
+   bool isEnabled() const
+   {
       return enabled;
    }
 
@@ -38,14 +45,22 @@ private:
 };
 
 template<typename Owner>
-class SoundTimer {
+class SoundTimer
+{
 public:
-   SoundTimer(Owner& owningObject) : owner(owningObject), period(0), counter(0) {
+   SoundTimer(Owner& owningObject)
+      : owner(owningObject)
+      , period(0)
+      , counter(0)
+   {
    }
 
-   void tick(uint32_t cycles) {
-      if (period != 0) {
-         while (cycles >= counter) {
+   void tick(uint32_t cycles)
+   {
+      if (period != 0)
+      {
+         while (cycles >= counter)
+         {
             cycles -= counter;
             owner.clock();
             counter = period;
@@ -55,7 +70,8 @@ public:
       }
    }
 
-   void setPeriod(uint32_t newPeriod) {
+   void setPeriod(uint32_t newPeriod)
+   {
       period = newPeriod;
    }
 
@@ -65,13 +81,20 @@ private:
    uint32_t counter;
 };
 
-class DutyUnit {
+class DutyUnit
+{
 public:
-   DutyUnit() : counter(0), index(0), high(false) {
+   DutyUnit()
+      : counter(0)
+      , index(0)
+      , high(false)
+   {
    }
 
-   void clock() {
-      static const std::array<std::array<bool, 8>, 4> kDutyMasks = {{
+   void clock()
+   {
+      static const std::array<std::array<bool, 8>, 4> kDutyMasks =
+      {{
          { false, false, false, false, false, false, false, true },
          { true, false, false, false, false, false, false, true },
          { true, false, false, false, false, true, true, true },
@@ -82,20 +105,24 @@ public:
       counter = (counter + 1) % 8;
    }
 
-   void reset() {
+   void reset()
+   {
       counter = 0;
    }
 
-   uint8_t readNrx1() const {
+   uint8_t readNrx1() const
+   {
       ASSERT((index & 0xFC) == 0x00);
       return index << 6;
    }
 
-   void writeNrx1(uint8_t value) {
+   void writeNrx1(uint8_t value)
+   {
       index = (value >> 6) & 0x03;
    }
 
-   bool isHigh() const {
+   bool isHigh() const
+   {
       return high;
    }
 
@@ -105,44 +132,60 @@ private:
    bool high;
 };
 
-class LengthUnit {
+class LengthUnit
+{
 public:
-   LengthUnit(SoundChannel& owningSoundChannel, uint16_t maxCounterValue) : owner(owningSoundChannel), maxCounter(maxCounterValue), counter(0), counterLoad(0), enabled(false) {
+   LengthUnit(SoundChannel& owningSoundChannel, uint16_t maxCounterValue)
+      : owner(owningSoundChannel)
+      , maxCounter(maxCounterValue)
+      , counter(0)
+      , counterLoad(0)
+      , enabled(false)
+   {
       ASSERT(maxCounter == 64 || maxCounter == 256);
    }
 
-   void clock() {
-      if (enabled && counter > 0) {
+   void clock()
+   {
+      if (enabled && counter > 0)
+      {
          --counter;
 
-         if (counter == 0) {
+         if (counter == 0)
+         {
             owner.disable();
          }
       }
    }
 
-   void trigger() {
-      if (counter == 0) {
+   void trigger()
+   {
+      if (counter == 0)
+      {
          counter = maxCounter;
       }
    }
 
-   uint8_t readNrx1() const {
+   uint8_t readNrx1() const
+   {
       ASSERT((counterLoad & ~(maxCounter - 1)) == 0x00);
       return counterLoad;
    }
 
-   uint8_t readNrx4() const {
+   uint8_t readNrx4() const
+   {
       return enabled ? 0x40 : 0x00;
    }
 
-   void writeNrx1(uint8_t value) {
+   void writeNrx1(uint8_t value)
+   {
       uint8_t mask = maxCounter - 1;
       counterLoad = value & mask;
       counter = maxCounter - counterLoad;
    }
 
-   void writeNrx4(uint8_t value) {
+   void writeNrx4(uint8_t value)
+   {
       enabled = (value & 0x40) != 0x00;
    }
 
@@ -154,20 +197,30 @@ private:
    bool enabled;
 };
 
-class EnvelopeUnit {
+class EnvelopeUnit
+   {
 public:
-   EnvelopeUnit() : period(0), counter(0), volume(0), volumeLoad(0), addMode(false), enabled(true) {
+   EnvelopeUnit()
+      : period(0)
+      , counter(0)
+      , volume(0)
+      , volumeLoad(0)
+      , addMode(false)
+      , enabled(true)
+   {
    }
 
    void clock();
 
-   void trigger() {
+   void trigger()
+   {
       counter = period == 0 ? 8 : period;
       volume = volumeLoad;
       enabled = true;
    }
 
-   uint8_t readNrx2() const {
+   uint8_t readNrx2() const
+   {
       uint8_t value = 0x00;
 
       ASSERT((volumeLoad & 0xF0) == 0x00);
@@ -181,13 +234,15 @@ public:
       return value;
    }
 
-   void writeNrx2(uint8_t value) {
+   void writeNrx2(uint8_t value)
+   {
       volumeLoad = (value & 0xF0) >> 4;
       addMode = (value & 0x08) != 0x00;
       period = value & 0x07;
    }
 
-   uint8_t getVolume() const {
+   uint8_t getVolume() const
+   {
       return volume;
    }
 
@@ -200,26 +255,37 @@ private:
    bool enabled;
 };
 
-class SweepUnit {
+class SweepUnit
+{
 public:
-   SweepUnit(SquareWaveChannel& owningSquareWaveChannel) : owner(owningSquareWaveChannel), shadowFrequency(0), period(0), counter(0), shift(0), negate(false), enabled(false) {
+   SweepUnit(SquareWaveChannel& owningSquareWaveChannel)
+      : owner(owningSquareWaveChannel)
+      , shadowFrequency(0), period(0)
+      , counter(0)
+      , shift(0)
+      , negate(false)
+      , enabled(false)
+   {
    }
 
    void clock();
 
-   void trigger() {
+   void trigger()
+   {
       // Sweep timer is reloaded
       counter = period == 0 ? 8 : period;
 
       updateEnabledState();
 
-      if (shift != 0) {
+      if (shift != 0)
+      {
          // Frequency calculation and the overflow check are performed immediately
          calculateNewFrequency();
       }
    }
 
-   uint8_t readNrx0() const {
+   uint8_t readNrx0() const
+   {
       uint8_t value = 0x00;
 
       ASSERT((period & 0x08) == 0x00);
@@ -233,18 +299,21 @@ public:
       return value;
    }
 
-   void writeNrx0(uint8_t value) {
+   void writeNrx0(uint8_t value)
+   {
       period = (value >> 4) & 0x07;
       negate = (value & 0x08) != 0x00;
       shift = value & 0x07;
    }
 
-   void setShadowFrequency(uint16_t newShadowFrequency) {
+   void setShadowFrequency(uint16_t newShadowFrequency)
+   {
       ASSERT(newShadowFrequency < 2048);
       shadowFrequency = newShadowFrequency;
    }
 
-   void updateEnabledState() {
+   void updateEnabledState()
+   {
       enabled = period != 0 || shift != 0;
    }
 
@@ -264,49 +333,64 @@ private:
 class WaveUnit {
 public:
    // TODO Wave table initial values different on CGB
-   WaveUnit() : position(0), volumeCode(0), dacPowered(false), waveTable{ 0x84, 0x40, 0x43, 0xAA, 0x2D, 0x78, 0x92, 0x3C, 0x60, 0x59, 0x59, 0xB0, 0x34, 0xB8, 0x2E, 0xDA }  {
+   WaveUnit()
+      : position(0)
+      , volumeCode(0)
+      , dacPowered(false)
+      , waveTable{ 0x84, 0x40, 0x43, 0xAA, 0x2D, 0x78, 0x92, 0x3C, 0x60, 0x59, 0x59, 0xB0, 0x34, 0xB8, 0x2E, 0xDA }
+   {
    }
 
-   void clock() {
+   void clock()
+   {
       position = (position + 1) % 32;
    }
 
-   void trigger() {
+   void trigger()
+   {
       position = 0;
    }
 
-   void reset() {
+   void reset()
+   {
       position = 0;
    }
 
    int8_t getCurrentAudioSample() const;
 
-   bool isDacPowered() const {
+   bool isDacPowered() const
+   {
       return dacPowered;
    }
 
-   uint8_t readNrx0() const {
+   uint8_t readNrx0() const
+   {
       return dacPowered ? 0x80 : 0x00;
    }
 
-   uint8_t readNrx2() const {
+   uint8_t readNrx2() const
+   {
       ASSERT((volumeCode & 0xFC) == 0x00);
       return volumeCode << 5;
    }
 
-   uint8_t readWaveTableValue(uint8_t index) const {
+   uint8_t readWaveTableValue(uint8_t index) const
+   {
       return waveTable[index];
    }
 
-   void writeNrx0(uint8_t value) {
+   void writeNrx0(uint8_t value)
+   {
       dacPowered = (value & 0x80) != 0x00;
    }
 
-   void writeNrx2(uint8_t value) {
+   void writeNrx2(uint8_t value)
+   {
       volumeCode = (value >> 5) & 0x03;
    }
 
-   void writeWaveTableValue(uint8_t index, uint8_t value) {
+   void writeWaveTableValue(uint8_t index, uint8_t value)
+   {
       waveTable[index] = value;
    }
 
@@ -319,16 +403,23 @@ private:
 
 class LFSRUnit {
 public:
-   LFSRUnit() : clockShift(0), widthMode(false), divisorCode(0), lfsr(0xFFFF) {
+   LFSRUnit()
+      : clockShift(0)
+      , widthMode(false)
+      , divisorCode(0)
+      , lfsr(0xFFFF)
+   {
    }
 
    void clock();
 
-   void trigger() {
+   void trigger()
+   {
       lfsr = 0xFFFF;
    }
 
-   uint8_t readNrx3() const {
+   uint8_t readNrx3() const
+   {
       uint8_t value = 0x00;
 
       ASSERT((clockShift & 0xF0) == 0x00);
@@ -342,18 +433,22 @@ public:
       return value;
    }
 
-   void writeNrx3(uint8_t value) {
+   void writeNrx3(uint8_t value)
+   {
       clockShift = (value & 0xF0) >> 4;
       widthMode = (value & 0x08) != 0x00;
       divisorCode = value & 0x07;
    }
 
-   bool isHigh() const {
+   bool isHigh() const
+   {
       return (lfsr & 0x0001) == 0x00;
    }
 
-   uint32_t calcTimerPeriod() const {
-      static const std::array<uint8_t, 8> kDivisorValues = {{
+   uint32_t calcTimerPeriod() const
+   {
+      static const std::array<uint8_t, 8> kDivisorValues =
+      {{
             8, 16, 32, 48, 64, 80, 96, 112
       }};
 
@@ -367,7 +462,8 @@ private:
    uint16_t lfsr;
 };
 
-class SquareWaveChannel : public SoundChannel {
+class SquareWaveChannel : public SoundChannel
+{
 public:
    SquareWaveChannel();
 
@@ -376,27 +472,33 @@ public:
    uint8_t read(uint16_t address) const;
    void write(uint16_t address, uint8_t value);
 
-   void tick(uint32_t cycles) {
+   void tick(uint32_t cycles)
+   {
       timer.tick(cycles);
    }
 
-   void clock() {
+   void clock()
+   {
       dutyUnit.clock();
    }
 
-   void lengthClock() {
+   void lengthClock()
+   {
       lengthUnit.clock();
    }
 
-   void envelopeClock() {
+   void envelopeClock()
+   {
       envelopeUnit.clock();
    }
 
-   void sweepClock() {
+   void sweepClock()
+   {
       sweepUnit.clock();
    }
 
-   void trigger() {
+   void trigger()
+   {
       SoundChannel::trigger();
 
       lengthUnit.trigger();
@@ -404,11 +506,13 @@ public:
       sweepUnit.trigger();
    }
 
-   void resetDutyUnit() {
+   void resetDutyUnit()
+   {
       dutyUnit.reset();
    }
 
-   void setFrequency(uint16_t newFrequency) {
+   void setFrequency(uint16_t newFrequency)
+   {
       frequency = newFrequency;
       timer.setPeriod((2048 - frequency) * 4);
    }
@@ -423,7 +527,8 @@ private:
    SweepUnit sweepUnit;
 };
 
-class WaveChannel : public SoundChannel {
+class WaveChannel : public SoundChannel
+{
 public:
    WaveChannel();
 
@@ -432,31 +537,37 @@ public:
    uint8_t read(uint16_t address) const;
    void write(uint16_t address, uint8_t value);
 
-   void tick(uint32_t cycles) {
+   void tick(uint32_t cycles)
+   {
       timer.tick(cycles);
    }
 
-   void clock() {
+   void clock()
+   {
       waveUnit.clock();
    }
 
-   void lengthClock() {
+   void lengthClock()
+   {
       lengthUnit.clock();
    }
 
-   void trigger() {
+   void trigger()
+   {
       SoundChannel::trigger();
 
       waveUnit.trigger();
       lengthUnit.trigger();
    }
 
-   void resetWaveUnit() {
+   void resetWaveUnit()
+   {
       waveUnit.reset();
    }
 
 private:
-   void setFrequency(uint16_t newFrequency) {
+   void setFrequency(uint16_t newFrequency)
+   {
       frequency = newFrequency;
       timer.setPeriod((2048 - frequency) * 2);
    }
@@ -468,7 +579,8 @@ private:
    LengthUnit lengthUnit;
 };
 
-class NoiseChannel : public SoundChannel {
+class NoiseChannel : public SoundChannel
+{
 public:
    NoiseChannel();
 
@@ -477,23 +589,28 @@ public:
    uint8_t read(uint16_t address) const;
    void write(uint16_t address, uint8_t value);
 
-   void tick(uint32_t cycles) {
+   void tick(uint32_t cycles)
+   {
       timer.tick(cycles);
    }
 
-   void clock() {
+   void clock()
+   {
       lfsrUnit.clock();
    }
 
-   void lengthClock() {
+   void lengthClock()
+   {
       lengthUnit.clock();
    }
 
-   void envelopeClock() {
+   void envelopeClock()
+   {
       envelopeUnit.clock();
    }
 
-   void trigger() {
+   void trigger()
+   {
       SoundChannel::trigger();
 
       lfsrUnit.trigger();
@@ -509,19 +626,26 @@ private:
    EnvelopeUnit envelopeUnit;
 };
 
-class FrameSequencer {
+class FrameSequencer
+   {
 public:
-   FrameSequencer(SoundController& owningSoundController) : timer(*this), owner(owningSoundController), step(0) {
+   FrameSequencer(SoundController& owningSoundController)
+      : timer(*this)
+      , owner(owningSoundController)
+      , step(0)
+   {
       timer.setPeriod(CPU::kClockSpeed / 512);
    }
 
-   void tick(uint32_t cycles) {
+   void tick(uint32_t cycles)
+   {
       timer.tick(cycles);
    }
 
    void clock();
 
-   void reset() {
+   void reset()
+   {
       step = 0;
    }
 
@@ -531,7 +655,8 @@ private:
    uint8_t step;
 };
 
-class Mixer {
+class Mixer
+{
 public:
    Mixer();
 
@@ -560,24 +685,29 @@ private:
    bool noiseRightEnabled;
 };
 
-class SoundController {
+class SoundController
+{
 public:
    static const size_t kSampleRate = 44100;
 
    SoundController();
 
-   void setGenerateAudioData(bool generateAudioData) {
+   void setGenerateAudioData(bool generateAudioData)
+   {
       generateData = generateAudioData;
 
-      if (!generateData) {
+      if (!generateData)
+      {
          cyclesSinceLastSample = 0;
-         for (std::vector<AudioSample>& buffer : buffers) {
+         for (std::vector<AudioSample>& buffer : buffers)
+         {
             buffer.clear();
          }
       }
    }
 
-   const std::vector<AudioSample>& getAudioData() {
+   const std::vector<AudioSample>& getAudioData()
+   {
       activeBufferIndex = !activeBufferIndex;
       buffers[activeBufferIndex].clear();
       return buffers[!activeBufferIndex];
@@ -588,20 +718,23 @@ public:
    uint8_t read(uint16_t address) const;
    void write(uint16_t address, uint8_t value);
 
-   void lengthClock() {
+   void lengthClock()
+   {
       squareWaveChannel1.lengthClock();
       squareWaveChannel2.lengthClock();
       waveChannel.lengthClock();
       noiseChannel.lengthClock();
    }
 
-   void envelopeClock() {
+   void envelopeClock()
+   {
       squareWaveChannel1.envelopeClock();
       squareWaveChannel2.envelopeClock();
       noiseChannel.envelopeClock();
    }
 
-   void sweepClock() {
+   void sweepClock()
+   {
       squareWaveChannel1.sweepClock();
    }
 
@@ -627,5 +760,3 @@ private:
 };
 
 } // namespace GBC
-
-#endif

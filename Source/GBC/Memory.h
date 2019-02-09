@@ -1,14 +1,19 @@
-#ifndef GBC_MEMORY_H
-#define GBC_MEMORY_H
+#pragma once
 
 #include <array>
 #include <cstdint>
 
-namespace GBC {
+namespace GBC
+{
 
-namespace Interrupt {
+class Cartridge;
+class GameBoy;
 
-enum Enum : uint8_t {
+namespace Interrupt
+{
+
+enum Enum : uint8_t
+{
    kVBlank = 1 << 0,
    kLCDState = 1 << 1,
    kTimer = 1 << 2,
@@ -18,37 +23,43 @@ enum Enum : uint8_t {
 
 } // namespace Interrupt
 
-namespace Boot {
+namespace Boot
+{
 
-enum Enum : uint8_t {
+enum Enum : uint8_t
+{
    kBooting = 0,
    kNotBooting = 1
 };
 
-};
+} // namespace Boot
 
-class Memory {
+class Memory
+{
 public:
    template<size_t size>
    using ByteArray = std::array<uint8_t, size>;
 
    static const uint8_t kInvalidAddressByte = 0xFF;
 
-   Memory(class Device& dev);
+   Memory(GameBoy& gb);
 
    void machineCycle();
 
    uint8_t read(uint16_t address) const;
    void write(uint16_t address, uint8_t value);
 
-   void setCartridge(class Cartridge* cartridge) {
+   void setCartridge(Cartridge* cartridge)
+   {
       cart = cartridge;
    }
 
-   union {
+   union
+   {
       ByteArray<0x10000> raw;       // Direct access                 (0x0000-0xFFFF, 64k)
 
-      struct {
+      struct
+      {
          ByteArray<0x4000> romb;    // Permanently-mapped ROM bank   (0x0000-0x3FFF, 16k)
          ByteArray<0x4000> roms;    // Switchable ROM bank           (0x4000-0x7FFF, 16k)
          ByteArray<0x2000> vram;    // Video RAM                     (0x8000-0x9FFF, 8k)
@@ -58,10 +69,12 @@ public:
          ByteArray<0x1E00> ramm;    // Mirror of working ram         (0xE000-0xFDFF, 7680)
          ByteArray<0x0100> sat;     // Sprite attribute table        (0xFE00-0xFEFF, 256)
 
-         union {                    // I/O device mappings           (0xFF00-0xFF7F, 128)
+         union                      // I/O device mappings           (0xFF00-0xFF7F, 128)
+         {
             ByteArray<0x0080> io;   // Direct access                 (0xFF00-0xFF7F, 128)
 
-            struct {
+            struct
+            {
                // General
                uint8_t p1;          // Joy pad / system info         (0xFF00, 1)
                uint8_t sb;          // Serial transfer data          (0xFF01, 1)
@@ -136,12 +149,13 @@ public:
    };
 
 private:
-   bool isSpriteAttributeTableAccessible() const {
+   bool isSpriteAttributeTableAccessible() const
+   {
       return dmaIndex == 0x00;
    }
 
-   class Cartridge* cart;
-   class Device& device;
+   Cartridge* cart;
+   GameBoy& gameBoy;
 
    bool dmaRequested;
    bool dmaInProgress;
@@ -150,5 +164,3 @@ private:
 };
 
 } // namespace GBC
-
-#endif
