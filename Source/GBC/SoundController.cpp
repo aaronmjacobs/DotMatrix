@@ -552,23 +552,21 @@ SoundController::SoundController()
    }
 }
 
-void SoundController::tick(uint64_t cycles)
+void SoundController::machineCycle()
 {
    static const uint64_t kCyclesPerSample = CPU::kClockSpeed / kSampleRate;
    //static_assert(CPU::kClockSpeed % kSampleRate == 0, "Sample rate does not divide evenly into the CPU clock speed!");
 
-   uint32_t cycles32 = static_cast<uint32_t>(cycles);
+   frameSequencer.machineCycle();
 
-   frameSequencer.tick(cycles32);
-
-   squareWaveChannel1.tick(cycles32);
-   squareWaveChannel2.tick(cycles32);
-   waveChannel.tick(cycles32);
-   noiseChannel.tick(cycles32);
+   squareWaveChannel1.machineCycle();
+   squareWaveChannel2.machineCycle();
+   waveChannel.machineCycle();
+   noiseChannel.machineCycle();
 
    if (generateData)
    {
-      cyclesSinceLastSample += cycles;
+      cyclesSinceLastSample += CPU::kClockCyclesPerMachineCycle;
       while (cyclesSinceLastSample >= kCyclesPerSample)
       {
          cyclesSinceLastSample -= kCyclesPerSample;

@@ -124,20 +124,20 @@ void GameBoy::machineCycle()
    {
       if (!ignoreMachineCycles)
       {
-         totalCycles += 4;
+         totalCycles += CPU::kClockCyclesPerMachineCycle;
       }
       return;
    }
 #endif // !GBC_RUN_TESTS
 
-   totalCycles += 4;
+   totalCycles += CPU::kClockCyclesPerMachineCycle;
 
    tickJoypad();
    tickDiv();
    tickTima();
    tickSerial();
    lcdController.tick(totalCycles, cpu.isStopped());
-   soundController.tick(4);
+   soundController.machineCycle();
    memory.machineCycle();
 }
 
@@ -223,7 +223,7 @@ void GameBoy::tickJoypad()
 
 void GameBoy::tickDiv()
 {
-   counter += 4;
+   counter += CPU::kClockCyclesPerMachineCycle;
 
    // DIV is just the upper 8 bits of the internal counter
    memory.div = (counter & 0xFF00) >> 8;
@@ -278,7 +278,7 @@ void GameBoy::tickSerial()
 
    if ((memory.sc & SC::kTransferStartFlag) && (memory.sc & SC::kShiftClock))
    {
-      serialCycles += 4;
+      serialCycles += CPU::kClockCyclesPerMachineCycle;
 
       if (serialCycles >= kCyclesPerSerialByte)
       {

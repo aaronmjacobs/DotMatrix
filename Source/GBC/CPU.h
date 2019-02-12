@@ -157,7 +157,9 @@ struct Operation
 class CPU
 {
 public:
+   static const uint8_t kClockCyclesPerMachineCycle = 4;
    static const uint64_t kClockSpeed = 4194304; // 4.194304 MHz TODO handle GBC / SGB
+   static const uint64_t kMachineSpeed = kClockSpeed / kClockCyclesPerMachineCycle;
 
    CPU(GameBoy& owningGameBoy);
 
@@ -248,9 +250,12 @@ private:
       /*
        * This function is equivalent to the following:
        *
-       * if (value) {
+       * if (value)
+       * {
        *    reg.f |= flag;
-       * } else {
+       * }
+       * else
+       * {
        *    reg.f &= ~flag;
        * }
        *

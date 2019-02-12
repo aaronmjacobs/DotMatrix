@@ -55,8 +55,10 @@ public:
    {
    }
 
-   void tick(uint32_t cycles)
+   void machineCycle()
    {
+      uint32_t cycles = CPU::kClockCyclesPerMachineCycle;
+
       if (period != 0)
       {
          while (cycles >= counter)
@@ -472,9 +474,9 @@ public:
    uint8_t read(uint16_t address) const;
    void write(uint16_t address, uint8_t value);
 
-   void tick(uint32_t cycles)
+   void machineCycle()
    {
-      timer.tick(cycles);
+      timer.machineCycle();
    }
 
    void clock()
@@ -537,9 +539,9 @@ public:
    uint8_t read(uint16_t address) const;
    void write(uint16_t address, uint8_t value);
 
-   void tick(uint32_t cycles)
+   void machineCycle()
    {
-      timer.tick(cycles);
+      timer.machineCycle();
    }
 
    void clock()
@@ -589,9 +591,9 @@ public:
    uint8_t read(uint16_t address) const;
    void write(uint16_t address, uint8_t value);
 
-   void tick(uint32_t cycles)
+   void machineCycle()
    {
-      timer.tick(cycles);
+      timer.machineCycle();
    }
 
    void clock()
@@ -637,9 +639,9 @@ public:
       timer.setPeriod(CPU::kClockSpeed / 512);
    }
 
-   void tick(uint32_t cycles)
+   void machineCycle()
    {
-      timer.tick(cycles);
+      timer.machineCycle();
    }
 
    void clock();
@@ -713,7 +715,7 @@ public:
       return buffers[!activeBufferIndex];
    }
 
-   void tick(uint64_t cycles);
+   void machineCycle();
 
    uint8_t read(uint16_t address) const;
    void write(uint16_t address, uint8_t value);
