@@ -14,6 +14,8 @@ namespace GBC
 namespace
 {
 
+using RamBank = std::array<uint8_t, 0x2000>;
+
 const uint16_t kHeaderOffset = 0x0100;
 const uint16_t kHeaderSize = 0x0050;
 
@@ -222,8 +224,8 @@ public:
             // Switchable RAM bank
             if (ramEnabled)
             {
-               uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
-               value = ramBanks[ramBank][address - 0xA000];
+               uint8_t bankNumber = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
+               value = ramBanks[bankNumber][address - 0xA000];
             }
             else
             {
@@ -297,8 +299,8 @@ public:
             // Switchable RAM bank
             if (ramEnabled)
             {
-               uint8_t ramBank = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
-               ramBanks[ramBank][address - 0xA000] = value;
+               uint8_t bankNumber = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
+               ramBanks[bankNumber][address - 0xA000] = value;
                wroteToRam = true;
             }
             else
@@ -319,7 +321,7 @@ public:
    {
       Archive ramData;
 
-      for (const auto& bank : ramBanks)
+      for (const RamBank& bank : ramBanks)
       {
          ramData.write(bank);
       }
@@ -329,7 +331,7 @@ public:
 
    bool loadRAM(Archive& ramData) override
    {
-      for (auto& bank : ramBanks)
+      for (RamBank& bank : ramBanks)
       {
          if (!ramData.read(bank))
          {
@@ -352,7 +354,7 @@ private:
    uint8_t ramBankNumber;
    BankingMode bankingMode;
 
-   std::array<std::array<uint8_t, 0x2000>, 4> ramBanks;
+   std::array<RamBank, 4> ramBanks;
 };
 
 class MBC2 : public MemoryBankController
@@ -730,7 +732,7 @@ public:
    {
       Archive ramData;
 
-      for (const auto& bank : ramBanks)
+      for (const RamBank& bank : ramBanks)
       {
          ramData.write(bank);
       }
@@ -743,7 +745,7 @@ public:
 
    bool loadRAM(Archive& ramData) override
    {
-      for (auto& bank : ramBanks)
+      for (RamBank& bank : ramBanks)
       {
          if (!ramData.read(bank))
          {
@@ -813,7 +815,7 @@ private:
    RTC rtcLatchedCopy;
    double tickTime;
 
-   std::array<std::array<uint8_t, 0x2000>, 4> ramBanks;
+   std::array<RamBank, 4> ramBanks;
 };
 
 class MBC5 : public MemoryBankController
@@ -938,7 +940,7 @@ public:
    {
       Archive ramData;
 
-      for (const auto& bank : ramBanks)
+      for (const RamBank& bank : ramBanks)
       {
          ramData.write(bank);
       }
@@ -948,7 +950,7 @@ public:
 
    bool loadRAM(Archive& ramData) override
    {
-      for (auto& bank : ramBanks)
+      for (RamBank& bank : ramBanks)
       {
          if (!ramData.read(bank))
          {
@@ -964,7 +966,7 @@ private:
    uint16_t romBankNumber;
    uint8_t ramBankNumber;
 
-   std::array<std::array<uint8_t, 0x2000>, 16> ramBanks;
+   std::array<RamBank, 16> ramBanks;
 };
 
 // static
