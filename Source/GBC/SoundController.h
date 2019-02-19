@@ -629,7 +629,7 @@ private:
 };
 
 class FrameSequencer
-   {
+{
 public:
    FrameSequencer(SoundController& owningSoundController)
       : timer(*this)
@@ -720,6 +720,14 @@ public:
    uint8_t read(uint16_t address) const;
    void write(uint16_t address, uint8_t value);
 
+private:
+   friend class FrameSequencer;
+
+   uint8_t readNr52() const;
+   void writeNr52(uint8_t value);
+   void setPowerEnabled(bool newPowerEnabled);
+   AudioSample getCurrentAudioSample() const;
+
    void lengthClock()
    {
       squareWaveChannel1.lengthClock();
@@ -739,12 +747,6 @@ public:
    {
       squareWaveChannel1.sweepClock();
    }
-
-private:
-   uint8_t readNr52() const;
-   void writeNr52(uint8_t value);
-   void setPowerEnabled(bool newPowerEnabled);
-   AudioSample getCurrentAudioSample() const;
 
    FrameSequencer frameSequencer;
    Mixer mixer;
