@@ -478,8 +478,6 @@ AudioSample Mixer::mix(int8_t square1Sample, int8_t square2Sample, int8_t waveSa
    AudioSample sample;
    sample.left = (square1LeftSample + square2LeftSample + waveLeftSample + noiseLeftSample) << 6;
    sample.right = (square1RightSample + square2RightSample + waveRightSample + noiseRightSample) << 6;
-   ASSERT(sample.left <= INT16_MAX && sample.left >= INT16_MIN
-      && sample.right <= INT16_MAX && sample.right >= INT16_MIN);
 
    return sample;
 }
@@ -554,8 +552,8 @@ SoundController::SoundController()
 
 void SoundController::machineCycle()
 {
-   static const uint64_t kCyclesPerSample = CPU::kClockSpeed / kSampleRate;
-   //static_assert(CPU::kClockSpeed % kSampleRate == 0, "Sample rate does not divide evenly into the CPU clock speed!");
+   static const uint8_t kCyclesPerSample = CPU::kClockSpeed / kSampleRate;
+   static_assert(CPU::kClockSpeed % kSampleRate == 0, "Sample rate does not divide evenly into the CPU clock speed!");
 
    frameSequencer.machineCycle();
 
@@ -567,9 +565,11 @@ void SoundController::machineCycle()
    if (generateData)
    {
       cyclesSinceLastSample += CPU::kClockCyclesPerMachineCycle;
-      while (cyclesSinceLastSample >= kCyclesPerSample)
+
+      if (cyclesSinceLastSample >= kCyclesPerSample)
       {
          cyclesSinceLastSample -= kCyclesPerSample;
+         ASSERT(cyclesSinceLastSample < kCyclesPerSample);
 
          AudioSample sample = getCurrentAudioSample();
          buffers[activeBufferIndex].push_back(sample);

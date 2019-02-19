@@ -690,7 +690,7 @@ private:
 class SoundController
 {
 public:
-   static const size_t kSampleRate = 44100;
+   static const size_t kSampleRate = 65536;
 
    SoundController();
 
@@ -756,7 +756,7 @@ private:
    NoiseChannel noiseChannel;
 
    bool generateData;
-   uint64_t cyclesSinceLastSample;
+   uint8_t cyclesSinceLastSample;
    std::size_t activeBufferIndex;
    std::array<std::vector<AudioSample>, 2> buffers;
 };
