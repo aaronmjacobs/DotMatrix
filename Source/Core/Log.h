@@ -88,15 +88,15 @@ namespace Log
       }
    };
 
-#if SWAP_DEBUG
+#if GBC_DEBUG
 #  define LOG_CERR_SEV_THRESHOLD templog::sev_debug
 #  define LOG_MSG_BOX_SEV_THRESHOLD templog::sev_debug
-#else // SWAP_DEBUG
+#else // GBC_DEBUG
 // Prevent text logging in release builds
 #  define LOG_CERR_SEV_THRESHOLD templog::sev_fatal + 1
 // Prevent debug messages boxes in release builds
 #  define LOG_MSG_BOX_SEV_THRESHOLD templog::sev_info
-#endif // SWAP_DEBUG
+#endif // GBC_DEBUG
 
    using cerr_logger = templog::logger<templog::non_filtering_logger<text_formating_policy, templog::std_write_policy>
                                        , LOG_CERR_SEV_THRESHOLD
