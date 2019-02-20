@@ -9,7 +9,7 @@
 	<key>CFBundleExecutable</key>
 	<string>@PROJECT_NAME@</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Gameboy Color Emulator</string>
+	<string>Game Boy Color Emulator</string>
 	<key>CFBundleIconFile</key>
 	<string>@PROJECT_NAME@</string>
 	<key>CFBundleIdentifier</key>
