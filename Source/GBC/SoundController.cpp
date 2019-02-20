@@ -467,17 +467,17 @@ AudioSample Mixer::mix(int8_t square1Sample, int8_t square2Sample, int8_t waveSa
       && waveSample >= -16 && waveSample < 16
       && noiseSample >= -16 && noiseSample < 16);
 
-   int16_t square1LeftSample = square1LeftEnabled ? square1Sample * leftVolume : 0;
-   int16_t square1RightSample = square1RightEnabled ? square1Sample * rightVolume : 0;
+   int16_t square1LeftSample = square1Sample * leftVolume * square1LeftEnabled;
+   int16_t square1RightSample = square1Sample * rightVolume * square1RightEnabled;
 
-   int16_t square2LeftSample = square2LeftEnabled ? square2Sample * leftVolume : 0;
-   int16_t square2RightSample = square2RightEnabled ? square2Sample * rightVolume : 0;
+   int16_t square2LeftSample = square2Sample * leftVolume * square2LeftEnabled;
+   int16_t square2RightSample = square2Sample * rightVolume * square2RightEnabled;
 
-   int16_t waveLeftSample = waveLeftEnabled ? waveSample * leftVolume : 0;
-   int16_t waveRightSample = waveRightEnabled ? waveSample * rightVolume : 0;
+   int16_t waveLeftSample = waveSample * leftVolume * waveLeftEnabled;
+   int16_t waveRightSample = waveSample * rightVolume * waveRightEnabled;
 
-   int16_t noiseLeftSample = noiseLeftEnabled ? noiseSample * leftVolume : 0;
-   int16_t noiseRightSample = noiseRightEnabled ? noiseSample * rightVolume : 0;
+   int16_t noiseLeftSample = noiseSample * leftVolume * noiseLeftEnabled;
+   int16_t noiseRightSample = noiseSample * rightVolume * noiseRightEnabled;
 
    // Each of the 4 samples uses a max of 5 bits (-16 = 0b00011111)
    // Volume multiplication has a max value of 8 (causing a max shift of 3 bits) producing a total usage of 8 bits
@@ -624,7 +624,7 @@ uint8_t SoundController::read(uint16_t address) const
          value = readNr52();
          break;
       default:
-         //ASSERT(false, "Trying to read value at invalid address from sound controller: %s", hex(address).c_str());
+         ASSERT(false, "Trying to read value at invalid address from sound controller: %s", Log::hex(address).c_str());
          break;
       }
    }
@@ -675,7 +675,7 @@ void SoundController::write(uint16_t address, uint8_t value)
          writeNr52(value);
          break;
       default:
-         //ASSERT(false, "Trying to write value at invalid address from sound controller: %s at %s", hex(value).c_str(), hex(address).c_str());
+         ASSERT(false, "Trying to write value at invalid address from sound controller: %s at %s", Log::hex(value).c_str(), Log::hex(address).c_str());
          break;
       }
    }
