@@ -25,9 +25,9 @@ public:
    {
    }
 
-   void trigger()
+   bool isEnabled() const
    {
-      enabled = true;
+      return enabled;
    }
 
    void disable()
@@ -35,9 +35,10 @@ public:
       enabled = false;
    }
 
-   bool isEnabled() const
+protected:
+   void trigger()
    {
-      return enabled;
+      enabled = true;
    }
 
 private:
@@ -200,7 +201,7 @@ private:
 };
 
 class EnvelopeUnit
-   {
+{
 public:
    EnvelopeUnit()
       : period(0)
@@ -209,6 +210,7 @@ public:
       , volumeLoad(0)
       , addMode(false)
       , enabled(true)
+      , dacPowered(false)
    {
    }
 
@@ -219,6 +221,11 @@ public:
       counter = period == 0 ? 8 : period;
       volume = volumeLoad;
       enabled = true;
+   }
+
+   bool isDacPowered() const
+   {
+      return dacPowered;
    }
 
    uint8_t readNrx2() const
@@ -241,6 +248,7 @@ public:
       volumeLoad = (value & 0xF0) >> 4;
       addMode = (value & 0x08) != 0x00;
       period = value & 0x07;
+      dacPowered = (value & 0xF8) != 0x00;
    }
 
    uint8_t getVolume() const
@@ -255,6 +263,7 @@ private:
    uint8_t volumeLoad;
    bool addMode;
    bool enabled;
+   bool dacPowered;
 };
 
 class SweepUnit
@@ -332,7 +341,8 @@ private:
    bool enabled;
 };
 
-class WaveUnit {
+class WaveUnit
+{
 public:
    // TODO Wave table initial values different on CGB
    WaveUnit()
@@ -358,12 +368,12 @@ public:
       position = 0;
    }
 
-   int8_t getCurrentAudioSample() const;
-
    bool isDacPowered() const
    {
       return dacPowered;
    }
+
+   int8_t getCurrentAudioSample() const;
 
    uint8_t readNrx0() const
    {
@@ -403,7 +413,8 @@ private:
    std::array<uint8_t, 16> waveTable;
 };
 
-class LFSRUnit {
+class LFSRUnit
+{
 public:
    LFSRUnit()
       : clockShift(0)
@@ -468,6 +479,11 @@ class SquareWaveChannel : public SoundChannel
 {
 public:
    SquareWaveChannel();
+
+   bool isEnabled() const
+   {
+      return SoundChannel::isEnabled() && envelopeUnit.isDacPowered();
+   }
 
    int8_t getCurrentAudioSample() const;
 
@@ -534,6 +550,11 @@ class WaveChannel : public SoundChannel
 public:
    WaveChannel();
 
+   bool isEnabled() const
+   {
+      return SoundChannel::isEnabled() && waveUnit.isDacPowered();
+   }
+
    int8_t getCurrentAudioSample() const;
 
    uint8_t read(uint16_t address) const;
@@ -585,6 +606,11 @@ class NoiseChannel : public SoundChannel
 {
 public:
    NoiseChannel();
+
+   bool isEnabled() const
+   {
+      return SoundChannel::isEnabled() && envelopeUnit.isDacPowered();
+   }
 
    int8_t getCurrentAudioSample() const;
 

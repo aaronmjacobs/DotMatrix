@@ -138,6 +138,9 @@ uint8_t SquareWaveChannel::read(uint16_t address) const
       value |= 0x80;
       value |= sweepUnit.readNrx0();
       break;
+   case 0xFF15:
+      value |= 0xFF;
+      break;
    case 0xFF11:
    case 0xFF16:
       value |= 0x3F;
@@ -163,7 +166,7 @@ uint8_t SquareWaveChannel::read(uint16_t address) const
       // TODO trigger?
       break;
    default:
-      //ASSERT(false);
+      ASSERT(false);
       value = Memory::kInvalidAddressByte;
       break;
    }
@@ -178,6 +181,8 @@ void SquareWaveChannel::write(uint16_t address, uint8_t value)
    case 0xFF10:
       // Sweep period, negate, shift
       sweepUnit.writeNrx0(value);
+      break;
+   case 0xFF15:
       break;
    case 0xFF11:
    case 0xFF16:
@@ -208,7 +213,7 @@ void SquareWaveChannel::write(uint16_t address, uint8_t value)
       }
       break;
    default:
-      //ASSERT(false);
+      ASSERT(false);
       break;
    }
 }
@@ -224,7 +229,7 @@ int8_t WaveChannel::getCurrentAudioSample() const
 {
    int8_t sample = 0;
 
-   if (isEnabled() && waveUnit.isDacPowered())
+   if (isEnabled())
    {
       sample = waveUnit.getCurrentAudioSample();
    }
@@ -270,7 +275,7 @@ uint8_t WaveChannel::read(uint16_t address) const
       }
       else
       {
-         //ASSERT(false);
+         ASSERT(false);
          value = Memory::kInvalidAddressByte;
       }
       break;
@@ -317,7 +322,7 @@ void WaveChannel::write(uint16_t address, uint8_t value)
       }
       else
       {
-         //ASSERT(false);
+         ASSERT(false);
       }
       break;
    }
@@ -348,6 +353,9 @@ uint8_t NoiseChannel::read(uint16_t address) const
 
    switch (address)
    {
+   case 0xFF1F:
+      value |= 0xFF;
+      break;
    case 0xFF20:
       value |= 0xFF;
       value |= lengthUnit.readNrx1();
@@ -363,7 +371,7 @@ uint8_t NoiseChannel::read(uint16_t address) const
       value |= lengthUnit.readNrx4();
       break;
    default:
-      //ASSERT(false);
+      ASSERT(false);
       value = Memory::kInvalidAddressByte;
       break;
    }
@@ -398,7 +406,7 @@ void NoiseChannel::write(uint16_t address, uint8_t value)
       }
       break;
    default:
-      //ASSERT(false);
+      ASSERT(false);
       break;
    }
 }
@@ -675,12 +683,12 @@ void SoundController::write(uint16_t address, uint8_t value)
 
 uint8_t SoundController::readNr52() const
 {
-   uint8_t value = powerEnabled ? 0x80 : 0x00;
+   uint8_t value = 0x70 | (powerEnabled ? 0x80 : 0x00);
 
    value |= squareWaveChannel1.isEnabled() ? 0x01 : 0x00;
    value |= squareWaveChannel2.isEnabled() ? 0x02 : 0x00;
-   value |= waveChannel.isEnabled() ? 0x03 : 0x00;
-   value |= noiseChannel.isEnabled() ? 0x04 : 0x00;
+   value |= waveChannel.isEnabled() ? 0x04 : 0x00;
+   value |= noiseChannel.isEnabled() ? 0x08 : 0x00;
 
    return value;
 }
