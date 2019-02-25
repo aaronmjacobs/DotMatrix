@@ -342,9 +342,9 @@ void CPU::Operand::write16(uint16_t value)
    }
 }
 
-CPU::CPU(GameBoy& owningGameBoy)
+CPU::CPU(GameBoy& gb)
    : reg({})
-   , gameBoy(owningGameBoy)
+   , gameBoy(gb)
    , mem(gameBoy.getMemory())
    , ime(false)
    , halted(false)

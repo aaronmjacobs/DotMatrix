@@ -61,7 +61,12 @@ public:
       return memory;
    }
 
-   const LCDController& getLCDController() const
+   CPU& getCPU()
+   {
+      return cpu;
+   }
+
+   LCDController& getLCDController()
    {
       return lcdController;
    }

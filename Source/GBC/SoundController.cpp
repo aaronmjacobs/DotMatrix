@@ -383,6 +383,8 @@ void NoiseChannel::write(uint16_t address, uint8_t value)
 {
    switch (address)
    {
+   case 0xFF1F:
+      break;
    case 0xFF20:
       // Length load (64-L)
       lengthUnit.writeNrx1(value);

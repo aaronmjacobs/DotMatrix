@@ -161,7 +161,7 @@ public:
    static const uint64_t kClockSpeed = 4194304; // 4.194304 MHz TODO handle GBC / SGB
    static const uint64_t kMachineSpeed = kClockSpeed / kClockCyclesPerMachineCycle;
 
-   CPU(GameBoy& owningGameBoy);
+   CPU(GameBoy& gb);
 
    void tick();
 

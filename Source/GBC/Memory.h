@@ -44,7 +44,8 @@ public:
 
    Memory(GameBoy& gb);
 
-   void machineCycle();
+   uint8_t readDirect(uint16_t address) const;
+   void writeDirect(uint16_t address, uint8_t value);
 
    uint8_t read(uint16_t address) const;
    void write(uint16_t address, uint8_t value);
@@ -149,18 +150,8 @@ public:
    };
 
 private:
-   bool isSpriteAttributeTableAccessible() const
-   {
-      return dmaIndex == 0x00;
-   }
-
    Cartridge* cart;
    GameBoy& gameBoy;
-
-   bool dmaRequested;
-   bool dmaInProgress;
-   uint8_t dmaIndex;
-   uint16_t dmaSource;
 };
 
 } // namespace GBC

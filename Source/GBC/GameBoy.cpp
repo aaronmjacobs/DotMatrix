@@ -65,7 +65,7 @@ enum Enum
 GameBoy::GameBoy()
    : memory(*this)
    , cpu(*this)
-   , lcdController(memory)
+   , lcdController(*this)
    , soundController()
    , cart(nullptr)
    , totalCycles(0)
@@ -136,9 +136,8 @@ void GameBoy::machineCycle()
    tickDiv();
    tickTima();
    tickSerial();
-   lcdController.tick(totalCycles, cpu.isStopped());
+   lcdController.machineCycle();
    soundController.machineCycle();
-   memory.machineCycle();
 }
 
 void GameBoy::setCartridge(UPtr<Cartridge> cartridge)

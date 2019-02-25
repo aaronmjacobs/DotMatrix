@@ -17,10 +17,6 @@ Memory::Memory(GameBoy& gb)
    : raw{}
    , cart(nullptr)
    , gameBoy(gb)
-   , dmaRequested(false)
-   , dmaInProgress(false)
-   , dmaIndex(0x00)
-   , dmaSource(0x0000)
 {
    // If no cartridge is available, all cartridge reads return 0xFF
    romb.fill(0xFF);
@@ -28,42 +24,17 @@ Memory::Memory(GameBoy& gb)
    eram.fill(0xFF);
 }
 
-void Memory::machineCycle()
+uint8_t Memory::readDirect(uint16_t address) const
 {
-   if (dmaInProgress)
-   {
-      if (dmaIndex <= 0x9F)
-      {
-         sat[dmaIndex] = raw[dmaSource + dmaIndex];
-         ++dmaIndex;
-      }
-      else
-      {
-         dmaInProgress = false;
-         dmaIndex = 0x00;
-      }
-   }
-
-   if (dmaRequested)
-   {
-      dmaRequested = false;
-      dmaInProgress = true;
-      dmaIndex = 0x00;
-
-      ASSERT(dma <= 0xF1);
-      dmaSource = dma << 8;
-   }
-}
-
-uint8_t Memory::read(uint16_t address) const
-{
-   gameBoy.machineCycle();
-
    uint8_t value = kInvalidAddressByte;
 
    if (boot == Boot::kBooting && address <= 0x00FF)
    {
       value = kBootstrap[address];
+   }
+   else if ((address >= 0x8000 && address <= 0x9FFF) || (address >= 0xFE00 && address <= 0xFEFF) || (address >= 0xFF40 && address <= 0xFF4F))
+   {
+      value = gameBoy.getLCDController().read(address);
    }
    else if (cart && address < 0x8000)
    {
@@ -77,10 +48,6 @@ uint8_t Memory::read(uint16_t address) const
    {
       // Sound registers
       value = gameBoy.getSoundController().read(address);
-   }
-   else if (address >= 0xFE00 && address < 0xFF00 && !isSpriteAttributeTableAccessible())
-   {
-      value = kInvalidAddressByte;
    }
    else
    {
@@ -102,13 +69,15 @@ uint8_t Memory::read(uint16_t address) const
    return value;
 }
 
-void Memory::write(uint16_t address, uint8_t value)
+void Memory::writeDirect(uint16_t address, uint8_t value)
 {
-   gameBoy.machineCycle();
-
    if (boot == Boot::kBooting && address <= 0x00FF)
    {
       // Bootstrap is read only
+   }
+   else if ((address >= 0x8000 && address <= 0x9FFF) || (address >= 0xFE00 && address <= 0xFEFF) || (address >= 0xFF40 && address <= 0xFF4F))
+   {
+      gameBoy.getLCDController().write(address, value);
    }
    else if (cart && address < 0x8000)
    {
@@ -122,10 +91,6 @@ void Memory::write(uint16_t address, uint8_t value)
    {
       // Sound registers
       gameBoy.getSoundController().write(address, value);
-   }
-   else if (address >= 0xFE00 && address < 0xFF00 && !isSpriteAttributeTableAccessible())
-   {
-      // Can't write during OAM
    }
    else
    {
@@ -175,12 +140,21 @@ void Memory::write(uint16_t address, uint8_t value)
       }
 
       raw[address] = value;
-
-      if (address == 0xFF46)
-      {
-         dmaRequested = true;
-      }
    }
+}
+
+uint8_t Memory::read(uint16_t address) const
+{
+   gameBoy.machineCycle();
+
+   return readDirect(address);
+}
+
+void Memory::write(uint16_t address, uint8_t value)
+{
+   gameBoy.machineCycle();
+
+   writeDirect(address, value);
 }
 
 } // namespace GBC
