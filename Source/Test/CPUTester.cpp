@@ -193,11 +193,11 @@ void dumpRegisters(const CPU::Registers& reg, const char* name = nullptr)
    {
       out << "\n" << name;
    }
-   out << "\na: " << hex(reg.a) << " f: " << hex(reg.f) << " af: " << hex(reg.af)
-      << "\nb: " << hex(reg.b) << " c: " << hex(reg.c) << " bc: " << hex(reg.bc)
-      << "\nd: " << hex(reg.d) << " e: " << hex(reg.e) << " de: " << hex(reg.de)
-      << "\nh: " << hex(reg.h) << " l: " << hex(reg.l) << " hl: " << hex(reg.hl)
-      << "\nsp: " << hex(reg.sp) << " pc: " << hex(reg.pc) << "\n";
+   out << "\na: " << Log::hex(reg.a) << " f: " << Log::hex(reg.f) << " af: " << Log::hex(reg.af)
+      << "\nb: " << Log::hex(reg.b) << " c: " << Log::hex(reg.c) << " bc: " << Log::hex(reg.bc)
+      << "\nd: " << Log::hex(reg.d) << " e: " << Log::hex(reg.e) << " de: " << Log::hex(reg.de)
+      << "\nh: " << Log::hex(reg.h) << " l: " << Log::hex(reg.l) << " hl: " << Log::hex(reg.hl)
+      << "\nsp: " << Log::hex(reg.sp) << " pc: " << Log::hex(reg.pc) << "\n";
    LOG_INFO(out.str());
 }
 
@@ -213,9 +213,9 @@ void dumpMem(const Memory& mem, uint16_t start, uint16_t end, const char* name =
    {
       if (i % 8 == 0)
       {
-         out << "\n" << hex(i) << " |";
+         out << "\n" << Log::hex(i) << " |";
       }
-      out << " " << hex(mem.read(i));
+      out << " " << Log::hex(mem.read(i));
    }
    out << "\n";
    LOG_INFO(out.str());
@@ -330,7 +330,7 @@ void CPUTester::runTests(bool randomizeData)
    uint16_t seed = 0x0000;
    if (randomizeData)
    {
-      std::random_gameBoy rd;
+      std::random_device rd;
       std::default_random_engine engine(rd());
       std::uniform_int_distribution<uint16_t> distribution;
 
@@ -385,7 +385,7 @@ void CPUTester::runTest(GameBoy& gameBoy, GameBoy& finalGameBoy, const CPUTest& 
    if (!fieldsMatch || !registersMatch || !memoryMatches)
    {
       std::ostringstream out;
-      out << "Opcode: " << hex(test.opcode);
+      out << "Opcode: " << Log::hex(test.opcode);
       LOG_INFO(out.str());
    }
 
