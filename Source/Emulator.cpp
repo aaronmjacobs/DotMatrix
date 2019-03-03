@@ -427,6 +427,7 @@ void Emulator::toggleFullScreen()
 
 void Emulator::loadGame()
 {
+#if !GBC_RUN_TESTS
    ASSERT(gameBoy);
 
    std::string saveFileName = getSaveName(gameBoy->title());
@@ -441,10 +442,12 @@ void Emulator::loadGame()
          LOG_INFO("Loaded game from: " << saveFileName);
       }
    }
+#endif // !GBC_RUN_TESTS
 }
 
 void Emulator::saveGameAsync()
 {
+#if !GBC_RUN_TESTS
    ASSERT(gameBoy);
 
    if (const char* title = gameBoy->title())
@@ -463,6 +466,7 @@ void Emulator::saveGameAsync()
          saveThreadConditionVariable.notify_all();
       }
    }
+#endif // !GBC_RUN_TESTS
 }
 
 void Emulator::saveThreadMain()
