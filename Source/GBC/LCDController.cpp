@@ -119,7 +119,6 @@ LCDController::LCDController(GameBoy& gb)
    , dmaInProgress(false)
    , dmaIndex(0)
    , dmaSource(0)
-   , vram{}
    , lcdc(0)
    , stat(Mode::kVBlank)
    , scy(0)
@@ -132,6 +131,7 @@ LCDController::LCDController(GameBoy& gb)
    , obp1(0)
    , wy(0)
    , wx(0)
+   , vram{}
    , oam{}
    , bgPaletteIndices{}
 {

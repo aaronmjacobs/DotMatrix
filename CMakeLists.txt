@@ -31,6 +31,10 @@ configure_file("${SRC_DIR}/Core/Constants.h.in" "${BIN_INCLUDE_DIR}/Core/Constan
 # Source content
 include(Sources.cmake)
 
+if(APPLE)
+   list(APPEND SOURCE_NAMES "Platform/Utils/MacOSUtils.mm")
+endif()
+
 set(SOURCES)
 foreach(SOURCE_NAME ${SOURCE_NAMES})
    list(APPEND SOURCES "${SRC_DIR}/${SOURCE_NAME}")
