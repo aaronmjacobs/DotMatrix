@@ -1,6 +1,9 @@
+#if !defined(__APPLE__)
+#  error "Trying to compile macOS-only source, but '__APPLE__' isn't defined!"
+#endif // !defined(__APPLE__)
+
 #include "Platform/Utils/OSUtils.h"
 
-#ifdef __APPLE__
 #import <Foundation/Foundation.h>
 
 #include <CoreServices/CoreServices.h>
@@ -10,12 +13,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#endif // __APPLE__
 
 namespace OSUtils
 {
 
-#ifdef __APPLE__
 bool getExecutablePath(std::string& executablePath)
 {
    uint32_t size = MAXPATHLEN;
@@ -60,6 +61,5 @@ bool createDirectory(const std::string& dir)
 {
    return mkdir(dir.c_str(), 0755) == 0;
 }
-#endif // __APPLE__
 
 } // namespace OSUtils
