@@ -1,3 +1,7 @@
 # Ignore content built with CMake
 Build/
 
+# Ignore installed files
+Install/
+!Install/.gitkeep
+
