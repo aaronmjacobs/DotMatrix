@@ -1,5 +1,3 @@
-#if !GBC_RUN_TESTS
-
 #include "Emulator.h"
 
 #include "Core/Constants.h"
@@ -69,5 +67,3 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE hPrevInstance, _In
    return main(__argc, __argv);
 }
 #endif // defined(_WIN32) && !GBC_DEBUG
-
-#endif // !GBC_RUN_TESTS

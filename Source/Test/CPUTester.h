@@ -1,7 +1,5 @@
 #pragma once
 
-#if GBC_RUN_TESTS
-
 #include <cstdint>
 #include <vector>
 
@@ -38,5 +36,3 @@ private:
 };
 
 } // namespace GBC
-
-#endif // GBC_RUN_TESTS

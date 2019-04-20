@@ -1,5 +1,3 @@
-#if GBC_RUN_TESTS
-
 #include "Core/Assert.h"
 #include "Core/Log.h"
 
@@ -3334,5 +3332,3 @@ void CPUTester::init()
 }
 
 } // namespace GBC
-
-#endif // GBC_RUN_TESTS

@@ -6,7 +6,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}" "${BIN_INCLUDE_DI
 target_sources(${PROJECT_NAME} PRIVATE
    "${SRC_DIR}/Emulator.h"
    "${SRC_DIR}/Emulator.cpp"
-   "${SRC_DIR}/Main.cpp"
 
    "${SRC_DIR}/Core/Archive.h"
    "${SRC_DIR}/Core/Assert.h"
@@ -56,11 +55,19 @@ target_sources(${PROJECT_NAME} PRIVATE
    "${SRC_DIR}/Platform/Video/ShaderProgram.cpp"
    "${SRC_DIR}/Platform/Video/Texture.h"
    "${SRC_DIR}/Platform/Video/Texture.cpp"
-
-   "${SRC_DIR}/Test/CPUTester.h"
-   "${SRC_DIR}/Test/CPUTester.cpp"
-   "${SRC_DIR}/Test/TestMain.cpp"
 )
+
+if(GBC_RUN_TESTS)
+   target_sources(${PROJECT_NAME} PRIVATE
+      "${SRC_DIR}/Test/CPUTester.h"
+      "${SRC_DIR}/Test/CPUTester.cpp"
+      "${SRC_DIR}/Test/TestMain.cpp"
+   )
+else()
+   target_sources(${PROJECT_NAME} PRIVATE
+      "${SRC_DIR}/Main.cpp"
+   )
+endif()
 
 if(APPLE)
    target_sources(${PROJECT_NAME} PRIVATE "${SRC_DIR}/Platform/Utils/MacOSUtils.mm")
