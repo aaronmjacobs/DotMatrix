@@ -4,9 +4,6 @@ set(BIN_INCLUDE_DIR "${PROJECT_BINARY_DIR}/Include")
 target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}" "${BIN_INCLUDE_DIR}")
 
 target_sources(${PROJECT_NAME} PRIVATE
-   "${SRC_DIR}/Emulator.h"
-   "${SRC_DIR}/Emulator.cpp"
-
    "${SRC_DIR}/Core/Archive.h"
    "${SRC_DIR}/Core/Assert.h"
    "${SRC_DIR}/Core/Constants.h.in"
@@ -65,6 +62,8 @@ if(GBC_RUN_TESTS)
    )
 else()
    target_sources(${PROJECT_NAME} PRIVATE
+      "${SRC_DIR}/Emulator.h"
+      "${SRC_DIR}/Emulator.cpp"
       "${SRC_DIR}/Main.cpp"
    )
 endif()
