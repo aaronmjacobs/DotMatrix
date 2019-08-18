@@ -15,7 +15,7 @@ option(GBC_RUN_TESTS "Run emulator tests" OFF)
 ### Target ###
 
 add_executable(${PROJECT_NAME} "")
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_14)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_compile_definitions(${PROJECT_NAME} PUBLIC GBC_DEBUG=$<CONFIG:Debug>)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_LOG_MSVC_STYLE=$<BOOL:${GBC_LOG_MSVC_STYLE}>)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_RUN_TESTS=$<BOOL:${GBC_RUN_TESTS}>)
@@ -23,10 +23,6 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_RUN_TESTS=$<BOOL:${GBC_RU
 include(TestBigEndian)
 TEST_BIG_ENDIAN(GBC_IS_BIG_ENDIAN)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_IS_BIG_ENDIAN=$<BOOL:${GBC_IS_BIG_ENDIAN}>)
-
-include(CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX("filesystem" GBC_HAS_FILESYSTEM_SUPPORT)
-target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_HAS_FILESYSTEM_SUPPORT=$<BOOL:${GBC_HAS_FILESYSTEM_SUPPORT}>)
 
 if(WIN32)
    target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX)
