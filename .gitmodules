@@ -16,3 +16,6 @@
 [submodule "Libraries/PPK_ASSERT"]
 	path = Libraries/PPK_ASSERT
 	url = https://github.com/gpakosz/PPK_ASSERT.git
+[submodule "Libraries/imgui"]
+	path = Libraries/imgui
+	url = https://github.com/ocornut/imgui.git

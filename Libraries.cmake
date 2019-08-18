@@ -3,6 +3,24 @@ set(COPY_LIBS)
 
 ## Integrated ##
 
+# imgui
+set(IMGUI_DIR "${LIB_DIR}/imgui")
+set(IMGUI_SOURCES
+   "${IMGUI_DIR}/imconfig.h"
+   "${IMGUI_DIR}/imgui.cpp"
+   "${IMGUI_DIR}/imgui.h"
+   "${IMGUI_DIR}/imgui_demo.cpp"
+   "${IMGUI_DIR}/imgui_draw.cpp"
+   "${IMGUI_DIR}/imgui_internal.h"
+   "${IMGUI_DIR}/imgui_widgets.cpp"
+   "${IMGUI_DIR}/imstb_rectpack.h"
+   "${IMGUI_DIR}/imstb_textedit.h"
+   "${IMGUI_DIR}/imstb_truetype.h"
+)
+target_sources(${PROJECT_NAME} PRIVATE "${IMGUI_SOURCES}")
+target_include_directories(${PROJECT_NAME} PUBLIC "${IMGUI_DIR}")
+source_group("Libraries\\imgui" "${IMGUI_DIR}/*")
+
 # PPK_ASSERT
 set(PPK_DIR "${LIB_DIR}/PPK_ASSERT")
 target_sources(${PROJECT_NAME} PRIVATE "${PPK_DIR}/src/ppk_assert.h;${PPK_DIR}/src/ppk_assert.cpp")
