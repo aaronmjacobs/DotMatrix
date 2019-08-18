@@ -1,3 +1,11 @@
+#define GBC_USE_WINMAIN (defined(_WIN32) && !GBC_DEBUG)
+
+#if GBC_USE_WINMAIN
+#  pragma comment(linker, "/SUBSYSTEM:WINDOWS")
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+#endif // GBC_USE_WINMAIN
+
 #include "Emulator.h"
 
 #include "Core/Constants.h"
@@ -59,11 +67,9 @@ int main(int argc, char* argv[])
    return 0;
 }
 
-// Don't create a console in Windows release builds
-#if defined(_WIN32) && !GBC_DEBUG
-#  pragma comment(linker, "/SUBSYSTEM:WINDOWS")
+#if GBC_USE_WINMAIN
 int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
    return main(__argc, __argv);
 }
-#endif // defined(_WIN32) && !GBC_DEBUG
+#endif // GBC_USE_WINMAIN
