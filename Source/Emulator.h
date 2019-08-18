@@ -6,14 +6,19 @@
 #include "Platform/Audio/AudioManager.h"
 #include "Platform/Input/ControllerInputDevice.h"
 #include "Platform/Input/KeyboardInputDevice.h"
-#include "Platform/Video/Renderer.h"
 
-#include "readerwriterqueue.h"
+#include <readerwriterqueue.h>
 
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+
+class Renderer;
+
+#if GBC_WITH_UI
+class UI;
+#endif // GBC_WITH_UI
 
 namespace GBC
 {
@@ -39,16 +44,7 @@ struct Bounds
 class Emulator
 {
 public:
-   Emulator()
-      : window(nullptr)
-      , cartWroteToRamLastFrame(false)
-      , exiting(false)
-#if GBC_DEBUG
-      , timeModifier(1.0)
-#endif // GBC_DEBUG
-   {
-   }
-
+   Emulator();
    ~Emulator();
 
    bool init();
@@ -80,6 +76,10 @@ private:
    UPtr<GBC::GameBoy> gameBoy;
    UPtr<Renderer> renderer;
    AudioManager audioManager;
+
+#if GBC_WITH_UI
+   UPtr<UI> ui;
+#endif // GBC_WITH_UI
 
    KeyboardInputDevice keyboardInputDevice;
    ControllerInputDevice controllerInputDevice;

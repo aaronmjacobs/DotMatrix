@@ -1,5 +1,9 @@
 #include "Emulator.h"
 
+#if GBC_WITH_UI
+#  include "UI.h"
+#endif // GBC_WITH_UI
+
 #include "Core/Archive.h"
 #include "Core/Assert.h"
 #include "Core/Constants.h"
@@ -10,6 +14,7 @@
 #include "GBC/LCDController.h"
 
 #include "Platform/Utils/IOUtils.h"
+#include "Platform/Video/Renderer.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -178,6 +183,16 @@ std::string getSaveName(const char* title)
 
 } // namespace
 
+Emulator::Emulator()
+   : window(nullptr)
+   , cartWroteToRamLastFrame(false)
+   , exiting(false)
+#if GBC_DEBUG
+   , timeModifier(1.0)
+#endif // GBC_DEBUG
+{
+}
+
 Emulator::~Emulator()
 {
    {
@@ -190,6 +205,10 @@ Emulator::~Emulator()
       saveThreadConditionVariable.notify_all();
       saveThread.join();
    }
+
+#if GBC_WITH_UI
+   ui = nullptr;
+#endif // GBC_WITH_UI
 
    renderer = nullptr;
    gameBoy = nullptr;
@@ -213,8 +232,15 @@ bool Emulator::init()
    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 
+   int windowWidth = GBC::kScreenWidth * 2;
+   int windowHeight = GBC::kScreenHeight * 2;
+#if GBC_WITH_UI
+   windowWidth = UI::getDesiredWindowWidth();
+   windowHeight = UI::getDesiredWindowHeight();
+#endif // GBC_WITH_UI
+
    std::string windowTitle = getWindowTitle(nullptr);
-   window = glfwCreateWindow(GBC::kScreenWidth * 2, GBC::kScreenHeight * 2, windowTitle.c_str() , nullptr, nullptr);
+   window = glfwCreateWindow(windowWidth, windowHeight, windowTitle.c_str() , nullptr, nullptr);
    if (!window)
    {
       LOG_ERROR_MSG_BOX("Unable to create GLFW window");
@@ -256,6 +282,10 @@ bool Emulator::init()
       saveThreadMain();
    });
 
+#if GBC_WITH_UI
+   ui = std::make_unique<UI>(window);
+#endif // GBC_WITH_UI
+
    return true;
 }
 
@@ -286,6 +316,10 @@ void Emulator::render()
    if (gameBoy && renderer)
    {
       renderer->draw(gameBoy->getLCDController().getFramebuffer());
+
+#if GBC_WITH_UI
+      ui->render(*gameBoy, *renderer);
+#endif // GBC_WITH_UI
 
       if (audioManager.canQueue())
       {

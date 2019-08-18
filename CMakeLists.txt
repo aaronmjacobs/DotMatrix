@@ -11,6 +11,7 @@ if(MSVC)
 endif()
 option(GBC_LOG_MSVC_STYLE "Format logs for MSVC" ${GBC_LOG_MSVC_STYLE_DEFAULT})
 option(GBC_RUN_TESTS "Run emulator tests" OFF)
+option(GBC_WITH_UI "Enable UI" ON)
 
 ### Target ###
 
@@ -19,6 +20,7 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_compile_definitions(${PROJECT_NAME} PUBLIC GBC_DEBUG=$<CONFIG:Debug>)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_LOG_MSVC_STYLE=$<BOOL:${GBC_LOG_MSVC_STYLE}>)
 target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_RUN_TESTS=$<BOOL:${GBC_RUN_TESTS}>)
+target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_WITH_UI=$<BOOL:${GBC_WITH_UI}>)
 
 include(TestBigEndian)
 TEST_BIG_ENDIAN(GBC_IS_BIG_ENDIAN)

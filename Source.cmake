@@ -55,6 +55,14 @@ target_sources(${PROJECT_NAME} PRIVATE
    "${SRC_DIR}/Platform/Video/Texture.cpp"
 )
 
+if(GBC_WITH_UI)
+   target_sources(${PROJECT_NAME} PRIVATE
+      "${SRC_DIR}/UI.h"
+      "${SRC_DIR}/UI.cpp"
+      "${SRC_DIR}/UIConfig.h"
+   )
+endif()
+
 if(GBC_RUN_TESTS)
    target_sources(${PROJECT_NAME} PRIVATE
       "${SRC_DIR}/Test/TestMain.cpp"

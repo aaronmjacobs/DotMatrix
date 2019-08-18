@@ -4,22 +4,29 @@ set(COPY_LIBS)
 ## Integrated ##
 
 # imgui
-set(IMGUI_DIR "${LIB_DIR}/imgui")
-set(IMGUI_SOURCES
-   "${IMGUI_DIR}/imconfig.h"
-   "${IMGUI_DIR}/imgui.cpp"
-   "${IMGUI_DIR}/imgui.h"
-   "${IMGUI_DIR}/imgui_demo.cpp"
-   "${IMGUI_DIR}/imgui_draw.cpp"
-   "${IMGUI_DIR}/imgui_internal.h"
-   "${IMGUI_DIR}/imgui_widgets.cpp"
-   "${IMGUI_DIR}/imstb_rectpack.h"
-   "${IMGUI_DIR}/imstb_textedit.h"
-   "${IMGUI_DIR}/imstb_truetype.h"
-)
-target_sources(${PROJECT_NAME} PRIVATE "${IMGUI_SOURCES}")
-target_include_directories(${PROJECT_NAME} PUBLIC "${IMGUI_DIR}")
-source_group("Libraries\\imgui" "${IMGUI_DIR}/*")
+if(GBC_WITH_UI)
+   set(IMGUI_DIR "${LIB_DIR}/imgui")
+   set(IMGUI_SOURCES
+      "${IMGUI_DIR}/imconfig.h"
+      "${IMGUI_DIR}/imgui.cpp"
+      "${IMGUI_DIR}/imgui.h"
+      "${IMGUI_DIR}/imgui_demo.cpp"
+      "${IMGUI_DIR}/imgui_draw.cpp"
+      "${IMGUI_DIR}/imgui_internal.h"
+      "${IMGUI_DIR}/imgui_widgets.cpp"
+      "${IMGUI_DIR}/imstb_rectpack.h"
+      "${IMGUI_DIR}/imstb_textedit.h"
+      "${IMGUI_DIR}/imstb_truetype.h"
+      "${IMGUI_DIR}/examples/imgui_impl_glfw.h"
+      "${IMGUI_DIR}/examples/imgui_impl_glfw.cpp"
+      "${IMGUI_DIR}/examples/imgui_impl_opengl3.h"
+      "${IMGUI_DIR}/examples/imgui_impl_opengl3.cpp"
+   )
+   target_sources(${PROJECT_NAME} PRIVATE "${IMGUI_SOURCES}")
+   target_include_directories(${PROJECT_NAME} PUBLIC "${IMGUI_DIR}")
+   target_compile_definitions(${PROJECT_NAME} PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD IMGUI_USER_CONFIG="UIConfig.h")
+   source_group("Libraries\\imgui" "${IMGUI_DIR}/*")
+endif()
 
 # PPK_ASSERT
 set(PPK_DIR "${LIB_DIR}/PPK_ASSERT")

@@ -15,6 +15,11 @@ public:
    void onFramebufferSizeChanged(int width, int height);
    void draw(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& pixels);
 
+   GLuint getTextureId() const
+   {
+      return texture.id();
+   }
+
 private:
    Model model;
    Texture texture;
