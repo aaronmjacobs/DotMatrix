@@ -23,4 +23,9 @@ public:
    ~UI();
 
    void render(GBC::GameBoy& gameBoy, const Renderer& renderer);
+
+private:
+   void renderScreen(const Renderer& renderer) const;
+   void renderJoypad(GBC::GameBoy& gameBoy) const;
+   void renderCPU(GBC::GameBoy& gameBoy) const;
 };

@@ -189,6 +189,10 @@ public:
    }
 
 private:
+#if GBC_WITH_UI
+   friend class UI;
+#endif // GBC_WITH_UI
+
    class Operand;
 
    struct Registers

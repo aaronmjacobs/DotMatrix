@@ -11,6 +11,8 @@
 namespace GBC
 {
 
+class Cartridge;
+
 struct Joypad
 {
    bool right = false;
@@ -50,7 +52,7 @@ public:
    void tick(double dt);
    void machineCycle();
 
-   void setCartridge(UPtr<class Cartridge> cartridge);
+   void setCartridge(UPtr<Cartridge> cartridge);
    Archive saveCartRAM() const;
    bool loadCartRAM(Archive& ram);
 
@@ -115,6 +117,10 @@ public:
    }
 
 private:
+#if GBC_WITH_UI
+   friend class UI;
+#endif // GBC_WITH_UI
+
    void tickJoypad();
    void tickDiv();
    void tickTima();
@@ -124,7 +130,7 @@ private:
    CPU cpu;
    LCDController lcdController;
    SoundController soundController;
-   UPtr<class Cartridge> cart;
+   UPtr<Cartridge> cart;
 
    uint64_t totalCycles;
 
