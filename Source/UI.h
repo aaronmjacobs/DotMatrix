@@ -28,4 +28,5 @@ private:
    void renderScreen(const Renderer& renderer) const;
    void renderJoypad(GBC::GameBoy& gameBoy) const;
    void renderCPU(GBC::GameBoy& gameBoy) const;
+   void renderMemory(GBC::GameBoy& gameBoy) const;
 };
