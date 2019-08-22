@@ -747,6 +747,10 @@ public:
    void write(uint16_t address, uint8_t value);
 
 private:
+#if GBC_WITH_UI
+   friend class UI;
+#endif // GBC_WITH_UI
+
    friend class FrameSequencer;
 
    uint8_t readNr52() const;

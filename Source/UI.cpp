@@ -67,6 +67,13 @@ void renderMemoryRegion(GBC::Memory& memory, const char* name, const char* descr
    address += size;
 }
 
+float audioSampleGetter(void* data, int index)
+{
+   std::vector<float>* floatSamples = reinterpret_cast<std::vector<float>*>(data);
+
+   return (*floatSamples)[index];
+}
+
 } // namespace
 
 // static
@@ -110,6 +117,7 @@ void UI::render(GBC::GameBoy& gameBoy, const Renderer& renderer)
    renderJoypad(gameBoy);
    renderCPU(gameBoy);
    renderMemory(gameBoy);
+   renderSoundController(gameBoy);
 
    ImGui::Render();
 
@@ -218,6 +226,34 @@ void UI::renderMemory(GBC::GameBoy& gameBoy) const
       renderMemoryRegion(memory, "ramh", "High RAM area and interrupt enable register", 0x0080, address);
 
       ImGui::EndTabBar();
+   }
+
+   ImGui::End();
+}
+
+void UI::renderSoundController(GBC::GameBoy& gameBoy) const
+{
+   ImGui::Begin("Sound Controller");
+
+   static const std::size_t kNumSamples = GBC::SoundController::kSampleRate / 4;
+   static std::size_t offset = 0;
+
+   if (ImGui::CollapsingHeader("Output"))
+   {
+      static std::vector<float> leftSamples(kNumSamples);
+      static std::vector<float> rightSamples(kNumSamples);
+
+      const std::vector<GBC::AudioSample>& audioData = gameBoy.getSoundController().buffers[!gameBoy.getSoundController().activeBufferIndex];
+
+      for (const GBC::AudioSample& audioSample : audioData)
+      {
+         leftSamples[offset] = static_cast<float>(audioSample.left) / -SHRT_MIN;
+         rightSamples[offset] = static_cast<float>(audioSample.right) / -SHRT_MIN;
+         offset = (offset + 1) % kNumSamples;
+      }
+
+      ImGui::PlotLines("Left", audioSampleGetter, &leftSamples, kNumSamples, offset, nullptr, -1.0f, 1.0f, ImVec2(500.0f, 100.0f));
+      ImGui::PlotLines("Right", audioSampleGetter, &rightSamples, kNumSamples, offset, nullptr, -1.0f, 1.0f, ImVec2(500.0f, 100.0f));
    }
 
    ImGui::End();
