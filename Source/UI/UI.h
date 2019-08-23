@@ -1,7 +1,7 @@
 #pragma once
 
 #if !GBC_WITH_UI
-#	error "Including UI header, but GBC_WITH_UI is not set!"
+#   error "Including UI config header, but GBC_WITH_UI is not set!"
 #endif // !GBC_WITH_UI
 
 class Renderer;

@@ -8,6 +8,8 @@
 #include "GBC/Memory.h"
 #include "GBC/SoundController.h"
 
+#include "UI/UIFriend.h"
+
 namespace GBC
 {
 
@@ -117,9 +119,7 @@ public:
    }
 
 private:
-#if GBC_WITH_UI
-   friend class UI;
-#endif // GBC_WITH_UI
+   DECLARE_UI_FRIEND
 
    void tickJoypad();
    void tickDiv();

@@ -1,9 +1,5 @@
 #include "Emulator.h"
 
-#if GBC_WITH_UI
-#  include "UI.h"
-#endif // GBC_WITH_UI
-
 #include "Core/Archive.h"
 #include "Core/Assert.h"
 #include "Core/Constants.h"
@@ -15,6 +11,8 @@
 
 #include "Platform/Utils/IOUtils.h"
 #include "Platform/Video/Renderer.h"
+
+#include "UI/UI.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>

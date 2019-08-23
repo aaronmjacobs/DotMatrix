@@ -2,6 +2,8 @@
 
 #include "GBC/CPU.h"
 
+#include "UI/UIFriend.h"
+
 #include <cstdint>
 #include <vector>
 
@@ -747,9 +749,7 @@ public:
    void write(uint16_t address, uint8_t value);
 
 private:
-#if GBC_WITH_UI
-   friend class UI;
-#endif // GBC_WITH_UI
+   DECLARE_UI_FRIEND
 
    friend class FrameSequencer;
 

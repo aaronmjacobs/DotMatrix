@@ -24,7 +24,7 @@ if(GBC_WITH_UI)
    )
    target_sources(${PROJECT_NAME} PRIVATE "${IMGUI_SOURCES}")
    target_include_directories(${PROJECT_NAME} PUBLIC "${IMGUI_DIR}")
-   target_compile_definitions(${PROJECT_NAME} PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD IMGUI_USER_CONFIG="UIConfig.h")
+   target_compile_definitions(${PROJECT_NAME} PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD IMGUI_USER_CONFIG="UI/UIConfig.h")
 
    set(IMGUI_CLUB_DIR "${LIB_DIR}/imgui_club")
    target_sources(${PROJECT_NAME} PRIVATE "${IMGUI_CLUB_DIR}/imgui_memory_editor/imgui_memory_editor.h")

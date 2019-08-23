@@ -53,13 +53,15 @@ target_sources(${PROJECT_NAME} PRIVATE
    "${SRC_DIR}/Platform/Video/ShaderProgram.cpp"
    "${SRC_DIR}/Platform/Video/Texture.h"
    "${SRC_DIR}/Platform/Video/Texture.cpp"
+
+   "${SRC_DIR}/UI/UIFriend.h"
 )
 
 if(GBC_WITH_UI)
    target_sources(${PROJECT_NAME} PRIVATE
-      "${SRC_DIR}/UI.h"
-      "${SRC_DIR}/UI.cpp"
-      "${SRC_DIR}/UIConfig.h"
+      "${SRC_DIR}/UI/UI.h"
+      "${SRC_DIR}/UI/UI.cpp"
+      "${SRC_DIR}/UI/UIConfig.h"
    )
 endif()
 

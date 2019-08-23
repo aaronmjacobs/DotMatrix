@@ -5,6 +5,8 @@
 
 #include "GBC/Memory.h"
 
+#include "UI/UIFriend.h"
+
 #include <cstdint>
 
 namespace GBC
@@ -189,9 +191,7 @@ public:
    }
 
 private:
-#if GBC_WITH_UI
-   friend class UI;
-#endif // GBC_WITH_UI
+   DECLARE_UI_FRIEND
 
    class Operand;
 

@@ -51,7 +51,7 @@ void renderMemoryRegion(GBC::Memory& memory, const char* name, const char* descr
 {
    if (ImGui::BeginTabItem(name))
    {
-      ImGui::Text(description);
+      ImGui::Text("%s", description);
       ImGui::Separator();
 
       MemoryHelper memoryHelper;
