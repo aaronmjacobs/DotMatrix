@@ -27,6 +27,8 @@ public:
    bool canQueue() const;
    void queue(const std::vector<GBC::AudioSample>& audioData);
 
+   void setPitch(float pitch);
+
 private:
    UPtr<ALCdevice, std::function<void(ALCdevice*)>> device;
    UPtr<ALCcontext, std::function<void(ALCcontext*)>> context;

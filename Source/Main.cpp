@@ -48,10 +48,6 @@ int main(int argc, char* argv[])
             frameTime = 0.0;
          }
 
-#if GBC_DEBUG
-         frameTime *= emulator.getTimeModifier();
-#endif // GBC_DEBUG
-
          glfwPollEvents();
 
          emulator.tick(frameTime);

@@ -183,11 +183,11 @@ std::string getSaveName(const char* title)
 
 Emulator::Emulator()
    : window(nullptr)
+#if GBC_WITH_UI
+   , timeScale(1.0)
+#endif // GBC_WITH_UI
    , cartWroteToRamLastFrame(false)
    , exiting(false)
-#if GBC_DEBUG
-   , timeModifier(1.0)
-#endif // GBC_DEBUG
 {
 }
 
@@ -289,6 +289,10 @@ bool Emulator::init()
 
 void Emulator::tick(double dt)
 {
+#if GBC_WITH_UI
+   dt *= timeScale;
+#endif // GBC_WITH_UI
+
    if (gameBoy)
    {
       GBC::Joypad joypad = GBC::Joypad::unionOf(keyboardInputDevice.poll(), controllerInputDevice.poll());
@@ -316,12 +320,12 @@ void Emulator::render()
       renderer->draw(gameBoy->getLCDController().getFramebuffer());
 
 #if GBC_WITH_UI
-      ui->render(*gameBoy, *renderer);
+      ui->render(*this);
 #endif // GBC_WITH_UI
 
       if (audioManager.canQueue())
       {
-         const std::vector<GBC::AudioSample>& audioData = gameBoy->getSoundController().getAudioData();
+         const std::vector<GBC::AudioSample>& audioData = gameBoy->getSoundController().swapAudioBuffers();
 
          if (!audioData.empty())
          {
@@ -393,29 +397,6 @@ void Emulator::onKeyChanged(int key, int scancode, int action, int mods)
       {
          toggleFullScreen();
       }
-
-#if GBC_DEBUG
-      switch (key)
-      {
-         case GLFW_KEY_1:
-            timeModifier = 1.0;
-            break;
-         case GLFW_KEY_2:
-            timeModifier = 2.0;
-            break;
-         case GLFW_KEY_3:
-            timeModifier = 5.0;
-            break;
-         case GLFW_KEY_4:
-            timeModifier = 1.0 / 60.0;
-            break;
-         case GLFW_KEY_5:
-            timeModifier = 0.0;
-            break;
-         default:
-            break;
-      }
-#endif // GBC_DEBUG
    }
 }
 

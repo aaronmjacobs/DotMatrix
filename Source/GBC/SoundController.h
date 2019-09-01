@@ -44,6 +44,8 @@ protected:
    }
 
 private:
+   DECLARE_UI_FRIEND
+
    bool enabled;
 };
 
@@ -81,6 +83,8 @@ public:
    }
 
 private:
+   DECLARE_UI_FRIEND
+
    Owner& owner;
    uint32_t period;
    uint32_t counter;
@@ -98,14 +102,6 @@ public:
 
    void clock()
    {
-      static const std::array<std::array<bool, 8>, 4> kDutyMasks =
-      {{
-         { false, false, false, false, false, false, false, true },
-         { true, false, false, false, false, false, false, true },
-         { true, false, false, false, false, true, true, true },
-         { false, true, true, true, true, true, true, false }
-      }};
-
       high = kDutyMasks[index][counter];
       counter = (counter + 1) % 8;
    }
@@ -132,6 +128,16 @@ public:
    }
 
 private:
+   DECLARE_UI_FRIEND
+
+   static constexpr const std::array<std::array<bool, 8>, 4> kDutyMasks =
+   {{
+      { false, false, false, false, false, false, false, true },
+      { true, false, false, false, false, false, false, true },
+      { true, false, false, false, false, true, true, true },
+      { false, true, true, true, true, true, true, false }
+   }};
+
    uint8_t counter;
    uint8_t index;
    bool high;
@@ -195,6 +201,8 @@ public:
    }
 
 private:
+   DECLARE_UI_FRIEND
+
    SoundChannel& owner;
    const uint16_t maxCounter;
    uint16_t counter;
@@ -259,6 +267,8 @@ public:
    }
 
 private:
+   DECLARE_UI_FRIEND
+
    uint8_t period;
    uint8_t counter;
    uint8_t volume;
@@ -273,7 +283,8 @@ class SweepUnit
 public:
    SweepUnit(SquareWaveChannel& owningSquareWaveChannel)
       : owner(owningSquareWaveChannel)
-      , shadowFrequency(0), period(0)
+      , shadowFrequency(0)
+      , period(0)
       , counter(0)
       , shift(0)
       , negate(false)
@@ -333,6 +344,8 @@ public:
    uint16_t calculateNewFrequency();
 
 private:
+   DECLARE_UI_FRIEND
+
    SquareWaveChannel& owner;
 
    uint16_t shadowFrequency;
@@ -409,6 +422,8 @@ public:
    }
 
 private:
+   DECLARE_UI_FRIEND
+
    uint8_t position;
    uint8_t volumeCode;
    bool dacPowered;
@@ -471,6 +486,8 @@ public:
    }
 
 private:
+   DECLARE_UI_FRIEND
+
    uint8_t clockShift;
    bool widthMode;
    uint8_t divisorCode;
@@ -538,6 +555,8 @@ public:
    }
 
 private:
+   DECLARE_UI_FRIEND
+
    SoundTimer<SquareWaveChannel> timer;
    uint16_t frequency;
 
@@ -591,6 +610,8 @@ public:
    }
 
 private:
+   DECLARE_UI_FRIEND
+
    void setFrequency(uint16_t newFrequency)
    {
       frequency = newFrequency;
@@ -649,6 +670,8 @@ public:
    }
 
 private:
+   DECLARE_UI_FRIEND
+
    SoundTimer<NoiseChannel> timer;
 
    LFSRUnit lfsrUnit;
@@ -680,6 +703,8 @@ public:
    }
 
 private:
+   DECLARE_UI_FRIEND
+
    SoundTimer<FrameSequencer> timer;
    SoundController& owner;
    uint8_t step;
@@ -699,6 +724,8 @@ public:
    void writeNr51(uint8_t value);
 
 private:
+   DECLARE_UI_FRIEND
+
    uint8_t leftVolume;
    uint8_t rightVolume;
 
@@ -736,10 +763,18 @@ public:
       }
    }
 
-   const std::vector<AudioSample>& getAudioData()
+   const std::vector<AudioSample>& swapAudioBuffers()
    {
       activeBufferIndex = !activeBufferIndex;
+
       buffers[activeBufferIndex].clear();
+#if GBC_WITH_UI
+      square1Buffers[activeBufferIndex].clear();
+      square2Buffers[activeBufferIndex].clear();
+      waveBuffers[activeBufferIndex].clear();
+      noiseBuffers[activeBufferIndex].clear();
+#endif // GBC_WITH_UI
+
       return buffers[!activeBufferIndex];
    }
 
@@ -753,10 +788,34 @@ private:
 
    friend class FrameSequencer;
 
+   const std::vector<AudioSample>& getAudioData() const
+   {
+      return buffers[activeBufferIndex];
+   }
+
+#if GBC_WITH_UI
+   const std::vector<int8_t>& getSquare1Data() const
+   {
+      return square1Buffers[activeBufferIndex];
+   }
+   const std::vector<int8_t>& getSquare2Data() const
+   {
+      return square2Buffers[activeBufferIndex];
+   }
+   const std::vector<int8_t>& getWaveData() const
+   {
+      return waveBuffers[activeBufferIndex];
+   }
+   const std::vector<int8_t>& getNoiseData() const
+   {
+      return noiseBuffers[activeBufferIndex];
+   }
+#endif // GBC_WITH_UI
+
    uint8_t readNr52() const;
    void writeNr52(uint8_t value);
    void setPowerEnabled(bool newPowerEnabled);
-   AudioSample getCurrentAudioSample() const;
+   void pushSample();
 
    void lengthClock()
    {
@@ -791,6 +850,13 @@ private:
    uint8_t cyclesSinceLastSample;
    std::size_t activeBufferIndex;
    std::array<std::vector<AudioSample>, 2> buffers;
+
+#if GBC_WITH_UI
+   std::array<std::vector<int8_t>, 2> square1Buffers;
+   std::array<std::vector<int8_t>, 2> square2Buffers;
+   std::array<std::vector<int8_t>, 2> waveBuffers;
+   std::array<std::vector<int8_t>, 2> noiseBuffers;
+#endif // GBC_WITH_UI
 };
 
 } // namespace GBC

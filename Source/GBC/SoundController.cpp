@@ -554,10 +554,31 @@ SoundController::SoundController()
 {
    // Try to guess a reasonable amount of data to reserve
    // For now, 1/30th of a second's worth
+   static const std::size_t kReserveSamples = kSampleRate / 30;
+
    for (std::vector<AudioSample>& buffer : buffers)
    {
-      buffer.reserve(kSampleRate / 30);
+      buffer.reserve(kReserveSamples);
    }
+
+#if GBC_WITH_UI
+   for (std::vector<int8_t>& buffer : square1Buffers)
+   {
+      buffer.reserve(kReserveSamples);
+   }
+   for (std::vector<int8_t>& buffer : square2Buffers)
+   {
+      buffer.reserve(kReserveSamples);
+   }
+   for (std::vector<int8_t>& buffer : waveBuffers)
+   {
+      buffer.reserve(kReserveSamples);
+   }
+   for (std::vector<int8_t>& buffer : noiseBuffers)
+   {
+      buffer.reserve(kReserveSamples);
+   }
+#endif // GBC_WITH_UI
 }
 
 void SoundController::machineCycle()
@@ -581,8 +602,7 @@ void SoundController::machineCycle()
          cyclesSinceLastSample -= kCyclesPerSample;
          ASSERT(cyclesSinceLastSample < kCyclesPerSample);
 
-         AudioSample sample = getCurrentAudioSample();
-         buffers[activeBufferIndex].push_back(sample);
+         pushSample();
       }
    }
 }
@@ -722,14 +742,22 @@ void SoundController::setPowerEnabled(bool newPowerEnabled)
    powerEnabled = newPowerEnabled;
 }
 
-AudioSample SoundController::getCurrentAudioSample() const
+void SoundController::pushSample()
 {
    int8_t square1Sample = squareWaveChannel1.getCurrentAudioSample();
    int8_t square2Sample = squareWaveChannel2.getCurrentAudioSample();
    int8_t waveSample = waveChannel.getCurrentAudioSample();
    int8_t noiseSample = noiseChannel.getCurrentAudioSample();
 
-   return mixer.mix(square1Sample, square2Sample, waveSample, noiseSample);
+   AudioSample sample = mixer.mix(square1Sample, square2Sample, waveSample, noiseSample);
+   buffers[activeBufferIndex].push_back(sample);
+
+#if GBC_WITH_UI
+   square1Buffers[activeBufferIndex].push_back(square1Sample);
+   square2Buffers[activeBufferIndex].push_back(square2Sample);
+   waveBuffers[activeBufferIndex].push_back(waveSample);
+   noiseBuffers[activeBufferIndex].push_back(noiseSample);
+#endif // GBC_WITH_UI
 }
 
 } // namespace GBC

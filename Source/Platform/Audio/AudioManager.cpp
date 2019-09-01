@@ -125,8 +125,7 @@ AudioManager::AudioManager()
    alGenSources(1, &source);
    checkAlError("generating audio source");
 
-   alSourcef(source, AL_PITCH, 1.0f);
-   checkAlError("setting source pitch");
+   setPitch(1.0f);
    alSourcef(source, AL_GAIN, 0.5f); // Full volume is pretty loud since our samples use the full range of values, so we lower it here
    checkAlError("setting source gain");
    alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
@@ -210,4 +209,10 @@ void AudioManager::queue(const std::vector<GBC::AudioSample>& audioData)
       alSourcePlay(source);
       checkAlError("playing source");
    }
+}
+
+void AudioManager::setPitch(float pitch)
+{
+   alSourcef(source, AL_PITCH, pitch);
+   checkAlError("setting source pitch");
 }

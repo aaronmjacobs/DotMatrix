@@ -7,6 +7,8 @@
 #include "Platform/Input/ControllerInputDevice.h"
 #include "Platform/Input/KeyboardInputDevice.h"
 
+#include "UI/UIFriend.h"
+
 #include <readerwriterqueue.h>
 
 #include <atomic>
@@ -15,10 +17,6 @@
 #include <thread>
 
 class Renderer;
-
-#if GBC_WITH_UI
-class UI;
-#endif // GBC_WITH_UI
 
 namespace GBC
 {
@@ -59,14 +57,9 @@ public:
    void onKeyChanged(int key, int scancode, int action, int mods);
    void onWindowRefreshRequested();
 
-#if GBC_DEBUG
-   double getTimeModifier() const
-   {
-      return timeModifier;
-   }
-#endif // GBC_DEBUG
-
 private:
+   DECLARE_UI_FRIEND
+
    void toggleFullScreen();
    void loadGame();
    void saveGameAsync();
@@ -79,6 +72,7 @@ private:
 
 #if GBC_WITH_UI
    UPtr<UI> ui;
+   double timeScale;
 #endif // GBC_WITH_UI
 
    KeyboardInputDevice keyboardInputDevice;
@@ -93,8 +87,4 @@ private:
    moodycamel::ReaderWriterQueue<SaveData> saveQueue;
 
    Bounds savedWindowBounds;
-
-#if GBC_DEBUG
-   double timeModifier;
-#endif // GBC_DEBUG
 };
