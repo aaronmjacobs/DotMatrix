@@ -9,10 +9,8 @@
 #include <functional>
 #include <vector>
 
-struct ALCcontext_struct;
-typedef struct ALCcontext_struct ALCcontext;
-struct ALCdevice_struct;
-typedef struct ALCdevice_struct ALCdevice;
+struct ALCcontext;
+struct ALCdevice;
 typedef unsigned int ALuint;
 
 class AudioManager
