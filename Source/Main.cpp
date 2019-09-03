@@ -1,4 +1,8 @@
-#define GBC_USE_WINMAIN (defined(_WIN32) && !GBC_DEBUG)
+#if defined(_WIN32) && !GBC_DEBUG
+#  define GBC_USE_WINMAIN 1
+#else
+#  define GBC_USE_WINMAIN 0
+#endif
 
 #if GBC_USE_WINMAIN
 #  pragma comment(linker, "/SUBSYSTEM:WINDOWS")
