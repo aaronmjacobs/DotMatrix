@@ -16,20 +16,20 @@ set(DEBUG_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/debug/src")
 
 # Headers
 set(HEADERS
-   "${INCLUDE_DIR}/glad/gl.h"
+   "${INCLUDE_DIR}/glad/glad.h"
    "${INCLUDE_DIR}/KHR/khrplatform.h"
 )
 set(DEBUG_HEADERS
-   "${DEBUG_INCLUDE_DIR}/glad/gl.h"
+   "${DEBUG_INCLUDE_DIR}/glad/glad.h"
    "${DEBUG_INCLUDE_DIR}/KHR/khrplatform.h"
 )
 
 # Sources
 set(SOURCES
-   "${SRC_DIR}/gl.c"
+   "${SRC_DIR}/glad.c"
 )
 set(DEBUG_SOURCES
-   "${DEBUG_SRC_DIR}/gl.c"
+   "${DEBUG_SRC_DIR}/glad.c"
 )
 
 ### Target Info ###

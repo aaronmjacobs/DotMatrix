@@ -3,7 +3,7 @@
 #include "Core/Log.h"
 #include "Core/Pointers.h"
 
-#include <glad/gl.h>
+#include <glad/glad.h>
 
 #include <array>
 #include <cstring>
