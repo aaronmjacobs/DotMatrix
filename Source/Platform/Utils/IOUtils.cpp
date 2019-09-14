@@ -3,7 +3,9 @@
 #include "Platform/Utils/IOUtils.h"
 #include "Platform/Utils/OSUtils.h"
 
-#include <filesystem>
+#if GBC_HAS_FILESYSTEM_SUPPORT
+#  include <filesystem>
+#endif // GBC_HAS_FILESYSTEM_SUPPORT
 #include <fstream>
 #include <mutex>
 
@@ -147,6 +149,7 @@ std::vector<std::string> getAllFilePathsRecursive(const std::string& directory)
 {
    std::vector<std::string> filePaths;
 
+#if GBC_HAS_FILESYSTEM_SUPPORT
    for (const std::filesystem::directory_entry& entry : std::filesystem::recursive_directory_iterator(directory))
    {
       const std::filesystem::path& path = entry.path();
@@ -157,6 +160,9 @@ std::vector<std::string> getAllFilePathsRecursive(const std::string& directory)
          filePaths.push_back(pathString);
       }
    }
+#else
+   ASSERT(false, "This build was generated without <filesystem> support, getAllFilePathsRecursive() will return an empty vector!");
+#endif
 
    return filePaths;
 }
