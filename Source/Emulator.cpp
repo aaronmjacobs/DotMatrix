@@ -11,7 +11,7 @@
 
 #include "Platform/Utils/IOUtils.h"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include <algorithm>
@@ -43,7 +43,7 @@ const char* getGlErrorName(GLenum error)
    }
 }
 
-void gladPostCallback(const char* name, void* funcptr, int numArgs, ...)
+void gladPostCallback(void* ret, const char* name, GLADapiproc apiproc, int len_args, ...)
 {
    GLenum errorCode = glad_glGetError();
    ASSERT(errorCode == GL_NO_ERROR, "OpenGL error %d (%s) in %s", errorCode, getGlErrorName(errorCode), name);
@@ -56,12 +56,12 @@ bool loadGl()
 
    if (!loaded)
    {
-      loaded = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) != 0;
+      loaded = gladLoadGL(reinterpret_cast<GLADloadfunc>(glfwGetProcAddress)) != 0;
 
 #if GBC_DEBUG
       if (loaded)
       {
-         glad_set_post_callback(gladPostCallback);
+         gladSetGLPostCallback(gladPostCallback);
       }
 #endif // GBC_DEBUG
    }
