@@ -2,6 +2,8 @@
 
 #include "Emulator.h"
 
+#include "Core/Math.h"
+
 #include "GBC/GameBoy.h"
 #include "GBC/LCDController.h"
 
@@ -21,7 +23,7 @@ namespace
 {
 
 const uint64_t kZero = 0;
-const std::size_t kNumPlottedSamples = GBC::SoundController::kSampleRate / 4;
+const int kNumPlottedSamples = GBC::SoundController::kSampleRate / 4;
 
 struct MemoryHelper
 {
@@ -29,14 +31,14 @@ struct MemoryHelper
    uint16_t address = 0;
 };
 
-MemoryEditor::u8 readMemory(const MemoryEditor::u8* data, size_t offset)
+MemoryEditor::u8 readMemory(const MemoryEditor::u8* data, std::size_t offset)
 {
    const MemoryHelper* memoryHelper = reinterpret_cast<const MemoryHelper*>(data);
 
    return memoryHelper->memory->readDirect(memoryHelper->address + static_cast<uint16_t>(offset));
 }
 
-void writeMemory(MemoryEditor::u8* data, size_t offset, MemoryEditor::u8 value)
+void writeMemory(MemoryEditor::u8* data, std::size_t offset, MemoryEditor::u8 value)
 {
    MemoryHelper* memoryHelper = reinterpret_cast<MemoryHelper*>(data);
 
@@ -80,7 +82,7 @@ float audioSampleGetter(void* data, int index)
    return (*floatSamples)[index];
 }
 
-void updateSamples(std::vector<float>& samples, std::size_t& offset, const std::vector<int8_t>& audioData)
+void updateSamples(std::vector<float>& samples, int& offset, const std::vector<int8_t>& audioData)
 {
    for (int8_t audioSample : audioData)
    {
@@ -92,7 +94,7 @@ void updateSamples(std::vector<float>& samples, std::size_t& offset, const std::
 std::string getPitch(uint32_t timerPeriod)
 {
    static const uint32_t kA4 = 440;
-   static const uint32_t kC0 = kA4 * std::pow(2, -4.75);
+   static const uint32_t kC0 = Math::round<uint32_t>(kA4 * std::pow(2, -4.75));
    static const std::array<const char*, 12> kNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
    if (timerPeriod == 0)
@@ -101,7 +103,7 @@ std::string getPitch(uint32_t timerPeriod)
    }
 
    uint32_t frequency = GBC::CPU::kClockSpeed / timerPeriod;
-   uint32_t halfSteps = 12 * std::log2(static_cast<double>(frequency) / kC0 + 0.5);
+   uint32_t halfSteps = 12 * Math::round<uint32_t>(std::log2(static_cast<double>(frequency) / kC0));
    uint32_t octave = halfSteps / 12;
    uint32_t pitch = halfSteps % 12;
 
@@ -179,11 +181,11 @@ void UI::renderEmulator(Emulator& emulator) const
 {
    ImGui::Begin("Emulator");
 
-   float timeScale = emulator.timeScale;
+   float timeScale = static_cast<float>(emulator.timeScale);
    ImGui::SliderFloat("Time scale", &timeScale, 0.0f, 1.0f, nullptr, 2.0f);
    emulator.timeScale = timeScale;
 
-   uint64_t clockSpeed = GBC::CPU::kClockSpeed * timeScale;
+   uint64_t clockSpeed = Math::round<uint64_t>(GBC::CPU::kClockSpeed * timeScale);
    ImGui::Text("Clock speed: %llu", clockSpeed);
 
    if (ImGui::Button("Step"))
@@ -302,7 +304,7 @@ void UI::renderSoundController(GBC::GameBoy& gameBoy) const
 
       static std::vector<float> leftSamples(kNumPlottedSamples);
       static std::vector<float> rightSamples(kNumPlottedSamples);
-      static std::size_t offset = 0;
+      static int offset = 0;
 
       const std::vector<GBC::AudioSample>& audioData = soundController.getAudioData();
       for (const GBC::AudioSample& audioSample : audioData)
@@ -368,7 +370,7 @@ void UI::renderSoundController(GBC::GameBoy& gameBoy) const
       GBC::SquareWaveChannel& squareWaveChannel1 = soundController.squareWaveChannel1;
 
       static std::vector<float> samples(kNumPlottedSamples);
-      static std::size_t offset = 0;
+      static int offset = 0;
       updateSamples(samples, offset, soundController.getSquare1Data());
 
       renderSoundChannel(squareWaveChannel1, samples, offset);
@@ -388,7 +390,7 @@ void UI::renderSoundController(GBC::GameBoy& gameBoy) const
       GBC::SquareWaveChannel& squareWaveChannel2 = soundController.squareWaveChannel2;
 
       static std::vector<float> samples(kNumPlottedSamples);
-      static std::size_t offset = 0;
+      static int offset = 0;
       updateSamples(samples, offset, soundController.getSquare2Data());
 
       renderSoundChannel(squareWaveChannel2, samples, offset);
@@ -407,7 +409,7 @@ void UI::renderSoundController(GBC::GameBoy& gameBoy) const
       GBC::WaveChannel& waveChannel = soundController.waveChannel;
 
       static std::vector<float> samples(kNumPlottedSamples);
-      static std::size_t offset = 0;
+      static int offset = 0;
       updateSamples(samples, offset, soundController.getWaveData());
 
       renderSoundChannel(waveChannel, samples, offset);
@@ -427,7 +429,7 @@ void UI::renderSoundController(GBC::GameBoy& gameBoy) const
       GBC::NoiseChannel& noiseChannel = soundController.noiseChannel;
 
       static std::vector<float> samples(kNumPlottedSamples);
-      static std::size_t offset = 0;
+      static int offset = 0;
       updateSamples(samples, offset, soundController.getNoiseData());
 
       renderSoundChannel(noiseChannel, samples, offset);
@@ -442,7 +444,7 @@ void UI::renderSoundController(GBC::GameBoy& gameBoy) const
    ImGui::End();
 }
 
-void UI::renderSoundChannel(GBC::SoundChannel& soundChannel, std::vector<float>& samples, std::size_t offset) const
+void UI::renderSoundChannel(GBC::SoundChannel& soundChannel, std::vector<float>& samples, int offset) const
 {
    if (ImGui::TreeNode("Channel"))
    {
@@ -577,7 +579,7 @@ void UI::renderWaveUnit(GBC::WaveUnit& waveUnit) const
          return static_cast<float>(sample);
       };
 
-      ImGui::PlotHistogram("Wave table", kHistogramGetter, &waveUnit, waveUnit.waveTable.size() * 2, 0, nullptr, 0.0f, 15.0f, ImVec2(0, 100));
+      ImGui::PlotHistogram("Wave table", kHistogramGetter, &waveUnit, static_cast<int>(waveUnit.waveTable.size() * 2), 0, nullptr, 0.0f, 15.0f, ImVec2(0, 100));
 
       ImGui::TreePop();
    }

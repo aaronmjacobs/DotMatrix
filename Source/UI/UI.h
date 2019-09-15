@@ -45,7 +45,7 @@ private:
    void renderMemory(GBC::GameBoy& gameBoy) const;
    void renderSoundController(GBC::GameBoy& gameBoy) const;
 
-   void renderSoundChannel(GBC::SoundChannel& soundChannel, std::vector<float>& samples, std::size_t offset) const;
+   void renderSoundChannel(GBC::SoundChannel& soundChannel, std::vector<float>& samples, int offset) const;
    template<typename T>
    void renderSoundTimer(GBC::SoundTimer<T>& soundTimer, uint32_t maxPeriod, bool displayNote) const;
    void renderDutyUnit(GBC::DutyUnit& dutyUnit) const;
