@@ -10,6 +10,7 @@ target_sources(${PROJECT_NAME} PRIVATE
    "${SRC_DIR}/Core/Enum.h"
    "${SRC_DIR}/Core/Log.h"
    "${SRC_DIR}/Core/Log.cpp"
+   "${SRC_DIR}/Core/Math.h"
    "${SRC_DIR}/Core/Pointers.h"
 
    "${SRC_DIR}/GBC/Bootstrap.h"
