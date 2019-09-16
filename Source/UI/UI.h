@@ -44,6 +44,7 @@ private:
    void renderCPU(GBC::GameBoy& gameBoy) const;
    void renderMemory(GBC::GameBoy& gameBoy) const;
    void renderSoundController(GBC::GameBoy& gameBoy) const;
+   void renderCartridge(GBC::GameBoy& gameBoy) const;
 
    void renderSoundChannel(GBC::SoundChannel& soundChannel, std::vector<float>& samples, int offset) const;
    template<typename T>

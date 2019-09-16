@@ -153,10 +153,10 @@ int64_t getPlatformTime()
 
 } // namespace
 
-class ROMOnly : public MemoryBankController
+class ROM : public MemoryBankController
 {
 public:
-   ROMOnly(const Cartridge& cartridge)
+   ROM(const Cartridge& cartridge)
       : MemoryBankController(cartridge)
    {
    }
@@ -997,7 +997,7 @@ UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data)
    {
       case Type::ROM:
          LOG_INFO("ROM");
-         mbc = std::make_unique<ROMOnly>(*cart);
+         mbc = std::make_unique<ROM>(*cart);
          break;
       case Type::MBC1:
       case Type::MBC1PlusRAM:
@@ -1046,8 +1046,9 @@ Cartridge::Cartridge(std::vector<uint8_t>&& data, const Header& headerData)
    , rumblePresent(cartHasRumble(header.type))
    , controller(nullptr)
 {
-   // Copy title into separate array to ensure there is a null terminator
-   memcpy(cartTitle.data(), header.title.data(), header.title.size());
+   bool supportsGBC = (header.cgbFlag & kCBGSupported) != 0x00;
+   std::size_t titleSize = supportsGBC ? header.title.size() : cartTitle.size() - 1;
+   std::memcpy(cartTitle.data(), header.title.data(), titleSize);
 }
 
 } // namespace GBC

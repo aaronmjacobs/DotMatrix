@@ -89,7 +89,7 @@ GameBoy::~GameBoy()
 
 void GameBoy::tick(double dt)
 {
-   uint64_t targetCycles = totalCycles + static_cast<uint64_t>(CPU::kClockSpeed * dt);
+   uint64_t targetCycles = totalCycles + static_cast<uint64_t>(CPU::kClockSpeed * dt + 0.5);
 
    while (totalCycles < targetCycles)
    {

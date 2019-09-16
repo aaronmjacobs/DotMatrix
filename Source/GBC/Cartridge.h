@@ -6,6 +6,8 @@
 
 #include "GBC/Memory.h"
 
+#include "UI/UIFriend.h"
+
 #include <array>
 #include <cstdint>
 #include <vector>
@@ -240,6 +242,8 @@ public:
    };
 
 private:
+   DECLARE_UI_FRIEND
+
    Cartridge(std::vector<uint8_t>&& data, const Header& headerData);
 
    void setController(UPtr<MemoryBankController> mbc)
@@ -249,7 +253,7 @@ private:
 
    std::vector<uint8_t> cartData;
    Header header;
-   std::array<char, 12> cartTitle;
+   std::array<char, 17> cartTitle;
 
    const bool ramPresent;
    const bool batteryPresent;
