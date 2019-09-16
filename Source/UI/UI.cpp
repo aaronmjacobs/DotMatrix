@@ -103,8 +103,8 @@ std::string getPitch(uint32_t timerPeriod)
       return "";
    }
 
-   uint32_t frequency = GBC::CPU::kClockSpeed / timerPeriod;
-   uint32_t halfSteps = 12 * Math::round<uint32_t>(std::log2(static_cast<double>(frequency) / kC0));
+   double frequency = GBC::CPU::kClockSpeed / static_cast<double>(timerPeriod);
+   uint32_t halfSteps = Math::round<uint32_t>(12 * std::log2(frequency / kC0));
    uint32_t octave = halfSteps / 12;
    uint32_t pitch = halfSteps % 12;
 
@@ -463,6 +463,8 @@ const char* getRAMSizeText(GBC::Cartridge::RAMSize ramSize)
       return "128 KB (16 banks)";
    case GBC::Cartridge::kRAM64KBytes:
       return "64 KB (8 banks)";
+   default:
+      return "Unknown";
    }
 }
 
