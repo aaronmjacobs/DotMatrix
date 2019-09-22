@@ -1,14 +1,6 @@
 #if defined(_WIN32) && !GBC_DEBUG
-#  define GBC_USE_WINMAIN 1
-#else
-#  define GBC_USE_WINMAIN 0
-#endif
-
-#if GBC_USE_WINMAIN
-#  pragma comment(linker, "/SUBSYSTEM:WINDOWS")
-#  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>
-#endif // GBC_USE_WINMAIN
+#  pragma comment(linker, "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+#endif // defined(_WIN32) && !GBC_DEBUG
 
 #include "Emulator.h"
 
@@ -70,10 +62,3 @@ int main(int argc, char* argv[])
    glfwTerminate();
    return 0;
 }
-
-#if GBC_USE_WINMAIN
-int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
-{
-   return main(__argc, __argv);
-}
-#endif // GBC_USE_WINMAIN
