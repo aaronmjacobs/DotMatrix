@@ -187,6 +187,7 @@ Emulator::Emulator()
    : window(nullptr)
 #if GBC_WITH_UI
    , timeScale(1.0)
+   , renderUi(true)
 #endif // GBC_WITH_UI
    , cartWroteToRamLastFrame(false)
    , exiting(false)
@@ -322,7 +323,10 @@ void Emulator::render()
       renderer->draw(gameBoy->getLCDController().getFramebuffer());
 
 #if GBC_WITH_UI
-      ui->render(*this);
+      if (renderUi)
+      {
+         ui->render(*this);
+      }
 #endif // GBC_WITH_UI
 
       if (audioManager.canQueue())
@@ -399,6 +403,12 @@ void Emulator::onKeyChanged(int key, int scancode, int action, int mods)
       {
          toggleFullScreen();
       }
+#if GBC_WITH_UI
+      else if (key == GLFW_KEY_SPACE)
+      {
+         renderUi = !renderUi;
+      }
+#endif // GBC_WITH_UI
    }
 }
 

@@ -129,6 +129,7 @@ void Renderer::onFramebufferSizeChanged(int width, int height)
 
 void Renderer::draw(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& pixels)
 {
+   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
    glClear(GL_COLOR_BUFFER_BIT);
 
    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GBC::kScreenWidth, GBC::kScreenHeight, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());

@@ -73,6 +73,7 @@ private:
 #if GBC_WITH_UI
    UPtr<UI> ui;
    double timeScale;
+   bool renderUi;
 #endif // GBC_WITH_UI
 
    KeyboardInputDevice keyboardInputDevice;
