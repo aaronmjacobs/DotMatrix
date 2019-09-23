@@ -7,6 +7,7 @@ target_sources(${PROJECT_NAME} PRIVATE
    "${SRC_DIR}/Core/Archive.h"
    "${SRC_DIR}/Core/Assert.h"
    "${SRC_DIR}/Core/Constants.h.in"
+   "${SRC_DIR}/Core/Enum.h"
    "${SRC_DIR}/Core/Log.h"
    "${SRC_DIR}/Core/Log.cpp"
    "${SRC_DIR}/Core/Pointers.h"

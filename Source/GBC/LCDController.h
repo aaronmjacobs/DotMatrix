@@ -19,10 +19,10 @@ namespace Mode
 
 enum Enum : uint8_t
 {
-   kHBlank = 0,
-   kVBlank = 1,
-   kSearchOAM = 2,
-   kDataTransfer = 3
+   HBlank = 0,
+   VBlank = 1,
+   SearchOAM = 2,
+   DataTransfer = 3
 };
 
 } // namespace Mode

@@ -1,4 +1,5 @@
 #include "Core/Assert.h"
+#include "Core/Enum.h"
 #include "Core/Log.h"
 
 #include "GBC/Cartridge.h"
@@ -66,77 +67,77 @@ bool performGlobalChecksum(const Cartridge::Header& header, const std::vector<ui
    return header.globalChecksum[0] == high && header.globalChecksum[1] == low;
 }
 
-bool cartHasRAM(Cartridge::CartridgeType type)
+bool cartHasRAM(Cartridge::Type type)
 {
    switch (type)
    {
-      case Cartridge::kMBC1PlusRAM:
-      case Cartridge::kMBC1PlusRAMPlusBattery:
-      case Cartridge::kMBC2:
-      case Cartridge::kMBC2PlusBattery:
-      case Cartridge::kROMPlusRAM:
-      case Cartridge::kROMPlusRAMPlusBattery:
-      case Cartridge::kMMM01PlusRAM:
-      case Cartridge::kMMM01PlusRAMPlusBattery:
-      case Cartridge::kMBC3PlusTimerPlusRAMPlusBattery:
-      case Cartridge::kMBC3PlusRAM:
-      case Cartridge::kMBC3PlusRAMPlusBattery:
-      case Cartridge::kMBC4PlusRAM:
-      case Cartridge::kMBC4PlusRAMPlusBattery:
-      case Cartridge::kMBC5PlusRAM:
-      case Cartridge::kMBC5PlusRAMPlusBattery:
-      case Cartridge::kMBC5PlusRumblePlusRAM:
-      case Cartridge::kMBC5PlusRumblePlusRAMPlusBattery:
-      case Cartridge::kMBC7PlusSensorPlusRumblePlusRAMPlusBattery:
-      case Cartridge::kHuC1PlusRAMPlusBattery:
+      case Cartridge::Type::MBC1PlusRAM:
+      case Cartridge::Type::MBC1PlusRAMPlusBattery:
+      case Cartridge::Type::MBC2:
+      case Cartridge::Type::MBC2PlusBattery:
+      case Cartridge::Type::ROMPlusRAM:
+      case Cartridge::Type::ROMPlusRAMPlusBattery:
+      case Cartridge::Type::MMM01PlusRAM:
+      case Cartridge::Type::MMM01PlusRAMPlusBattery:
+      case Cartridge::Type::MBC3PlusTimerPlusRAMPlusBattery:
+      case Cartridge::Type::MBC3PlusRAM:
+      case Cartridge::Type::MBC3PlusRAMPlusBattery:
+      case Cartridge::Type::MBC4PlusRAM:
+      case Cartridge::Type::MBC4PlusRAMPlusBattery:
+      case Cartridge::Type::MBC5PlusRAM:
+      case Cartridge::Type::MBC5PlusRAMPlusBattery:
+      case Cartridge::Type::MBC5PlusRumblePlusRAM:
+      case Cartridge::Type::MBC5PlusRumblePlusRAMPlusBattery:
+      case Cartridge::Type::MBC7PlusSensorPlusRumblePlusRAMPlusBattery:
+      case Cartridge::Type::HuC1PlusRAMPlusBattery:
          return true;
       default:
          return false;
    }
 }
 
-bool cartHasBattery(Cartridge::CartridgeType type)
+bool cartHasBattery(Cartridge::Type type)
 {
    switch (type)
    {
-      case Cartridge::kMBC1PlusRAMPlusBattery:
-      case Cartridge::kMBC2PlusBattery:
-      case Cartridge::kROMPlusRAMPlusBattery:
-      case Cartridge::kMMM01PlusRAMPlusBattery:
-      case Cartridge::kMBC3PlusTimerPlusBattery:
-      case Cartridge::kMBC3PlusTimerPlusRAMPlusBattery:
-      case Cartridge::kMBC3PlusRAMPlusBattery:
-      case Cartridge::kMBC4PlusRAMPlusBattery:
-      case Cartridge::kMBC5PlusRAMPlusBattery:
-      case Cartridge::kMBC5PlusRumblePlusRAMPlusBattery:
-      case Cartridge::kMBC7PlusSensorPlusRumblePlusRAMPlusBattery:
-      case Cartridge::kHuC1PlusRAMPlusBattery:
+      case Cartridge::Type::MBC1PlusRAMPlusBattery:
+      case Cartridge::Type::MBC2PlusBattery:
+      case Cartridge::Type::ROMPlusRAMPlusBattery:
+      case Cartridge::Type::MMM01PlusRAMPlusBattery:
+      case Cartridge::Type::MBC3PlusTimerPlusBattery:
+      case Cartridge::Type::MBC3PlusTimerPlusRAMPlusBattery:
+      case Cartridge::Type::MBC3PlusRAMPlusBattery:
+      case Cartridge::Type::MBC4PlusRAMPlusBattery:
+      case Cartridge::Type::MBC5PlusRAMPlusBattery:
+      case Cartridge::Type::MBC5PlusRumblePlusRAMPlusBattery:
+      case Cartridge::Type::MBC7PlusSensorPlusRumblePlusRAMPlusBattery:
+      case Cartridge::Type::HuC1PlusRAMPlusBattery:
          return true;
       default:
          return false;
    }
 }
 
-bool cartHasTimer(Cartridge::CartridgeType type)
+bool cartHasTimer(Cartridge::Type type)
 {
    switch (type)
    {
-      case Cartridge::kMBC3PlusTimerPlusBattery:
-      case Cartridge::kMBC3PlusTimerPlusRAMPlusBattery:
+      case Cartridge::Type::MBC3PlusTimerPlusBattery:
+      case Cartridge::Type::MBC3PlusTimerPlusRAMPlusBattery:
          return true;
       default:
          return false;
    }
 }
 
-bool cartHasRumble(Cartridge::CartridgeType type)
+bool cartHasRumble(Cartridge::Type type)
 {
    switch (type)
    {
-      case Cartridge::kMBC5PlusRumble:
-      case Cartridge::kMBC5PlusRumblePlusRAM:
-      case Cartridge::kMBC5PlusRumblePlusRAMPlusBattery:
-      case Cartridge::kMBC7PlusSensorPlusRumblePlusRAMPlusBattery:
+      case Cartridge::Type::MBC5PlusRumble:
+      case Cartridge::Type::MBC5PlusRumblePlusRAM:
+      case Cartridge::Type::MBC5PlusRumblePlusRAMPlusBattery:
+      case Cartridge::Type::MBC7PlusSensorPlusRumblePlusRAMPlusBattery:
          return true;
       default:
          return false;
@@ -186,7 +187,7 @@ public:
       , ramEnabled(false)
       , romBankNumber(0x01)
       , ramBankNumber(0x00)
-      ,  bankingMode(kROMBankingMode)
+      , bankingMode(BankingMode::ROM)
       , ramBanks({})
    {
    }
@@ -224,7 +225,7 @@ public:
             // Switchable RAM bank
             if (ramEnabled)
             {
-               uint8_t bankNumber = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
+               uint8_t bankNumber = (bankingMode == BankingMode::RAM) ? ramBankNumber : 0x00;
                value = ramBanks[bankNumber][address - 0xA000];
             }
             else
@@ -273,14 +274,14 @@ public:
             uint8_t bankNumber = value & 0x03;
             switch (bankingMode)
             {
-               case kROMBankingMode:
+               case BankingMode::ROM:
                   romBankNumber = (romBankNumber & 0x1F) | (bankNumber << 5);
                   break;
-               case kRAMBankingMode:
+               case BankingMode::RAM:
                   ramBankNumber = bankNumber;
                   break;
                default:
-                  ASSERT(false, "Invalid banking mode: %hhu", bankingMode);
+                  ASSERT(false, "Invalid banking mode: %hhu", Enum::cast(bankingMode));
             }
             break;
          }
@@ -288,7 +289,7 @@ public:
          case 0x7000:
          {
             // ROM / RAM mode select
-            bankingMode = (value & 0x01) == 0x00 ? kROMBankingMode : kRAMBankingMode;
+            bankingMode = (value & 0x01) == 0x00 ? BankingMode::ROM : BankingMode::RAM;
             break;
          }
          case 0xA000:
@@ -299,7 +300,7 @@ public:
             // Switchable RAM bank
             if (ramEnabled)
             {
-               uint8_t bankNumber = (bankingMode == kRAMBankingMode) ? ramBankNumber : 0x00;
+               uint8_t bankNumber = (bankingMode == BankingMode::RAM) ? ramBankNumber : 0x00;
                ramBanks[bankNumber][address - 0xA000] = value;
                wroteToRam = true;
             }
@@ -343,10 +344,10 @@ public:
    }
 
 private:
-   enum BankingMode : uint8_t
+   enum class BankingMode : uint8_t
    {
-      kROMBankingMode = 0x00,
-      kRAMBankingMode = 0x01
+      ROM = 0x00,
+      RAM = 0x01
    };
 
    bool ramEnabled;
@@ -508,7 +509,7 @@ public:
       , rtcLatched(false)
       , latchData(0xFF)
       , romBankNumber(0x01)
-      , bankRegisterMode(kBankZero)
+      , bankRegisterMode(BankRegisterMode::BankZero)
       , rtc({})
       , rtcLatchedCopy({})
       , tickTime(0.0)
@@ -554,29 +555,29 @@ public:
             {
                switch (bankRegisterMode)
                {
-                  case kBankZero:
-                  case kBankOne:
-                  case kBankTwo:
-                  case kBankThree:
-                     value = ramBanks[bankRegisterMode][address - 0xA000];
+                  case BankRegisterMode::BankZero:
+                  case BankRegisterMode::BankOne:
+                  case BankRegisterMode::BankTwo:
+                  case BankRegisterMode::BankThree:
+                     value = ramBanks[Enum::cast(bankRegisterMode)][address - 0xA000];
                      break;
-                  case kRTCSeconds:
+                  case BankRegisterMode::RTCSeconds:
                      value = readRTC.seconds;
                      break;
-                  case kRTCMinutes:
+                  case BankRegisterMode::RTCMinutes:
                      value = readRTC.minutes;
                      break;
-                  case kRTCHours:
+                  case BankRegisterMode::RTCHours:
                      value = readRTC.hours;
                      break;
-                  case kRTCDaysLow:
+                  case BankRegisterMode::RTCDaysLow:
                      value = readRTC.daysLow;
                      break;
-                  case kRTCDaysHigh:
+                  case BankRegisterMode::RTCDaysHigh:
                      value = readRTC.daysHigh;
                      break;
                   default:
-                     ASSERT(false, "Invalid RAM bank / RTC selection value: %hhu", bankRegisterMode);
+                     ASSERT(false, "Invalid RAM bank / RTC selection value: %hhu", Enum::cast(bankRegisterMode));
                      break;
                }
             }
@@ -653,25 +654,25 @@ public:
             {
                switch (bankRegisterMode)
                {
-                  case kBankZero:
-                  case kBankOne:
-                  case kBankTwo:
-                  case kBankThree:
-                     ramBanks[bankRegisterMode][address - 0xA000] = value;
+                  case BankRegisterMode::BankZero:
+                  case BankRegisterMode::BankOne:
+                  case BankRegisterMode::BankTwo:
+                  case BankRegisterMode::BankThree:
+                     ramBanks[Enum::cast(bankRegisterMode)][address - 0xA000] = value;
                      break;
-                  case kRTCSeconds:
+                  case BankRegisterMode::RTCSeconds:
                      rtc.seconds = value;
                      break;
-                  case kRTCMinutes:
+                  case BankRegisterMode::RTCMinutes:
                      rtc.minutes = value;
                      break;
-                  case kRTCHours:
+                  case BankRegisterMode::RTCHours:
                      rtc.hours = value;
                      break;
-                  case kRTCDaysLow:
+                  case BankRegisterMode::RTCDaysLow:
                      rtc.daysLow = value;
                      break;
-                  case kRTCDaysHigh:
+                  case BankRegisterMode::RTCDaysHigh:
                      rtc.daysHigh = value;
                      break;
                   default:
@@ -773,17 +774,17 @@ public:
    }
 
 private:
-   enum BankRegisterMode : uint8_t
+   enum class BankRegisterMode : uint8_t
    {
-      kBankZero = 0x00,
-      kBankOne = 0x01,
-      kBankTwo = 0x02,
-      kBankThree = 0x03,
-      kRTCSeconds = 0x08,
-      kRTCMinutes = 0x09,
-      kRTCHours = 0x0A,
-      kRTCDaysLow = 0x0B,
-      kRTCDaysHigh = 0x0C
+      BankZero = 0x00,
+      BankOne = 0x01,
+      BankTwo = 0x02,
+      BankThree = 0x03,
+      RTCSeconds = 0x08,
+      RTCMinutes = 0x09,
+      RTCHours = 0x0A,
+      RTCDaysLow = 0x0B,
+      RTCDaysHigh = 0x0C
    };
 
    // Real time clock
@@ -994,40 +995,40 @@ UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data)
    UPtr<MemoryBankController> mbc;
    switch (header.type)
    {
-      case kROMOnly:
-         LOG_INFO("ROM only");
+      case Type::ROM:
+         LOG_INFO("ROM");
          mbc = std::make_unique<ROMOnly>(*cart);
          break;
-      case kMBC1:
-      case kMBC1PlusRAM:
-      case kMBC1PlusRAMPlusBattery:
+      case Type::MBC1:
+      case Type::MBC1PlusRAM:
+      case Type::MBC1PlusRAMPlusBattery:
          LOG_INFO("MBC1");
          mbc = std::make_unique<MBC1>(*cart);
          break;
-      case kMBC2:
-      case kMBC2PlusBattery:
+      case Type::MBC2:
+      case Type::MBC2PlusBattery:
          LOG_INFO("MBC2");
          mbc = std::make_unique<MBC2>(*cart);
          break;
-      case kMBC3PlusTimerPlusBattery:
-      case kMBC3PlusTimerPlusRAMPlusBattery:
-      case kMBC3:
-      case kMBC3PlusRAM:
-      case kMBC3PlusRAMPlusBattery:
+      case Type::MBC3PlusTimerPlusBattery:
+      case Type::MBC3PlusTimerPlusRAMPlusBattery:
+      case Type::MBC3:
+      case Type::MBC3PlusRAM:
+      case Type::MBC3PlusRAMPlusBattery:
          LOG_INFO("MBC3");
          mbc = std::make_unique<MBC3>(*cart);
          break;
-      case kMBC5:
-      case kMBC5PlusRAM:
-      case kMBC5PlusRAMPlusBattery:
-      case kMBC5PlusRumble:
-      case kMBC5PlusRumblePlusRAM:
-      case kMBC5PlusRumblePlusRAMPlusBattery:
+      case Type::MBC5:
+      case Type::MBC5PlusRAM:
+      case Type::MBC5PlusRAMPlusBattery:
+      case Type::MBC5PlusRumble:
+      case Type::MBC5PlusRumblePlusRAM:
+      case Type::MBC5PlusRumblePlusRAMPlusBattery:
          LOG_INFO("MBC5");
          mbc = std::make_unique<MBC5>(*cart);
          break;
       default:
-         LOG_ERROR("Invalid cartridge type: " << Log::hex(static_cast<uint8_t>(header.type)));
+         LOG_ERROR("Invalid cartridge type: " << Log::hex(Enum::cast(header.type)));
          return nullptr;
    }
 

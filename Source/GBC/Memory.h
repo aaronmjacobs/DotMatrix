@@ -14,25 +14,20 @@ namespace Interrupt
 
 enum Enum : uint8_t
 {
-   kVBlank = 1 << 0,
-   kLCDState = 1 << 1,
-   kTimer = 1 << 2,
-   kSerial = 1 << 3,
-   kJoypad = 1 << 4,
+   VBlank = 1 << 0,
+   LCDState = 1 << 1,
+   Timer = 1 << 2,
+   Serial = 1 << 3,
+   Joypad = 1 << 4,
 };
 
 } // namespace Interrupt
 
-namespace Boot
+enum class Boot : uint8_t
 {
-
-enum Enum : uint8_t
-{
-   kBooting = 0,
-   kNotBooting = 1
+   Booting = 0,
+   NotBooting = 1
 };
-
-} // namespace Boot
 
 class Memory
 {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Assert.h"
+#include "Core/Enum.h"
 
 #include "GBC/Memory.h"
 
@@ -14,128 +15,128 @@ class GameBoy;
 // Instructions
 enum class Ins : uint8_t
 {
-   kInvalid,
+   Invalid,
 
-   kLD,
-   kLDD,
-   kLDI,
-   kLDH,
-   kLDHL,
-   kPUSH,
-   kPOP,
+   LD,
+   LDD,
+   LDI,
+   LDH,
+   LDHL,
+   PUSH,
+   POP,
 
-   kADD,
-   kADC,
-   kSUB,
-   kSBC,
-   kAND,
-   kOR,
-   kXOR,
-   kCP,
-   kINC,
-   kDEC,
+   ADD,
+   ADC,
+   SUB,
+   SBC,
+   AND,
+   OR,
+   XOR,
+   CP,
+   INC,
+   DEC,
 
-   kSWAP,
-   kDAA,
-   kCPL,
-   kCCF,
-   kSCF,
-   kNOP,
-   kHALT,
-   kSTOP,
-   kDI,
-   kEI,
+   SWAP,
+   DAA,
+   CPL,
+   CCF,
+   SCF,
+   NOP,
+   HALT,
+   STOP,
+   DI,
+   EI,
 
-   kRLCA,
-   kRLA,
-   kRRCA,
-   kRRA,
-   kRLC,
-   kRL,
-   kRRC,
-   kRR,
-   kSLA,
-   kSRA,
-   kSRL,
+   RLCA,
+   RLA,
+   RRCA,
+   RRA,
+   RLC,
+   RL,
+   RRC,
+   RR,
+   SLA,
+   SRA,
+   SRL,
 
-   kBIT,
-   kSET,
-   kRES,
+   BIT,
+   SET,
+   RES,
 
-   kJP,
-   kJR,
+   JP,
+   JR,
 
-   kCALL,
+   CALL,
 
-   kRST,
+   RST,
 
-   kRET,
-   kRETI,
+   RET,
+   RETI,
 
-   kPREFIX
+   PREFIX
 };
 
 // Operands
 enum class Opr : uint8_t
 {
-   kNone,
+   None,
 
-   kA,
-   kF,
-   kB,
-   kC,
-   kD,
-   kE,
-   kH,
-   kL,
+   A,
+   F,
+   B,
+   C,
+   D,
+   E,
+   H,
+   L,
 
-   kAF,
-   kBC,
-   kDE,
-   kHL,
-   kSP,
-   kPC,
+   AF,
+   BC,
+   DE,
+   HL,
+   SP,
+   PC,
 
-   kImm8,
-   kImm16,
-   kImm8Signed,
+   Imm8,
+   Imm16,
+   Imm8Signed,
 
-   kDrefC,
+   DerefC,
 
-   kDrefBC,
-   kDrefDE,
-   kDrefHL,
+   DerefBC,
+   DerefDE,
+   DerefHL,
 
-   kDrefImm8,
-   kDrefImm16,
+   DerefImm8,
+   DerefImm16,
 
-   kCB,
+   CB,
 
    // flags (for jumps)
-   kFlagC,
-   kFlagNC,
-   kFlagZ,
-   kFlagNZ,
+   FlagC,
+   FlagNC,
+   FlagZ,
+   FlagNZ,
 
    // bit offsets
-   k0,
-   k1,
-   k2,
-   k3,
-   k4,
-   k5,
-   k6,
-   k7,
+   Bit0,
+   Bit1,
+   Bit2,
+   Bit3,
+   Bit4,
+   Bit5,
+   Bit6,
+   Bit7,
 
    // RST values
-   k00H,
-   k08H,
-   k10H,
-   k18H,
-   k20H,
-   k28H,
-   k30H,
-   k38H
+   Rst00H,
+   Rst08H,
+   Rst10H,
+   Rst18H,
+   Rst20H,
+   Rst28H,
+   Rst30H,
+   Rst38H
 };
 
 struct Operation
@@ -235,17 +236,17 @@ private:
       uint16_t pc;      // program counter
    };
 
-   enum Flag : uint8_t
+   enum class Flag : uint8_t
    {
-      kZero = 1 << 7,      // Zero flag
-      kSub = 1 << 6,       // Subtract flag
-      kHalfCarry = 1 << 5, // Half carry flag
-      kCarry = 1 << 4,     // Carry flag
+      Zero = 1 << 7,      // Zero flag
+      Sub = 1 << 6,       // Subtract flag
+      HalfCarry = 1 << 5, // Half carry flag
+      Carry = 1 << 4,     // Carry flag
    };
 
    void setFlag(Flag flag, bool value)
    {
-      ASSERT(flag == kZero || flag == kSub || flag == kHalfCarry || flag == kCarry, "Invalid flag value: %hhu", flag);
+      ASSERT(flag == Flag::Zero || flag == Flag::Sub || flag == Flag::HalfCarry || flag == Flag::Carry, "Invalid flag value: %hhu", Enum::cast(flag));
 
       /*
        * This function is equivalent to the following:
@@ -262,14 +263,14 @@ private:
        * In tests the code below runs ~2x faster
        */
 
-      reg.f ^= (-static_cast<int8_t>(value) ^ reg.f) & flag;
+      reg.f ^= (-static_cast<int8_t>(value) ^ reg.f) & Enum::cast(flag);
    }
 
    bool getFlag(Flag flag)
    {
-      ASSERT(flag == kZero || flag == kSub || flag == kHalfCarry || flag == kCarry, "Invalid flag value: %hhu", flag);
+      ASSERT(flag == Flag::Zero || flag == Flag::Sub || flag == Flag::HalfCarry || flag == Flag::Carry, "Invalid flag value: %hhu", Enum::cast(flag));
 
-      return (reg.f & flag) != 0;
+      return (reg.f & Enum::cast(flag)) != 0;
    }
 
    void push(uint16_t value);

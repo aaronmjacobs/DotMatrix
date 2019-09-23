@@ -14,17 +14,17 @@ namespace
 namespace P1
 {
 
-enum Enum
+enum Enum : uint8_t
 {
-   kP10InPort = 0x01,
-   kP11InPort = 0x02,
-   kP12InPort = 0x04,
-   kP13InPort = 0x08,
-   kP14OutPort = 0x10,
-   kP15OutPort = 0x20,
+   P10InPort = 0x01,
+   P11InPort = 0x02,
+   P12InPort = 0x04,
+   P13InPort = 0x08,
+   P14OutPort = 0x10,
+   P15OutPort = 0x20,
 
-   kInMask = 0x0F,
-   kOutMask = 0x30
+   InMask = 0x0F,
+   OutMask = 0x30
 };
 
 } // namespace P1
@@ -32,10 +32,10 @@ enum Enum
 namespace TAC
 {
 
-enum Enum
+enum Enum : uint8_t
 {
-   kTimerStartStop = 1 << 2,
-   kInputClockSelect = (1 << 1) | (1 << 0)
+   TimerStartStop = 1 << 2,
+   InputClockSelect = (1 << 1) | (1 << 0)
 };
 
 const std::array<uint16_t, 4> kCounterMasks =
@@ -51,11 +51,11 @@ const std::array<uint16_t, 4> kCounterMasks =
 namespace SC
 {
 
-enum Enum
+enum Enum : uint8_t
 {
-   kTransferStartFlag = 1 << 7,
-   kClockSpeed = 1 << 1, // CGB only
-   kShiftClock = 1 << 0
+   TransferStartFlag = 1 << 7,
+   ClockSpeed = 1 << 1, // CGB only
+   ShiftClock = 1 << 0
 };
 
 } // namespace SC
@@ -71,7 +71,7 @@ GameBoy::GameBoy()
    , totalCycles(0)
    , cartWroteToRam(false)
    , joypad({})
-   , lastInputVals(P1::kInMask)
+   , lastInputVals(P1::InMask)
    , counter(0)
    , timaOverloaded(false)
    , ifWritten(false)
@@ -186,24 +186,24 @@ void GameBoy::tickJoypad()
       cpu.resume();
    }
 
-   uint8_t dpadVals = P1::kInMask;
-   if ((memory.p1 & P1::kP14OutPort) == 0x00)
+   uint8_t dpadVals = P1::InMask;
+   if ((memory.p1 & P1::P14OutPort) == 0x00)
    {
-      uint8_t right = joypad.right ? 0x00 : P1::kP10InPort;
-      uint8_t left = joypad.left ? 0x00 : P1::kP11InPort;
-      uint8_t up = joypad.up ? 0x00 : P1::kP12InPort;
-      uint8_t down = joypad.down ? 0x00 : P1::kP13InPort;
+      uint8_t right = joypad.right ? 0x00 : P1::P10InPort;
+      uint8_t left = joypad.left ? 0x00 : P1::P11InPort;
+      uint8_t up = joypad.up ? 0x00 : P1::P12InPort;
+      uint8_t down = joypad.down ? 0x00 : P1::P13InPort;
 
       dpadVals = (right | left | up | down);
    }
 
-   uint8_t faceVals = P1::kInMask;
-   if ((memory.p1 & P1::kP15OutPort) == 0x00)
+   uint8_t faceVals = P1::InMask;
+   if ((memory.p1 & P1::P15OutPort) == 0x00)
    {
-      uint8_t a = joypad.a ? 0x00 : P1::kP10InPort;
-      uint8_t b = joypad.b ? 0x00 : P1::kP11InPort;
-      uint8_t select = joypad.select ? 0x00 : P1::kP12InPort;
-      uint8_t start = joypad.start ? 0x00 : P1::kP13InPort;
+      uint8_t a = joypad.a ? 0x00 : P1::P10InPort;
+      uint8_t b = joypad.b ? 0x00 : P1::P11InPort;
+      uint8_t select = joypad.select ? 0x00 : P1::P12InPort;
+      uint8_t start = joypad.start ? 0x00 : P1::P13InPort;
 
       faceVals = (a | b | select | start);
    }
@@ -213,11 +213,11 @@ void GameBoy::tickJoypad()
    if ((inputVals & inputChange) != inputChange)
    {
       // At least one bit went from high to low
-      memory.ifr |= Interrupt::kJoypad;
+      memory.ifr |= Interrupt::Joypad;
    }
    lastInputVals = inputVals;
 
-   memory.p1 = (memory.p1 & P1::kOutMask) | (inputVals & P1::kInMask);
+   memory.p1 = (memory.p1 & P1::OutMask) | (inputVals & P1::InMask);
 }
 
 void GameBoy::tickDiv()
@@ -242,7 +242,7 @@ void GameBoy::tickTima()
       // If the IF register was written to during the last cycle, it overrides the value set here
       if (!ifWritten)
       {
-         memory.ifr |= Interrupt::kTimer;
+         memory.ifr |= Interrupt::Timer;
       }
    }
 
@@ -251,8 +251,8 @@ void GameBoy::tickTima()
 
    // Increase TIMA on falling edge
    // This can be caused by a counter increase, counter reset, TAC change, TIMA disable, etc.
-   bool enabled = (memory.tac & TAC::kTimerStartStop) != 0;
-   uint16_t mask = TAC::kCounterMasks[memory.tac & TAC::kInputClockSelect];
+   bool enabled = (memory.tac & TAC::TimerStartStop) != 0;
+   uint16_t mask = TAC::kCounterMasks[memory.tac & TAC::InputClockSelect];
    bool timerBit = (counter & mask) != 0 && enabled;
 
    if (lastTimerBit && !timerBit)
@@ -275,7 +275,7 @@ void GameBoy::tickSerial()
    static const uint64_t kCyclesPerSerialByte = kCyclesPerSerialBit * 8; // 4096
    STATIC_ASSERT(CPU::kClockSpeed % kSerialFrequency == 0); // Should divide evenly
 
-   if ((memory.sc & SC::kTransferStartFlag) && (memory.sc & SC::kShiftClock))
+   if ((memory.sc & SC::TransferStartFlag) && (memory.sc & SC::ShiftClock))
    {
       serialCycles += CPU::kClockCyclesPerMachineCycle;
 
@@ -292,8 +292,8 @@ void GameBoy::tickSerial()
          }
 
          memory.sb = receivedVal;
-         memory.sc &= ~SC::kTransferStartFlag;
-         memory.ifr |= Interrupt::kSerial;
+         memory.sc &= ~SC::TransferStartFlag;
+         memory.ifr |= Interrupt::Serial;
       }
    }
 }

@@ -132,92 +132,92 @@ public:
       return rumblePresent;
    }
 
-   enum CGBFlag : uint8_t
+   enum class CGBFlag : uint8_t
    {
-      kCBGSupported = 0x80,
-      kCGBRequired = 0xC0
+      CBGSupported = 0x80,
+      CGBRequired = 0xC0
    };
 
-   enum SGBFlag : uint8_t
+   enum class SGBFlag : uint8_t
    {
-      kNoSGBFunctions = 0x00,
-      kSupportsSGBFunctions = 0x03
+      NoSGBFunctions = 0x00,
+      SupportsSGBFunctions = 0x03
    };
 
-   enum CartridgeType : uint8_t
+   enum class Type : uint8_t
    {
-      kROMOnly = 0x00,
+      ROM = 0x00,
 
-      kMBC1 = 0x01,
-      kMBC1PlusRAM = 0x02,
-      kMBC1PlusRAMPlusBattery = 0x03,
+      MBC1 = 0x01,
+      MBC1PlusRAM = 0x02,
+      MBC1PlusRAMPlusBattery = 0x03,
 
-      kMBC2 = 0x05,
-      kMBC2PlusBattery = 0x06,
+      MBC2 = 0x05,
+      MBC2PlusBattery = 0x06,
 
-      kROMPlusRAM = 0x08,
-      kROMPlusRAMPlusBattery = 0x09,
+      ROMPlusRAM = 0x08,
+      ROMPlusRAMPlusBattery = 0x09,
 
-      kMMM01 = 0x0B,
-      kMMM01PlusRAM = 0x0C,
-      kMMM01PlusRAMPlusBattery = 0x0D,
+      MMM01 = 0x0B,
+      MMM01PlusRAM = 0x0C,
+      MMM01PlusRAMPlusBattery = 0x0D,
 
-      kMBC3PlusTimerPlusBattery = 0x0F,
-      kMBC3PlusTimerPlusRAMPlusBattery = 0x10,
-      kMBC3 = 0x11,
-      kMBC3PlusRAM = 0x12,
-      kMBC3PlusRAMPlusBattery = 0x13,
+      MBC3PlusTimerPlusBattery = 0x0F,
+      MBC3PlusTimerPlusRAMPlusBattery = 0x10,
+      MBC3 = 0x11,
+      MBC3PlusRAM = 0x12,
+      MBC3PlusRAMPlusBattery = 0x13,
 
-      kMBC4 = 0x15,
-      kMBC4PlusRAM = 0x16,
-      kMBC4PlusRAMPlusBattery = 0x17,
+      MBC4 = 0x15,
+      MBC4PlusRAM = 0x16,
+      MBC4PlusRAMPlusBattery = 0x17,
 
-      kMBC5 = 0x19,
-      kMBC5PlusRAM = 0x1A,
-      kMBC5PlusRAMPlusBattery = 0x1B,
-      kMBC5PlusRumble = 0x1C,
-      kMBC5PlusRumblePlusRAM = 0x1D,
-      kMBC5PlusRumblePlusRAMPlusBattery = 0x1E,
+      MBC5 = 0x19,
+      MBC5PlusRAM = 0x1A,
+      MBC5PlusRAMPlusBattery = 0x1B,
+      MBC5PlusRumble = 0x1C,
+      MBC5PlusRumblePlusRAM = 0x1D,
+      MBC5PlusRumblePlusRAMPlusBattery = 0x1E,
 
-      kMBC6 = 0x20,
+      MBC6 = 0x20,
 
-      kMBC7PlusSensorPlusRumblePlusRAMPlusBattery = 0x22,
+      MBC7PlusSensorPlusRumblePlusRAMPlusBattery = 0x22,
 
-      kPocketCamera = 0xFC,
-      kBandaiTAMA5 = 0xFD,
-      kHuC3 = 0xFE,
-      kHuC1PlusRAMPlusBattery = 0xFF
+      PocketCamera = 0xFC,
+      BandaiTAMA5 = 0xFD,
+      HuC3 = 0xFE,
+      HuC1PlusRAMPlusBattery = 0xFF
    };
 
-   enum ROMSize : uint8_t
+   enum class ROMSize : uint8_t
    {
-      kROM32KBytes = 0x00,       // no ROM banking
-      kROM64KBytes = 0x01,       // 4 banks
-      kROM128KBytes = 0x02,      // 8 banks
-      kROM256KBytes = 0x03,      // 16 banks
-      kROM512KBytes = 0x04,      // 32 banks
-      kROM1MBytes = 0x05,        // 64 banks - only 63 banks used by MBC1
-      kROM2MBytes = 0x06,        // 128 banks - only 125 banks used by MBC1
-      kROM4MBytes = 0x07,        // 256 banks
-      kROM1Point1MBytes = 0x52,  // 72 banks
-      kROM1Point2MBytes = 0x53,  // 80 banks
-      kROM1Point5MBytes = 0x54   // 96 banks
+      ROM32KBytes = 0x00,       // no ROM banking
+      ROM64KBytes = 0x01,       // 4 banks
+      ROM128KBytes = 0x02,      // 8 banks
+      ROM256KBytes = 0x03,      // 16 banks
+      ROM512KBytes = 0x04,      // 32 banks
+      ROM1MBytes = 0x05,        // 64 banks - only 63 banks used by MBC1
+      ROM2MBytes = 0x06,        // 128 banks - only 125 banks used by MBC1
+      ROM4MBytes = 0x07,        // 256 banks
+      ROM1Point1MBytes = 0x52,  // 72 banks
+      ROM1Point2MBytes = 0x53,  // 80 banks
+      ROM1Point5MBytes = 0x54   // 96 banks
    };
 
-   enum RAMSize : uint8_t
+   enum class RAMSize : uint8_t
    {
-      kRAMNone = 0x00,
-      kRAM2KBytes = 0x01,
-      kRAM8KBytes = 0x02,
-      kRAM32KBytes = 0x03,       // 4 banks of 8 KBytes each
-      kRAM128KBytes = 0x04,      // 16 banks of 8 KBytes each
-      kRAM64KBytes = 0x05        // 8 banks of 8 KBytes each
+      RAMNone = 0x00,
+      RAM2KBytes = 0x01,
+      RAM8KBytes = 0x02,
+      RAM32KBytes = 0x03,       // 4 banks of 8 KBytes each
+      RAM128KBytes = 0x04,      // 16 banks of 8 KBytes each
+      RAM64KBytes = 0x05        // 8 banks of 8 KBytes each
    };
 
-   enum DestinationCode : uint8_t
+   enum class DestinationCode : uint8_t
    {
-      kDestJapanese = 0x00,
-      kDestNonJapanese = 0x01
+      DestJapanese = 0x00,
+      DestNonJapanese = 0x01
    };
 
    struct Header
@@ -229,7 +229,7 @@ public:
       CGBFlag cgbFlag;
       std::array<uint8_t, 2> newLicenseeCode;
       SGBFlag sgbFlag;
-      CartridgeType type;
+      Type type;
       ROMSize romSize;
       RAMSize ramSize;
       DestinationCode destinationCode;

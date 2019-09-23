@@ -1,4 +1,5 @@
 #include "Core/Assert.h"
+#include "Core/Enum.h"
 
 #include "GBC/Bootstrap.h"
 #include "GBC/Cartridge.h"
@@ -28,7 +29,7 @@ uint8_t Memory::readDirect(uint16_t address) const
 {
    uint8_t value = kInvalidAddressByte;
 
-   if (boot == Boot::kBooting && address <= 0x00FF)
+   if (boot == Enum::cast(Boot::Booting) && address <= 0x00FF)
    {
       value = kBootstrap[address];
    }
@@ -71,7 +72,7 @@ uint8_t Memory::readDirect(uint16_t address) const
 
 void Memory::writeDirect(uint16_t address, uint8_t value)
 {
-   if (boot == Boot::kBooting && address <= 0x00FF)
+   if (boot == Enum::cast(Boot::Booting) && address <= 0x00FF)
    {
       // Bootstrap is read only
    }

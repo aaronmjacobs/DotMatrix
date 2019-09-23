@@ -20,20 +20,20 @@ bool endsWith(const std::string& str, const std::string& suffix)
 
 enum class Result
 {
-   kPass,
-   kFail,
-   kError
+   Pass,
+   Fail,
+   Error
 };
 
 const char* getResultName(Result result)
 {
    switch (result)
    {
-   case Result::kPass:
+   case Result::Pass:
       return "pass";
-   case Result::kFail:
+   case Result::Fail:
       return "fail";
-   case Result::kError:
+   case Result::Error:
       return "error";
    default:
       return "invalid";
@@ -43,7 +43,7 @@ const char* getResultName(Result result)
 struct TestResult
 {
    std::string cartPath;
-   Result result = Result::kError;
+   Result result = Result::Error;
 };
 
 Result runTestCart(UPtr<GBC::Cartridge> cart, float time)
@@ -54,7 +54,7 @@ Result runTestCart(UPtr<GBC::Cartridge> cart, float time)
    gameBoy->tick(time);
 
    // Magic numbers signal a successful test
-   return gameBoy->cpu.reg.a == 0 ? Result::kPass : Result::kFail;
+   return gameBoy->cpu.reg.a == 0 ? Result::Pass : Result::Fail;
    //   && gameBoy.cpu.reg.b == 3 && gameBoy.cpu.reg.c == 5
    //   && gameBoy.cpu.reg.d == 8 && gameBoy.cpu.reg.e == 13
    //   && gameBoy.cpu.reg.h == 21 && gameBoy.cpu.reg.l == 34;
@@ -89,7 +89,7 @@ std::vector<TestResult> runTestCarts(const std::vector<std::string>& cartPaths, 
 
 void runTestCartsInPath(std::string path, std::string resultPath, float time)
 {
-   std::replace(path.begin(), path.end(), '\\', '/');
+   IOUtils::standardizePath(path);
 
    std::vector<std::string> filePaths = IOUtils::getAllFilePathsRecursive(path);
 
@@ -102,7 +102,6 @@ void runTestCartsInPath(std::string path, std::string resultPath, float time)
    for (const TestResult& result : results)
    {
       std::string relativePath = result.cartPath;
-      std::replace(relativePath.begin(), relativePath.end(), '\\', '/');
 
       size_t basePathpos = relativePath.rfind(path);
       if (basePathpos != std::string::npos)
