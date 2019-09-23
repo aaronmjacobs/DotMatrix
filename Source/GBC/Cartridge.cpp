@@ -1046,7 +1046,7 @@ Cartridge::Cartridge(std::vector<uint8_t>&& data, const Header& headerData)
    , rumblePresent(cartHasRumble(header.type))
    , controller(nullptr)
 {
-   bool supportsGBC = (header.cgbFlag & kCBGSupported) != 0x00;
+   bool supportsGBC = (Enum::cast(header.cgbFlag) & Enum::cast(CGBFlag::Supported)) != 0x00;
    std::size_t titleSize = supportsGBC ? header.title.size() : cartTitle.size() - 1;
    std::memcpy(cartTitle.data(), header.title.data(), titleSize);
 }

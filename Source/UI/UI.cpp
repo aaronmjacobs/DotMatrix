@@ -2,6 +2,7 @@
 
 #include "Emulator.h"
 
+#include "Core/Enum.h"
 #include "Core/Math.h"
 
 #include "GBC/Cartridge.h"
@@ -113,81 +114,81 @@ std::string getPitch(uint32_t timerPeriod)
    return ss.str();
 }
 
-const char* getCartridgeTypeText(GBC::Cartridge::CartridgeType type)
+const char* getCartridgeTypeText(GBC::Cartridge::Type type)
 {
    switch (type)
    {
-   case GBC::Cartridge::kROM:
+   case GBC::Cartridge::Type::ROM:
       return "ROM";
 
-   case GBC::Cartridge::kMBC1:
+   case GBC::Cartridge::Type::MBC1:
       return "MBC1";
-   case GBC::Cartridge::kMBC1PlusRAM:
+   case GBC::Cartridge::Type::MBC1PlusRAM:
       return "MBC1 + RAM";
-   case GBC::Cartridge::kMBC1PlusRAMPlusBattery:
+   case GBC::Cartridge::Type::MBC1PlusRAMPlusBattery:
       return "MBC1 + RAM + Battery";
 
-   case GBC::Cartridge::kMBC2:
+   case GBC::Cartridge::Type::MBC2:
       return "MBC2";
-   case GBC::Cartridge::kMBC2PlusBattery:
+   case GBC::Cartridge::Type::MBC2PlusBattery:
       return "MBC2 + Battery";
 
-   case GBC::Cartridge::kROMPlusRAM:
+   case GBC::Cartridge::Type::ROMPlusRAM:
       return "ROM + RAM";
-   case GBC::Cartridge::kROMPlusRAMPlusBattery:
+   case GBC::Cartridge::Type::ROMPlusRAMPlusBattery:
       return "ROM + RAM + Battery";
 
-   case GBC::Cartridge::kMMM01:
+   case GBC::Cartridge::Type::MMM01:
       return "MM01";
-   case GBC::Cartridge::kMMM01PlusRAM:
+   case GBC::Cartridge::Type::MMM01PlusRAM:
       return "MM01 + RAM";
-   case GBC::Cartridge::kMMM01PlusRAMPlusBattery:
+   case GBC::Cartridge::Type::MMM01PlusRAMPlusBattery:
       return "MM01 + RAM + Battery";
 
-   case GBC::Cartridge::kMBC3PlusTimerPlusBattery:
+   case GBC::Cartridge::Type::MBC3PlusTimerPlusBattery:
       return "MBC3 + Timer + Battery";
-   case GBC::Cartridge::kMBC3PlusTimerPlusRAMPlusBattery:
+   case GBC::Cartridge::Type::MBC3PlusTimerPlusRAMPlusBattery:
       return "MBC3 + Timer + RAM + Battery";
-   case GBC::Cartridge::kMBC3:
+   case GBC::Cartridge::Type::MBC3:
       return "MBC3";
-   case GBC::Cartridge::kMBC3PlusRAM:
+   case GBC::Cartridge::Type::MBC3PlusRAM:
       return "MBC3 + RAM";
-   case GBC::Cartridge::kMBC3PlusRAMPlusBattery:
+   case GBC::Cartridge::Type::MBC3PlusRAMPlusBattery:
       return "MBC3 + RAM + Battery";
 
-   case GBC::Cartridge::kMBC4:
+   case GBC::Cartridge::Type::MBC4:
       return "MBC4";
-   case GBC::Cartridge::kMBC4PlusRAM:
+   case GBC::Cartridge::Type::MBC4PlusRAM:
       return "MBC4 + RAM";
-   case GBC::Cartridge::kMBC4PlusRAMPlusBattery:
+   case GBC::Cartridge::Type::MBC4PlusRAMPlusBattery:
       return "MBC4 + RAM + Battery";
 
-   case GBC::Cartridge::kMBC5:
+   case GBC::Cartridge::Type::MBC5:
       return "MBC5";
-   case GBC::Cartridge::kMBC5PlusRAM:
+   case GBC::Cartridge::Type::MBC5PlusRAM:
       return "MBC5 + RAM";
-   case GBC::Cartridge::kMBC5PlusRAMPlusBattery:
+   case GBC::Cartridge::Type::MBC5PlusRAMPlusBattery:
       return "MBC5 + RAM + Battery";
-   case GBC::Cartridge::kMBC5PlusRumble:
+   case GBC::Cartridge::Type::MBC5PlusRumble:
       return "MBC5 + Rumble";
-   case GBC::Cartridge::kMBC5PlusRumblePlusRAM:
+   case GBC::Cartridge::Type::MBC5PlusRumblePlusRAM:
       return "MBC5 + Rumble + RAM";
-   case GBC::Cartridge::kMBC5PlusRumblePlusRAMPlusBattery:
+   case GBC::Cartridge::Type::MBC5PlusRumblePlusRAMPlusBattery:
       return "MBC5 + Rumble + RAM + Battery";
 
-   case GBC::Cartridge::kMBC6:
+   case GBC::Cartridge::Type::MBC6:
       return "MBC6";
 
-   case GBC::Cartridge::kMBC7PlusSensorPlusRumblePlusRAMPlusBattery:
+   case GBC::Cartridge::Type::MBC7PlusSensorPlusRumblePlusRAMPlusBattery:
       return "MBC7 + Sensor + Rumble + RAM + Battery";
 
-   case GBC::Cartridge::kPocketCamera:
+   case GBC::Cartridge::Type::PocketCamera:
       return "Pocket Camera";
-   case GBC::Cartridge::kBandaiTAMA5:
+   case GBC::Cartridge::Type::BandaiTAMA5:
       return "Bandai TAMA 5";
-   case GBC::Cartridge::kHuC3:
+   case GBC::Cartridge::Type::HuC3:
       return "HuC3";
-   case GBC::Cartridge::kHuC1PlusRAMPlusBattery:
+   case GBC::Cartridge::Type::HuC1PlusRAMPlusBattery:
       return "HuC1 + RAM + Battery";
    default:
       return "Unknown";
@@ -198,28 +199,49 @@ const char* getROMSizeText(GBC::Cartridge::ROMSize romSize)
 {
    switch (romSize)
    {
-   case GBC::Cartridge::kROM32KBytes:
+   case GBC::Cartridge::ROMSize::Size32KBytes:
       return "32 KB (no banking)";
-   case GBC::Cartridge::kROM64KBytes:
+   case GBC::Cartridge::ROMSize::Size64KBytes:
       return "64 KB (4 banks)";
-   case GBC::Cartridge::kROM128KBytes:
+   case GBC::Cartridge::ROMSize::Size128KBytes:
       return "128 KB (8 banks)";
-   case GBC::Cartridge::kROM256KBytes:
+   case GBC::Cartridge::ROMSize::Size256KBytes:
       return "256 KB (16 banks)";
-   case GBC::Cartridge::kROM512KBytes:
+   case GBC::Cartridge::ROMSize::Size512KBytes:
       return "512 KB (32 banks)";
-   case GBC::Cartridge::kROM1MBytes:
+   case GBC::Cartridge::ROMSize::Size1MBytes:
       return "1 MB (64 banks)";
-   case GBC::Cartridge::kROM2MBytes:
+   case GBC::Cartridge::ROMSize::Size2MBytes:
       return "2 MB (128 banks)";
-   case GBC::Cartridge::kROM4MBytes:
+   case GBC::Cartridge::ROMSize::Size4MBytes:
       return "4 MB (256 banks)";
-   case GBC::Cartridge::kROM1Point1MBytes:
+   case GBC::Cartridge::ROMSize::Size1Point1MBytes:
       return "1.1 MB (72 banks)";
-   case GBC::Cartridge::kROM1Point2MBytes:
+   case GBC::Cartridge::ROMSize::Size1Point2MBytes:
       return "1.2 MB (80 banks)";
-   case GBC::Cartridge::kROM1Point5MBytes:
+   case GBC::Cartridge::ROMSize::Size1Point5MBytes:
       return "1.5 MB (96 banks)";
+   default:
+      return "Unknown";
+   }
+}
+
+const char* getRAMSizeText(GBC::Cartridge::RAMSize ramSize)
+{
+   switch (ramSize)
+   {
+   case GBC::Cartridge::RAMSize::None:
+      return "0 KB (no RAM)";
+   case GBC::Cartridge::RAMSize::Size2KBytes:
+      return "2 KB (1 bank)";
+   case GBC::Cartridge::RAMSize::Size8KBytes:
+      return "8 KB (1 bank)";
+   case GBC::Cartridge::RAMSize::Size32KBytes:
+      return "32 KB (4 banks)";
+   case GBC::Cartridge::RAMSize::Size128KBytes:
+      return "128 KB (16 banks)";
+   case GBC::Cartridge::RAMSize::Size64KBytes:
+      return "64 KB (8 banks)";
    default:
       return "Unknown";
    }
@@ -447,27 +469,6 @@ const char* getLicenseeText(uint8_t oldCode, std::array<uint8_t, 2> newCode)
    }
 }
 
-const char* getRAMSizeText(GBC::Cartridge::RAMSize ramSize)
-{
-   switch (ramSize)
-   {
-   case GBC::Cartridge::kRAMNone:
-      return "0 KB (no RAM)";
-   case GBC::Cartridge::kRAM2KBytes:
-      return "2 KB (1 bank)";
-   case GBC::Cartridge::kRAM8KBytes:
-      return "8 KB (1 bank)";
-   case GBC::Cartridge::kRAM32KBytes:
-      return "32 KB (4 banks)";
-   case GBC::Cartridge::kRAM128KBytes:
-      return "128 KB (16 banks)";
-   case GBC::Cartridge::kRAM64KBytes:
-      return "64 KB (8 banks)";
-   default:
-      return "Unknown";
-   }
-}
-
 } // namespace
 
 // static
@@ -603,10 +604,10 @@ void UI::renderCPU(GBC::GameBoy& gameBoy) const
    ImGui::NextColumn();
 
    unsigned int* flags = reinterpret_cast<unsigned int*>(&gameBoy.cpu.reg.f);
-   ImGui::CheckboxFlags("Zero", flags, GBC::CPU::kZero);
-   ImGui::CheckboxFlags("Subtract", flags, GBC::CPU::kSub);
-   ImGui::CheckboxFlags("Half Carry", flags, GBC::CPU::kHalfCarry);
-   ImGui::CheckboxFlags("Carry", flags, GBC::CPU::kCarry);
+   ImGui::CheckboxFlags("Zero", flags, Enum::cast(GBC::CPU::Flag::Zero));
+   ImGui::CheckboxFlags("Subtract", flags, Enum::cast(GBC::CPU::Flag::Sub));
+   ImGui::CheckboxFlags("Half Carry", flags, Enum::cast(GBC::CPU::Flag::HalfCarry));
+   ImGui::CheckboxFlags("Carry", flags, Enum::cast(GBC::CPU::Flag::Carry));
    ImGui::NextColumn();
 
    ImGui::Checkbox("Halted", &gameBoy.cpu.halted);
@@ -837,7 +838,7 @@ void UI::renderCartridge(GBC::GameBoy& gameBoy) const
       ImGui::Text("RAM Size: %s", getRAMSizeText(header.ramSize));
       ImGui::NextColumn();
 
-      const char* destinationText = header.destinationCode == GBC::Cartridge::kDestJapanese ? "Japanese" : "Non-Japanese";
+      const char* destinationText = header.destinationCode == GBC::Cartridge::DestinationCode::Japanese ? "Japanese" : "Non-Japanese";
       ImGui::Text("Destination: %s", destinationText);
       ImGui::NextColumn();
 
@@ -847,14 +848,17 @@ void UI::renderCartridge(GBC::GameBoy& gameBoy) const
       const char* cgbFlagText = nullptr;
       switch (header.cgbFlag)
       {
-      case GBC::Cartridge::CGBFlag::kCBGSupported:
+      case GBC::Cartridge::CGBFlag::Ignored:
+         cgbFlagText = "Ignored";
+         break;
+      case GBC::Cartridge::CGBFlag::Supported:
          cgbFlagText = "Supported";
          break;
-      case GBC::Cartridge::CGBFlag::kCGBRequired:
+      case GBC::Cartridge::CGBFlag::Required:
          cgbFlagText = "Required";
          break;
       default:
-         cgbFlagText = "Unsupported";
+         cgbFlagText = "Unknown";
          break;
       }
       ImGui::Text("CGB: %s", cgbFlagText);
@@ -866,20 +870,20 @@ void UI::renderCartridge(GBC::GameBoy& gameBoy) const
       const char* sgbFlagText = nullptr;
       switch (header.sgbFlag)
       {
-      case GBC::Cartridge::SGBFlag::kNoSGBFunctions:
-         sgbFlagText = "Unsupported";
+      case GBC::Cartridge::SGBFlag::Ignored:
+         sgbFlagText = "Ignored";
          break;
-      case GBC::Cartridge::SGBFlag::kSupportsSGBFunctions:
+      case GBC::Cartridge::SGBFlag::Supported:
          sgbFlagText = "Supported";
          break;
       default:
-         sgbFlagText = "";
+         sgbFlagText = "Unknown";
          break;
       }
       ImGui::Text("SGB: %s", sgbFlagText);
       ImGui::NextColumn();
 
-      bool supportsGBC = (header.cgbFlag & GBC::Cartridge::kCBGSupported) != 0x00;
+      bool supportsGBC = (Enum::cast(header.cgbFlag) & Enum::cast(GBC::Cartridge::CGBFlag::Supported)) != 0x00;
       if (supportsGBC)
       {
          ImGui::Text("Manufacturer Code: 0x%02X%02X%02X%02X", header.manufacturerCode[0], header.manufacturerCode[1], header.manufacturerCode[2], header.manufacturerCode[3]);

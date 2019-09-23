@@ -12,7 +12,9 @@
 #include "Platform/Utils/IOUtils.h"
 #include "Platform/Video/Renderer.h"
 
+#if GBC_WITH_UI
 #include "UI/UI.h"
+#endif // GBC_WITH_UI
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>

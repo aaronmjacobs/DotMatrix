@@ -136,14 +136,15 @@ public:
 
    enum class CGBFlag : uint8_t
    {
-      CBGSupported = 0x80,
-      CGBRequired = 0xC0
+      Ignored = 0x00,
+      Supported = 0x80,
+      Required = 0xC0
    };
 
    enum class SGBFlag : uint8_t
    {
-      NoSGBFunctions = 0x00,
-      SupportsSGBFunctions = 0x03
+      Ignored = 0x00,
+      Supported = 0x03
    };
 
    enum class Type : uint8_t
@@ -193,33 +194,33 @@ public:
 
    enum class ROMSize : uint8_t
    {
-      ROM32KBytes = 0x00,       // no ROM banking
-      ROM64KBytes = 0x01,       // 4 banks
-      ROM128KBytes = 0x02,      // 8 banks
-      ROM256KBytes = 0x03,      // 16 banks
-      ROM512KBytes = 0x04,      // 32 banks
-      ROM1MBytes = 0x05,        // 64 banks - only 63 banks used by MBC1
-      ROM2MBytes = 0x06,        // 128 banks - only 125 banks used by MBC1
-      ROM4MBytes = 0x07,        // 256 banks
-      ROM1Point1MBytes = 0x52,  // 72 banks
-      ROM1Point2MBytes = 0x53,  // 80 banks
-      ROM1Point5MBytes = 0x54   // 96 banks
+      Size32KBytes = 0x00,       // no ROM banking
+      Size64KBytes = 0x01,       // 4 banks
+      Size128KBytes = 0x02,      // 8 banks
+      Size256KBytes = 0x03,      // 16 banks
+      Size512KBytes = 0x04,      // 32 banks
+      Size1MBytes = 0x05,        // 64 banks - only 63 banks used by MBC1
+      Size2MBytes = 0x06,        // 128 banks - only 125 banks used by MBC1
+      Size4MBytes = 0x07,        // 256 banks
+      Size1Point1MBytes = 0x52,  // 72 banks
+      Size1Point2MBytes = 0x53,  // 80 banks
+      Size1Point5MBytes = 0x54   // 96 banks
    };
 
    enum class RAMSize : uint8_t
    {
-      RAMNone = 0x00,
-      RAM2KBytes = 0x01,
-      RAM8KBytes = 0x02,
-      RAM32KBytes = 0x03,       // 4 banks of 8 KBytes each
-      RAM128KBytes = 0x04,      // 16 banks of 8 KBytes each
-      RAM64KBytes = 0x05        // 8 banks of 8 KBytes each
+      None = 0x00,
+      Size2KBytes = 0x01,
+      Size8KBytes = 0x02,
+      Size32KBytes = 0x03,       // 4 banks of 8 KBytes each
+      Size128KBytes = 0x04,      // 16 banks of 8 KBytes each
+      Size64KBytes = 0x05        // 8 banks of 8 KBytes each
    };
 
    enum class DestinationCode : uint8_t
    {
-      DestJapanese = 0x00,
-      DestNonJapanese = 0x01
+      Japanese = 0x00,
+      NonJapanese = 0x01
    };
 
    struct Header
