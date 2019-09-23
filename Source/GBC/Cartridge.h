@@ -5,6 +5,7 @@
 #include "Core/Pointers.h"
 
 #include "GBC/Memory.h"
+#include "GBC/MemoryBankController.h"
 
 #include "UI/UIFriend.h"
 
@@ -14,47 +15,6 @@
 
 namespace GBC
 {
-
-class Cartridge;
-
-class MemoryBankController
-{
-public:
-   MemoryBankController(const Cartridge& cartridge)
-      : cart(cartridge)
-      , wroteToRam(false)
-   {
-   }
-
-   virtual ~MemoryBankController() = default;
-
-   virtual uint8_t read(uint16_t address) const = 0;
-   virtual void write(uint16_t address, uint8_t value) = 0;
-
-   virtual void tick(double dt)
-   {
-      wroteToRam = false;
-   }
-
-   virtual Archive saveRAM() const
-   {
-      return {};
-   }
-
-   virtual bool loadRAM(Archive& ramData)
-   {
-      return false;
-   }
-
-   bool wroteToRamThisFrame() const
-   {
-      return wroteToRam;
-   }
-
-protected:
-   const Cartridge& cart;
-   bool wroteToRam;
-};
 
 class Cartridge
 {
