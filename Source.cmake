@@ -13,7 +13,6 @@ target_sources(${PROJECT_NAME} PRIVATE
    "${SRC_DIR}/Core/Math.h"
    "${SRC_DIR}/Core/Pointers.h"
 
-   "${SRC_DIR}/GBC/Bootstrap.h"
    "${SRC_DIR}/GBC/Cartridge.h"
    "${SRC_DIR}/GBC/Cartridge.cpp"
    "${SRC_DIR}/GBC/CPU.h"
