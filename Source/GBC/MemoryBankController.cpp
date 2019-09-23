@@ -23,25 +23,24 @@ int64_t getPlatformTime()
 
 } // namespace
 
-// ROM
+// MBCNull
 
-ROM::ROM(const Cartridge& cartridge)
+MBCNull::MBCNull(const Cartridge& cartridge)
    : MemoryBankController(cartridge)
 {
 }
 
-uint8_t ROM::read(uint16_t address) const
+uint8_t MBCNull::read(uint16_t address) const
 {
-   if (address < 0x8000)
+   if (address >= 0x8000)
    {
-      return cart.data(address);
+      LOG_WARNING("Trying to read invalid cartridge location: " << Log::hex(address));
    }
 
-   LOG_WARNING("Trying to read invalid cartridge location: " << Log::hex(address));
-   return Memory::kInvalidAddressByte;
+   return cart.data(address);
 }
 
-void ROM::write(uint16_t address, uint8_t value)
+void MBCNull::write(uint16_t address, uint8_t value)
 {
    // No writable memory
    LOG_WARNING("Trying to write to read-only cartridge at location " << Log::hex(address) << ": " << Log::hex(value));

@@ -19,7 +19,7 @@ namespace GBC
 class Cartridge
 {
 public:
-   static UPtr<Cartridge> fromData(std::vector<uint8_t>&& data);
+   static UPtr<Cartridge> fromData(std::vector<uint8_t>&& data, std::string& error);
 
    const char* title() const
    {
@@ -201,6 +201,8 @@ public:
       uint8_t headerChecksum;
       std::array<uint8_t, 2> globalChecksum;
    };
+
+   static const char* getTypeName(Type type);
 
 private:
    DECLARE_UI_FRIEND

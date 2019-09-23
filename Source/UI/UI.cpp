@@ -114,87 +114,6 @@ std::string getPitch(uint32_t timerPeriod)
    return ss.str();
 }
 
-const char* getCartridgeTypeText(GBC::Cartridge::Type type)
-{
-   switch (type)
-   {
-   case GBC::Cartridge::Type::ROM:
-      return "ROM";
-
-   case GBC::Cartridge::Type::MBC1:
-      return "MBC1";
-   case GBC::Cartridge::Type::MBC1PlusRAM:
-      return "MBC1 + RAM";
-   case GBC::Cartridge::Type::MBC1PlusRAMPlusBattery:
-      return "MBC1 + RAM + Battery";
-
-   case GBC::Cartridge::Type::MBC2:
-      return "MBC2";
-   case GBC::Cartridge::Type::MBC2PlusBattery:
-      return "MBC2 + Battery";
-
-   case GBC::Cartridge::Type::ROMPlusRAM:
-      return "ROM + RAM";
-   case GBC::Cartridge::Type::ROMPlusRAMPlusBattery:
-      return "ROM + RAM + Battery";
-
-   case GBC::Cartridge::Type::MMM01:
-      return "MM01";
-   case GBC::Cartridge::Type::MMM01PlusRAM:
-      return "MM01 + RAM";
-   case GBC::Cartridge::Type::MMM01PlusRAMPlusBattery:
-      return "MM01 + RAM + Battery";
-
-   case GBC::Cartridge::Type::MBC3PlusTimerPlusBattery:
-      return "MBC3 + Timer + Battery";
-   case GBC::Cartridge::Type::MBC3PlusTimerPlusRAMPlusBattery:
-      return "MBC3 + Timer + RAM + Battery";
-   case GBC::Cartridge::Type::MBC3:
-      return "MBC3";
-   case GBC::Cartridge::Type::MBC3PlusRAM:
-      return "MBC3 + RAM";
-   case GBC::Cartridge::Type::MBC3PlusRAMPlusBattery:
-      return "MBC3 + RAM + Battery";
-
-   case GBC::Cartridge::Type::MBC4:
-      return "MBC4";
-   case GBC::Cartridge::Type::MBC4PlusRAM:
-      return "MBC4 + RAM";
-   case GBC::Cartridge::Type::MBC4PlusRAMPlusBattery:
-      return "MBC4 + RAM + Battery";
-
-   case GBC::Cartridge::Type::MBC5:
-      return "MBC5";
-   case GBC::Cartridge::Type::MBC5PlusRAM:
-      return "MBC5 + RAM";
-   case GBC::Cartridge::Type::MBC5PlusRAMPlusBattery:
-      return "MBC5 + RAM + Battery";
-   case GBC::Cartridge::Type::MBC5PlusRumble:
-      return "MBC5 + Rumble";
-   case GBC::Cartridge::Type::MBC5PlusRumblePlusRAM:
-      return "MBC5 + Rumble + RAM";
-   case GBC::Cartridge::Type::MBC5PlusRumblePlusRAMPlusBattery:
-      return "MBC5 + Rumble + RAM + Battery";
-
-   case GBC::Cartridge::Type::MBC6:
-      return "MBC6";
-
-   case GBC::Cartridge::Type::MBC7PlusSensorPlusRumblePlusRAMPlusBattery:
-      return "MBC7 + Sensor + Rumble + RAM + Battery";
-
-   case GBC::Cartridge::Type::PocketCamera:
-      return "Pocket Camera";
-   case GBC::Cartridge::Type::BandaiTAMA5:
-      return "Bandai TAMA 5";
-   case GBC::Cartridge::Type::HuC3:
-      return "HuC3";
-   case GBC::Cartridge::Type::HuC1PlusRAMPlusBattery:
-      return "HuC1 + RAM + Battery";
-   default:
-      return "Unknown";
-   }
-}
-
 const char* getROMSizeText(GBC::Cartridge::ROMSize romSize)
 {
    switch (romSize)
@@ -845,7 +764,7 @@ void UI::renderCartridge(GBC::GameBoy& gameBoy) const
       ImGui::Text("Title: %s", gameBoy.cart->title());
       ImGui::NextColumn();
 
-      ImGui::Text("Type: %s", getCartridgeTypeText(header.type));
+      ImGui::Text("Type: %s", GBC::Cartridge::getTypeName(header.type));
       ImGui::NextColumn();
 
       ImGui::Text("Licensee: %s", getLicenseeText(header.oldLicenseeCode, header.newLicenseeCode));

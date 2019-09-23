@@ -143,24 +143,27 @@ bool cartHasRumble(Cartridge::Type type)
 } // namespace
 
 // static
-UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data)
+UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data, std::string& error)
 {
    if (data.size() < kHeaderOffset + kHeaderSize)
    {
-      LOG_ERROR("Cartridge provided insufficient data");
+      error = "Cartridge provided insufficient data";
       return nullptr;
    }
 
    Header header = parseHeader(data);
    if (!performHeaderChecksum(header, data))
    {
-      LOG_ERROR("Cartridge data failed header checksum");
+      error = "Cartridge failed header checksum";
       return nullptr;
    }
+
+#if GBC_DEBUG
    if (!performGlobalChecksum(header, data))
    {
-      LOG_WARNING("Cartridge data failed global checksum");
+      LOG_WARNING("Cartridge failed global checksum");
    }
+#endif // GBC_DEBUG
 
    UPtr<Cartridge> cart(new Cartridge(std::move(data), header));
 
@@ -168,8 +171,8 @@ UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data)
    switch (header.type)
    {
       case Type::ROM:
-         LOG_INFO("ROM");
-         mbc = std::make_unique<ROM>(*cart);
+         LOG_INFO("Null");
+         mbc = std::make_unique<MBCNull>(*cart);
          break;
       case Type::MBC1:
       case Type::MBC1PlusRAM:
@@ -200,12 +203,93 @@ UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data)
          mbc = std::make_unique<MBC5>(*cart);
          break;
       default:
-         LOG_ERROR("Invalid cartridge type: " << Log::hex(Enum::cast(header.type)));
+         error = std::string("Unimplemented cartridge type: ") + getTypeName(header.type);
          return nullptr;
    }
 
    cart->setController(std::move(mbc));
    return cart;
+}
+
+const char* Cartridge::getTypeName(Type type)
+{
+   switch (type)
+   {
+   case Type::ROM:
+      return "ROM";
+
+   case Type::MBC1:
+      return "MBC1";
+   case Type::MBC1PlusRAM:
+      return "MBC1 + RAM";
+   case Type::MBC1PlusRAMPlusBattery:
+      return "MBC1 + RAM + Battery";
+
+   case Type::MBC2:
+      return "MBC2";
+   case Type::MBC2PlusBattery:
+      return "MBC2 + Battery";
+
+   case Type::ROMPlusRAM:
+      return "ROM + RAM";
+   case Type::ROMPlusRAMPlusBattery:
+      return "ROM + RAM + Battery";
+
+   case Type::MMM01:
+      return "MM01";
+   case Type::MMM01PlusRAM:
+      return "MM01 + RAM";
+   case Type::MMM01PlusRAMPlusBattery:
+      return "MM01 + RAM + Battery";
+
+   case Type::MBC3PlusTimerPlusBattery:
+      return "MBC3 + Timer + Battery";
+   case Type::MBC3PlusTimerPlusRAMPlusBattery:
+      return "MBC3 + Timer + RAM + Battery";
+   case Type::MBC3:
+      return "MBC3";
+   case Type::MBC3PlusRAM:
+      return "MBC3 + RAM";
+   case Type::MBC3PlusRAMPlusBattery:
+      return "MBC3 + RAM + Battery";
+
+   case Type::MBC4:
+      return "MBC4";
+   case Type::MBC4PlusRAM:
+      return "MBC4 + RAM";
+   case Type::MBC4PlusRAMPlusBattery:
+      return "MBC4 + RAM + Battery";
+
+   case Type::MBC5:
+      return "MBC5";
+   case Type::MBC5PlusRAM:
+      return "MBC5 + RAM";
+   case Type::MBC5PlusRAMPlusBattery:
+      return "MBC5 + RAM + Battery";
+   case Type::MBC5PlusRumble:
+      return "MBC5 + Rumble";
+   case Type::MBC5PlusRumblePlusRAM:
+      return "MBC5 + Rumble + RAM";
+   case Type::MBC5PlusRumblePlusRAMPlusBattery:
+      return "MBC5 + Rumble + RAM + Battery";
+
+   case Type::MBC6:
+      return "MBC6";
+
+   case Type::MBC7PlusSensorPlusRumblePlusRAMPlusBattery:
+      return "MBC7 + Sensor + Rumble + RAM + Battery";
+
+   case Type::PocketCamera:
+      return "Pocket Camera";
+   case Type::BandaiTAMA5:
+      return "Bandai TAMA 5";
+   case Type::HuC3:
+      return "HuC3";
+   case Type::HuC1PlusRAMPlusBattery:
+      return "HuC1 + RAM + Battery";
+   default:
+      return "Unknown";
+   }
 }
 
 Cartridge::Cartridge(std::vector<uint8_t>&& data, const Header& headerData)

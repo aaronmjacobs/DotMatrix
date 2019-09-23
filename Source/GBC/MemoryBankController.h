@@ -2,6 +2,8 @@
 
 #include "Core/Archive.h"
 
+#include "UI/UIFriend.h"
+
 #include <array>
 #include <cstdint>
 
@@ -51,10 +53,10 @@ protected:
    bool wroteToRam;
 };
 
-class ROM : public MemoryBankController
+class MBCNull : public MemoryBankController
 {
 public:
-   ROM(const Cartridge& cartridge);
+   MBCNull(const Cartridge& cartridge);
 
    uint8_t read(uint16_t address) const override;
    void write(uint16_t address, uint8_t value) override;
@@ -72,6 +74,8 @@ public:
    bool loadRAM(Archive& ramData) override;
 
 private:
+   DECLARE_UI_FRIEND
+
    enum class BankingMode : uint8_t
    {
       ROM = 0x00,
@@ -98,6 +102,8 @@ public:
    bool loadRAM(Archive& ramData) override;
 
 private:
+   DECLARE_UI_FRIEND
+
    bool ramEnabled;
    uint8_t romBankNumber;
 
@@ -118,6 +124,8 @@ public:
    bool loadRAM(Archive& ramData) override;
 
 private:
+   DECLARE_UI_FRIEND
+
    enum class BankRegisterMode : uint8_t
    {
       BankZero = 0x00,
@@ -175,6 +183,8 @@ public:
    bool loadRAM(Archive& ramData) override;
 
 private:
+   DECLARE_UI_FRIEND
+
    bool ramEnabled;
    uint16_t romBankNumber;
    uint8_t ramBankNumber;

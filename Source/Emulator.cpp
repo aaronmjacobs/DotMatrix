@@ -356,7 +356,8 @@ void Emulator::setRom(const char* romPath)
       LOG_INFO("Loading rom: " << romPath);
 
       std::vector<uint8_t> cartData = IOUtils::readBinaryFile(romPath);
-      UPtr<GBC::Cartridge> cartridge(GBC::Cartridge::fromData(std::move(cartData)));
+      std::string error;
+      UPtr<GBC::Cartridge> cartridge = GBC::Cartridge::fromData(std::move(cartData), error);
 
       if (cartridge)
       {
@@ -372,7 +373,7 @@ void Emulator::setRom(const char* romPath)
       }
       else
       {
-         LOG_WARNING_MSG_BOX("Failed to load rom: " << romPath);
+         LOG_ERROR_MSG_BOX(error);
       }
    }
 }
