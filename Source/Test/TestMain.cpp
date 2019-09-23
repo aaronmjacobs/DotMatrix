@@ -6,18 +6,12 @@
 #undef private
 #undef _ALLOW_KEYWORD_MACROS
 
-#include "Test/CPUTester.h"
-
 #include "Platform/Utils/IOUtils.h"
 
 #include <sstream>
 
-#if defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#endif // defined(_WIN32)
-
-namespace {
+namespace
+{
 
 bool endsWith(const std::string& str, const std::string& suffix)
 {
@@ -72,7 +66,7 @@ std::vector<TestResult> runTestCarts(const std::vector<std::string>& cartPaths, 
 
    for (const std::string& cartPath : cartPaths)
    {
-      printf("Running %s...\n", cartPath.c_str());
+      std::printf("Running %s...\n", cartPath.c_str());
 
       TestResult result;
       result.cartPath = cartPath;
@@ -87,14 +81,16 @@ std::vector<TestResult> runTestCarts(const std::vector<std::string>& cartPaths, 
       results.push_back(result);
 
       const char* resultName = getResultName(result.result);
-      printf("%s\n\n", resultName);
+      std::printf("%s\n\n", resultName);
    }
 
    return results;
 }
 
-void runTestCartsInPath(const std::string& path, const std::string& resultPath, float time)
+void runTestCartsInPath(std::string path, std::string resultPath, float time)
 {
+   std::replace(path.begin(), path.end(), '\\', '/');
+
    std::vector<std::string> filePaths = IOUtils::getAllFilePathsRecursive(path);
 
    // Only try to run .gb files
@@ -124,51 +120,28 @@ void runTestCartsInPath(const std::string& path, const std::string& resultPath, 
 
 int main(int argc, char *argv[])
 {
-   static const std::string kRomsCommand = "-roms";
-   static const std::string kCpuCommand = "-cpu";
    static const float kDefaultTime = 10.0f;
 
-   if (argc > 1)
+   if (argc > 2)
    {
-      const char* command = argv[1];
+      float time = kDefaultTime;
 
-      if (command == kRomsCommand)
+      if (argc > 3)
       {
-         if (argc > 3)
+         std::stringstream ss(argv[3]);
+         float parsedTime = 0.0f;
+         if (ss >> parsedTime)
          {
-            float time = kDefaultTime;
-
-            if (argc > 4)
-            {
-               std::stringstream ss(argv[4]);
-               float parsedTime = 0.0f;
-               if (ss >> parsedTime)
-               {
-                  time = parsedTime;
-               }
-            }
-
-            runTestCartsInPath(argv[2], argv[3], time);
+            time = parsedTime;
          }
-         else
-         {
-            printf("Usage: %s -roms carts_path output_path [test_time]\n", argv[0]);
-         }
-
-         return 0;
       }
-      else if (command == kCpuCommand)
-      {
-         GBC::CPUTester cpuTester;
-         for (int i = 0; i < 10; ++i)
-         {
-            cpuTester.runTests(true);
-         }
 
-         return 0;
-      }
+      runTestCartsInPath(argv[1], argv[2], time);
+   }
+   else
+   {
+      std::printf("Usage: %s carts_path output_path [test_time]\n", argv[0]);
    }
 
-   printf("Usage: %s (-roms | -cpu) [options]\n", argv[0]);
    return 0;
 }

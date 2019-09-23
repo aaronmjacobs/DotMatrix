@@ -56,8 +56,6 @@ target_sources(${PROJECT_NAME} PRIVATE
 
 if(GBC_RUN_TESTS)
    target_sources(${PROJECT_NAME} PRIVATE
-      "${SRC_DIR}/Test/CPUTester.h"
-      "${SRC_DIR}/Test/CPUTester.cpp"
       "${SRC_DIR}/Test/TestMain.cpp"
    )
 else()
