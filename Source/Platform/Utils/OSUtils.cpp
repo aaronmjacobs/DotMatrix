@@ -1,5 +1,7 @@
 #include "Platform/Utils/OSUtils.h"
 
+#include "Platform/Utils/IOUtils.h"
+
 #include <cstdint>
 
 #ifdef __APPLE__
@@ -104,6 +106,8 @@ bool getExecutablePath(std::string& executablePath)
       executablePath = std::string(buffer);
    }
 
+   IOUtils::standardizePath(executablePath);
+
    return true;
 }
 
@@ -124,6 +128,8 @@ bool getAppDataPath(const std::string& appName, std::string& appDataPath)
 
    WideCharToMultiByte(CP_UTF8, 0, widePathStr.data(), static_cast<int>(widePathStr.size()), appDataPath.data(), static_cast<int>(appDataPath.size()), nullptr, nullptr);
    appDataPath += "/" + appName;
+
+   IOUtils::standardizePath(appDataPath);
 
    return true;
 }
@@ -148,6 +154,8 @@ bool getDirectoryFromPath(const std::string& path, std::string& dir)
    }
 
    dir = path.substr(0, pos);
+   IOUtils::standardizePath(dir);
+
    return true;
 }
 

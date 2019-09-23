@@ -70,4 +70,9 @@ bool ensurePathToFileExists(const std::string& path);
  */
 std::vector<std::string> getAllFilePathsRecursive(const std::string& directory);
 
+/**
+ * Standardizes path representation
+ */
+void standardizePath(std::string& path);
+
 } // namespace IOUtils

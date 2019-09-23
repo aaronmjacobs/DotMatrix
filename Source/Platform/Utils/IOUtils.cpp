@@ -157,6 +157,7 @@ std::vector<std::string> getAllFilePathsRecursive(const std::string& directory)
 
       if (canRead(pathString))
       {
+         standardizePath(pathString);
          filePaths.push_back(pathString);
       }
    }
@@ -165,6 +166,11 @@ std::vector<std::string> getAllFilePathsRecursive(const std::string& directory)
 #endif
 
    return filePaths;
+}
+
+void standardizePath(std::string& path)
+{
+   std::replace(path.begin(), path.end(), '\\', '/');
 }
 
 } // namespace IOUtils
