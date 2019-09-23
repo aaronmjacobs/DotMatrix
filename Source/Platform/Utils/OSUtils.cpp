@@ -17,12 +17,12 @@
 #endif // __linux__
 
 #ifdef _WIN32
-#include <codecvt>
 #include <cstring>
 #include <locale>
 #include <ShlObj.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #endif // _WIN32
 
@@ -119,8 +119,12 @@ bool getAppDataPath(const std::string& appName, std::string& appDataPath)
    std::wstring widePathStr(path);
    CoTaskMemFree(path);
 
-   std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-   appDataPath = converter.to_bytes(widePathStr) + "/" + appName;
+   int sizeUTF8 = WideCharToMultiByte(CP_UTF8, 0, widePathStr.data(), static_cast<int>(widePathStr.size()), nullptr, 0, nullptr, nullptr);
+   appDataPath.resize(sizeUTF8);
+
+   WideCharToMultiByte(CP_UTF8, 0, widePathStr.data(), static_cast<int>(widePathStr.size()), appDataPath.data(), static_cast<int>(appDataPath.size()), nullptr, nullptr);
+   appDataPath += "/" + appName;
+
    return true;
 }
 
