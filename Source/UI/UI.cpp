@@ -557,19 +557,41 @@ void UI::renderEmulator(Emulator& emulator) const
 
 void UI::renderJoypad(GBC::GameBoy& gameBoy) const
 {
-   ImGui::SetNextWindowPos(ImVec2(278.0f, 252.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowSize(ImVec2(175.0f, 135.0f));
+   ImGui::SetNextWindowPos(ImVec2(454.0f, 525.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Joypad", nullptr, ImGuiWindowFlags_NoResize);
 
    GBC::Joypad& joypad = gameBoy.joypad;
 
-   ImGui::Checkbox("A", &joypad.a);
-   ImGui::Checkbox("B", &joypad.b);
-   ImGui::Checkbox("Start", &joypad.start);
-   ImGui::Checkbox("Select", &joypad.select);
+   ImGui::Columns(2, "joypad");
+   ImGui::Separator();
+
    ImGui::Checkbox("Up", &joypad.up);
+   ImGui::NextColumn();
+
+   ImGui::Checkbox("A", &joypad.a);
+   ImGui::NextColumn();
+
    ImGui::Checkbox("Down", &joypad.down);
+   ImGui::NextColumn();
+
+   ImGui::Checkbox("B", &joypad.b);
+   ImGui::NextColumn();
+
    ImGui::Checkbox("Left", &joypad.left);
+   ImGui::NextColumn();
+
+   ImGui::Checkbox("Start", &joypad.start);
+   ImGui::NextColumn();
+
    ImGui::Checkbox("Right", &joypad.right);
+   ImGui::NextColumn();
+
+   ImGui::Checkbox("Select", &joypad.select);
+   ImGui::NextColumn();
+
+   ImGui::Columns(1);
+   ImGui::Separator();
 
    ImGui::End();
 }
