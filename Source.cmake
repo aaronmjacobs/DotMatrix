@@ -26,6 +26,7 @@ target_sources(${PROJECT_NAME} PRIVATE
    "${SRC_DIR}/GBC/MemoryBankController.h"
    "${SRC_DIR}/GBC/MemoryBankController.cpp"
    "${SRC_DIR}/GBC/Operations.h"
+   "${SRC_DIR}/GBC/Operations.cpp"
    "${SRC_DIR}/GBC/SoundController.h"
    "${SRC_DIR}/GBC/SoundController.cpp"
 
