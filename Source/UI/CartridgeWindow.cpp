@@ -332,6 +332,36 @@ const char* getMbc3BankModeText(GBC::MBC3::BankRegisterMode mode)
    }
 }
 
+void renderRtc(GBC::MBC3::RTC& rtc, const char* id)
+{
+   static const uint16_t kZero = 0;
+   static const uint16_t kSecondMax = 59;
+   static const uint16_t kMinuteMax = 59;
+   static const uint16_t kHourMax = 23;
+   static const uint16_t kDayMax = 511;
+
+   ImGui::PushID(id);
+
+   ImGui::SliderScalar("Seconds", ImGuiDataType_U8, &rtc.seconds, &kZero, &kSecondMax);
+   ImGui::SliderScalar("Minutes", ImGuiDataType_U8, &rtc.minutes, &kZero, &kMinuteMax);
+   ImGui::SliderScalar("Hours", ImGuiDataType_U8, &rtc.hours, &kZero, &kHourMax);
+
+   uint16_t days = (rtc.daysMsb << 8) | rtc.daysLow;
+   ImGui::SliderScalar("Days", ImGuiDataType_U16, &days, &kZero, &kDayMax);
+   rtc.daysLow = days & 0x00FF;
+   rtc.daysHigh = (days >> 8) & 0x0001;
+
+   bool carry = rtc.daysCarry != 0;
+   ImGui::Checkbox("Carry", &carry);
+   rtc.daysCarry = carry ? 1 : 0;
+
+   bool halt = rtc.halt != 0;
+   ImGui::Checkbox("Halt", &halt);
+   rtc.halt = halt ? 1 : 0;
+
+   ImGui::PopID();
+}
+
 } // namespace
 
 void UI::renderCartridgeWindow(GBC::Cartridge* cart) const
@@ -358,30 +388,10 @@ void UI::renderCartridgeWindow(GBC::Cartridge* cart) const
          ImGui::Separator();
 
          ImGui::Text("Title: %s", cart->title());
-         ImGui::NextColumn();
-
-         ImGui::Text("Type: %s", GBC::Cartridge::getTypeName(header.type));
-         ImGui::NextColumn();
-
          ImGui::Text("Licensee: %s", getLicenseeText(header.oldLicenseeCode, header.newLicenseeCode));
-         ImGui::NextColumn();
-
-         ImGui::Text("ROM Size: %s", getROMSizeText(header.romSize));
-         ImGui::NextColumn();
-
          ImGui::Text("Version: %d", header.maskRomVersionNumber);
-         ImGui::NextColumn();
-
-         ImGui::Text("RAM Size: %s", getRAMSizeText(header.ramSize));
-         ImGui::NextColumn();
-
          const char* destinationText = header.destinationCode == GBC::Cartridge::DestinationCode::Japanese ? "Japanese" : "Non-Japanese";
          ImGui::Text("Destination: %s", destinationText);
-         ImGui::NextColumn();
-
-         ImGui::Text("Header Checksum: 0x%02X", header.headerChecksum);
-         ImGui::NextColumn();
-
          const char* cgbFlagText = nullptr;
          switch (header.cgbFlag)
          {
@@ -399,11 +409,6 @@ void UI::renderCartridgeWindow(GBC::Cartridge* cart) const
             break;
          }
          ImGui::Text("CGB: %s", cgbFlagText);
-         ImGui::NextColumn();
-
-         ImGui::Text("Global Checksum: 0x%02X%02X", header.globalChecksum[0], header.globalChecksum[1]);
-         ImGui::NextColumn();
-
          const char* sgbFlagText = nullptr;
          switch (header.sgbFlag)
          {
@@ -420,6 +425,11 @@ void UI::renderCartridgeWindow(GBC::Cartridge* cart) const
          ImGui::Text("SGB: %s", sgbFlagText);
          ImGui::NextColumn();
 
+         ImGui::Text("Type: %s", GBC::Cartridge::getTypeName(header.type));
+         ImGui::Text("ROM Size: %s", getROMSizeText(header.romSize));
+         ImGui::Text("RAM Size: %s", getRAMSizeText(header.ramSize));
+         ImGui::Text("Header Checksum: 0x%02X", header.headerChecksum);
+         ImGui::Text("Global Checksum: 0x%02X%02X", header.globalChecksum[0], header.globalChecksum[1]);
          bool supportsGBC = (Enum::cast(header.cgbFlag) & Enum::cast(GBC::Cartridge::CGBFlag::Supported)) != 0x00;
          if (supportsGBC)
          {
@@ -464,12 +474,14 @@ void UI::renderCartridgeWindow(GBC::Cartridge* cart) const
             static const char* kRtcId = "rtc";
             static const char* kLatchedRtcId = "rtc_latched";
 
+            ImGui::Text("Banking mode: %s", getMbc3BankModeText(mbc3->bankRegisterMode));
             ImGui::Checkbox("RAM / RTC enabled", &mbc3->ramRTCEnabled);
             ImGui::Checkbox("RTC latched", &mbc3->rtcLatched);
             ImGui::InputScalar("Latch data", ImGuiDataType_U8, &mbc3->latchData);
-            ImGui::Text("Banking mode: %s", getMbc3BankModeText(mbc3->bankRegisterMode));
             ImGui::SliderScalar("ROM bank number", ImGuiDataType_U8, &mbc3->romBankNumber, &kZero, &maxRomBank);
-            ImGui::InputDouble("Time remainder", &mbc3->tickTime);
+            double remainderMin = 0.0;
+            double remainderMax = 1.0;
+            ImGui::SliderScalar("Time remainder", ImGuiDataType_Double, &mbc3->tickTime, &remainderMin, &remainderMax);
 
             ImGui::Columns(2, "rtc");
             ImGui::Separator();
@@ -481,72 +493,10 @@ void UI::renderCartridgeWindow(GBC::Cartridge* cart) const
 
             ImGui::Separator();
 
-            ImGui::PushID(kRtcId);
-            ImGui::InputScalar("Seconds", ImGuiDataType_U8, &mbc3->rtc.seconds);
-            ImGui::PopID();
-            ImGui::NextColumn();
-            ImGui::PushID(kLatchedRtcId);
-            ImGui::InputScalar("Seconds", ImGuiDataType_U8, &mbc3->rtcLatchedCopy.seconds);
-            ImGui::PopID();
+            renderRtc(mbc3->rtc, "rtc");
             ImGui::NextColumn();
 
-            ImGui::PushID(kRtcId);
-            ImGui::InputScalar("Minutes", ImGuiDataType_U8, &mbc3->rtc.minutes);
-            ImGui::PopID();
-            ImGui::NextColumn();
-            ImGui::PushID(kLatchedRtcId);
-            ImGui::InputScalar("Minutes", ImGuiDataType_U8, &mbc3->rtcLatchedCopy.minutes);
-            ImGui::PopID();
-            ImGui::NextColumn();
-
-            ImGui::PushID(kRtcId);
-            ImGui::InputScalar("Hours", ImGuiDataType_U8, &mbc3->rtc.hours);
-            ImGui::PopID();
-            ImGui::NextColumn();
-            ImGui::PushID(kLatchedRtcId);
-            ImGui::InputScalar("Hours", ImGuiDataType_U8, &mbc3->rtcLatchedCopy.hours);
-            ImGui::PopID();
-            ImGui::NextColumn();
-
-            ImGui::PushID(kRtcId);
-            uint16_t days = (mbc3->rtc.daysMsb << 8) | mbc3->rtc.daysLow;
-            ImGui::InputScalar("Days", ImGuiDataType_U16, &days);
-            mbc3->rtc.daysLow = days & 0x00FF;
-            mbc3->rtc.daysHigh = (days >> 8) & 0x0001;
-            ImGui::PopID();
-            ImGui::NextColumn();
-            ImGui::PushID(kLatchedRtcId);
-            uint16_t daysLatched = (mbc3->rtcLatchedCopy.daysMsb << 8) | mbc3->rtcLatchedCopy.daysLow;
-            ImGui::InputScalar("Days", ImGuiDataType_U16, &daysLatched);
-            mbc3->rtcLatchedCopy.daysLow = daysLatched & 0x00FF;
-            mbc3->rtcLatchedCopy.daysHigh = (daysLatched >> 8) & 0x0001;
-            ImGui::PopID();
-            ImGui::NextColumn();
-
-            ImGui::PushID(kRtcId);
-            bool carry = mbc3->rtc.daysCarry != 0;
-            ImGui::Checkbox("Carry", &carry);
-            mbc3->rtc.daysCarry = carry ? 1 : 0;
-            ImGui::PopID();
-            ImGui::NextColumn();
-            ImGui::PushID(kLatchedRtcId);
-            bool carryLatched = mbc3->rtcLatchedCopy.daysCarry != 0;
-            ImGui::Checkbox("Carry", &carryLatched);
-            mbc3->rtcLatchedCopy.daysCarry = carryLatched ? 1 : 0;
-            ImGui::PopID();
-            ImGui::NextColumn();
-
-            ImGui::PushID(kRtcId);
-            bool halt = mbc3->rtc.halt != 0;
-            ImGui::Checkbox("Halt", &halt);
-            mbc3->rtc.halt = halt ? 1 : 0;
-            ImGui::PopID();
-            ImGui::NextColumn();
-            ImGui::PushID(kLatchedRtcId);
-            bool haltLatched = mbc3->rtcLatchedCopy.halt != 0;
-            ImGui::Checkbox("Halt", &haltLatched);
-            mbc3->rtcLatchedCopy.halt = haltLatched ? 1 : 0;
-            ImGui::PopID();
+            renderRtc(mbc3->rtcLatchedCopy, "rtc latched");
             ImGui::NextColumn();
 
             ImGui::Columns(1);

@@ -136,9 +136,6 @@ public:
       RTCDaysHigh = 0x0C
    };
 
-private:
-   DECLARE_UI_FRIEND
-
    // Real time clock
    struct RTC
    {
@@ -158,6 +155,9 @@ private:
          };
       };
    };
+
+private:
+   DECLARE_UI_FRIEND
 
    bool ramRTCEnabled;
    bool rtcLatched;

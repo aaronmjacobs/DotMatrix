@@ -85,38 +85,24 @@ void UI::renderSoundControllerWindow(GBC::SoundController& soundController) cons
    if (ImGui::CollapsingHeader("Mixer"))
    {
       GBC::Mixer& mixer = soundController.mixer;
+      uint8_t volumeMin = 0x01;
+      uint8_t volumeMax = 0x08;
 
       ImGui::Columns(2, "mixer");
 
       ImGui::Checkbox("Vin left enabled", &mixer.vinLeftEnabled);
-      ImGui::NextColumn();
-      ImGui::Checkbox("Vin right enabled", &mixer.vinRightEnabled);
-      ImGui::NextColumn();
-
       ImGui::Checkbox("Square 1 left enabled", &mixer.square1LeftEnabled);
-      ImGui::NextColumn();
-      ImGui::Checkbox("Square 1 right enabled", &mixer.square1RightEnabled);
-      ImGui::NextColumn();
-
       ImGui::Checkbox("Square 2 left enabled", &mixer.square2LeftEnabled);
-      ImGui::NextColumn();
-      ImGui::Checkbox("Square 2 right enabled", &mixer.square2RightEnabled);
-      ImGui::NextColumn();
-
       ImGui::Checkbox("Wave left enabled", &mixer.waveLeftEnabled);
-      ImGui::NextColumn();
-      ImGui::Checkbox("Wave right enabled", &mixer.waveRightEnabled);
-      ImGui::NextColumn();
-
       ImGui::Checkbox("Noise left enabled", &mixer.noiseLeftEnabled);
-      ImGui::NextColumn();
-      ImGui::Checkbox("Noise right enabled", &mixer.noiseRightEnabled);
-      ImGui::NextColumn();
-
-      uint8_t volumeMin = 0x01;
-      uint8_t volumeMax = 0x08;
       ImGui::SliderScalar("Left volume", ImGuiDataType_U8, &mixer.leftVolume, &volumeMin, &volumeMax, "0x%02X");
       ImGui::NextColumn();
+
+      ImGui::Checkbox("Vin right enabled", &mixer.vinRightEnabled);
+      ImGui::Checkbox("Square 1 right enabled", &mixer.square1RightEnabled);
+      ImGui::Checkbox("Square 2 right enabled", &mixer.square2RightEnabled);
+      ImGui::Checkbox("Wave right enabled", &mixer.waveRightEnabled);
+      ImGui::Checkbox("Noise right enabled", &mixer.noiseRightEnabled);
       ImGui::SliderScalar("Right volume", ImGuiDataType_U8, &mixer.rightVolume, &volumeMin, &volumeMax, "0x%02X");
       ImGui::NextColumn();
 
