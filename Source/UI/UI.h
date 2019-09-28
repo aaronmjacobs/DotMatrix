@@ -12,12 +12,17 @@ class Renderer;
 
 namespace GBC
 {
+class Cartridge;
+class CPU;
 class DutyUnit;
 class EnvelopeUnit;
 class GameBoy;
+class Joypad;
 class LengthUnit;
 class LFSRUnit;
+class Memory;
 class SoundChannel;
+class SoundController;
 class SweepUnit;
 class WaveUnit;
 template<typename T>
@@ -38,13 +43,15 @@ public:
    void render(Emulator& emulator);
 
 private:
-   void renderScreen(const Renderer& renderer) const;
-   void renderEmulator(Emulator& emulator) const;
-   void renderJoypad(GBC::GameBoy& gameBoy) const;
-   void renderCPU(GBC::GameBoy& gameBoy) const;
-   void renderMemory(GBC::GameBoy& gameBoy) const;
-   void renderSoundController(GBC::GameBoy& gameBoy) const;
-   void renderCartridge(GBC::GameBoy& gameBoy) const;
+   static const uint64_t kZero;
+
+   void renderScreenWindow(const Renderer& renderer) const;
+   void renderEmulatorWindow(Emulator& emulator) const;
+   void renderJoypadWindow(GBC::Joypad& joypad) const;
+   void renderCPUWindow(GBC::CPU& cpu) const;
+   void renderMemoryWindow(GBC::Memory& memory) const;
+   void renderSoundControllerWindow(GBC::SoundController& soundController) const;
+   void renderCartridgeWindow(GBC::Cartridge* cart) const;
 
    void renderSoundChannel(GBC::SoundChannel& soundChannel, std::vector<float>& samples, int offset) const;
    template<typename T>

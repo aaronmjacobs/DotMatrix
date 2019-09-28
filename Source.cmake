@@ -61,6 +61,13 @@ target_sources(${PROJECT_NAME} PRIVATE
 
 if(GBC_WITH_UI)
    target_sources(${PROJECT_NAME} PRIVATE
+      "${SRC_DIR}/UI/CartridgeWindow.cpp"
+      "${SRC_DIR}/UI/CPUWindow.cpp"
+      "${SRC_DIR}/UI/EmulatorWindow.cpp"
+      "${SRC_DIR}/UI/JoypadWindow.cpp"
+      "${SRC_DIR}/UI/MemoryWindow.cpp"
+      "${SRC_DIR}/UI/ScreenWindow.cpp"
+      "${SRC_DIR}/UI/SoundControllerWindow.cpp"
       "${SRC_DIR}/UI/UI.h"
       "${SRC_DIR}/UI/UI.cpp"
       "${SRC_DIR}/UI/UIConfig.h"
