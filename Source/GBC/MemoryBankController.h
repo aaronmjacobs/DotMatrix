@@ -123,9 +123,6 @@ public:
    Archive saveRAM() const override;
    bool loadRAM(Archive& ramData) override;
 
-private:
-   DECLARE_UI_FRIEND
-
    enum class BankRegisterMode : uint8_t
    {
       BankZero = 0x00,
@@ -138,6 +135,9 @@ private:
       RTCDaysLow = 0x0B,
       RTCDaysHigh = 0x0C
    };
+
+private:
+   DECLARE_UI_FRIEND
 
    // Real time clock
    struct RTC

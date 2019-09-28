@@ -8,6 +8,7 @@
 #include "GBC/Cartridge.h"
 #include "GBC/GameBoy.h"
 #include "GBC/LCDController.h"
+#include "GBC/MemoryBankController.h"
 
 #include "Platform/Video/Renderer.h"
 
@@ -163,6 +164,27 @@ const char* getRAMSizeText(GBC::Cartridge::RAMSize ramSize)
       return "64 KB (8 banks)";
    default:
       return "Unknown";
+   }
+}
+
+std::size_t getRAMSizeBytes(GBC::Cartridge::RAMSize ramSize)
+{
+   switch (ramSize)
+   {
+   case GBC::Cartridge::RAMSize::None:
+      return 0;
+   case GBC::Cartridge::RAMSize::Size2KBytes:
+      return 2048;
+   case GBC::Cartridge::RAMSize::Size8KBytes:
+      return 8192;
+   case GBC::Cartridge::RAMSize::Size32KBytes:
+      return 32768;
+   case GBC::Cartridge::RAMSize::Size128KBytes:
+      return 131072;
+   case GBC::Cartridge::RAMSize::Size64KBytes:
+      return 65536;
+   default:
+      return 0;
    }
 }
 
@@ -385,6 +407,33 @@ const char* getLicenseeText(uint8_t oldCode, std::array<uint8_t, 2> newCode)
    case 0x97: return "kaneko";
    case 0x99: return "pack in soft";
    default: return "Unknown";
+   }
+}
+
+const char* getMbc3BankModeText(GBC::MBC3::BankRegisterMode mode)
+{
+   switch (mode)
+   {
+   case GBC::MBC3::BankRegisterMode::BankZero:
+      return "RAM bank 0";
+   case GBC::MBC3::BankRegisterMode::BankOne:
+      return "RAM bank 1";
+   case GBC::MBC3::BankRegisterMode::BankTwo:
+      return "RAM bank 2";
+   case GBC::MBC3::BankRegisterMode::BankThree:
+      return "RAM bank 3";
+   case GBC::MBC3::BankRegisterMode::RTCSeconds:
+      return "RTC seconds";
+   case GBC::MBC3::BankRegisterMode::RTCMinutes:
+      return "RTC minutes";
+   case GBC::MBC3::BankRegisterMode::RTCHours:
+      return "RTC hours";
+   case GBC::MBC3::BankRegisterMode::RTCDaysLow:
+      return "RTC days (low)";
+   case GBC::MBC3::BankRegisterMode::RTCDaysHigh:
+      return "RTC days (high)";
+   default:
+      return "Unknown";
    }
 }
 
@@ -754,89 +803,277 @@ void UI::renderCartridge(GBC::GameBoy& gameBoy) const
       return;
    }
 
-   if (ImGui::CollapsingHeader("Header", ImGuiTreeNodeFlags_DefaultOpen))
+   const GBC::Cartridge::Header& header = gameBoy.cart->header;
+
+   GBC::MemoryBankController* mbc = gameBoy.cart->controller.get();
+   ASSERT(mbc);
+
+   if (ImGui::BeginTabBar("CartridgeTabBar"))
    {
-      GBC::Cartridge::Header header = gameBoy.cart->header;
-
-      ImGui::Columns(2, "header");
-      ImGui::Separator();
-
-      ImGui::Text("Title: %s", gameBoy.cart->title());
-      ImGui::NextColumn();
-
-      ImGui::Text("Type: %s", GBC::Cartridge::getTypeName(header.type));
-      ImGui::NextColumn();
-
-      ImGui::Text("Licensee: %s", getLicenseeText(header.oldLicenseeCode, header.newLicenseeCode));
-      ImGui::NextColumn();
-
-      ImGui::Text("ROM Size: %s", getROMSizeText(header.romSize));
-      ImGui::NextColumn();
-
-      ImGui::Text("Version: %d", header.maskRomVersionNumber);
-      ImGui::NextColumn();
-
-      ImGui::Text("RAM Size: %s", getRAMSizeText(header.ramSize));
-      ImGui::NextColumn();
-
-      const char* destinationText = header.destinationCode == GBC::Cartridge::DestinationCode::Japanese ? "Japanese" : "Non-Japanese";
-      ImGui::Text("Destination: %s", destinationText);
-      ImGui::NextColumn();
-
-      ImGui::Text("Header Checksum: 0x%02X", header.headerChecksum);
-      ImGui::NextColumn();
-
-      const char* cgbFlagText = nullptr;
-      switch (header.cgbFlag)
+      if (ImGui::BeginTabItem("Header"))
       {
-      case GBC::Cartridge::CGBFlag::Ignored:
-         cgbFlagText = "Ignored";
-         break;
-      case GBC::Cartridge::CGBFlag::Supported:
-         cgbFlagText = "Supported";
-         break;
-      case GBC::Cartridge::CGBFlag::Required:
-         cgbFlagText = "Required";
-         break;
-      default:
-         cgbFlagText = "Unknown";
-         break;
+         ImGui::Columns(2, "header");
+         ImGui::Separator();
+
+         ImGui::Text("Title: %s", gameBoy.cart->title());
+         ImGui::NextColumn();
+
+         ImGui::Text("Type: %s", GBC::Cartridge::getTypeName(header.type));
+         ImGui::NextColumn();
+
+         ImGui::Text("Licensee: %s", getLicenseeText(header.oldLicenseeCode, header.newLicenseeCode));
+         ImGui::NextColumn();
+
+         ImGui::Text("ROM Size: %s", getROMSizeText(header.romSize));
+         ImGui::NextColumn();
+
+         ImGui::Text("Version: %d", header.maskRomVersionNumber);
+         ImGui::NextColumn();
+
+         ImGui::Text("RAM Size: %s", getRAMSizeText(header.ramSize));
+         ImGui::NextColumn();
+
+         const char* destinationText = header.destinationCode == GBC::Cartridge::DestinationCode::Japanese ? "Japanese" : "Non-Japanese";
+         ImGui::Text("Destination: %s", destinationText);
+         ImGui::NextColumn();
+
+         ImGui::Text("Header Checksum: 0x%02X", header.headerChecksum);
+         ImGui::NextColumn();
+
+         const char* cgbFlagText = nullptr;
+         switch (header.cgbFlag)
+         {
+         case GBC::Cartridge::CGBFlag::Ignored:
+            cgbFlagText = "Ignored";
+            break;
+         case GBC::Cartridge::CGBFlag::Supported:
+            cgbFlagText = "Supported";
+            break;
+         case GBC::Cartridge::CGBFlag::Required:
+            cgbFlagText = "Required";
+            break;
+         default:
+            cgbFlagText = "Unknown";
+            break;
+         }
+         ImGui::Text("CGB: %s", cgbFlagText);
+         ImGui::NextColumn();
+
+         ImGui::Text("Global Checksum: 0x%02X%02X", header.globalChecksum[0], header.globalChecksum[1]);
+         ImGui::NextColumn();
+
+         const char* sgbFlagText = nullptr;
+         switch (header.sgbFlag)
+         {
+         case GBC::Cartridge::SGBFlag::Ignored:
+            sgbFlagText = "Ignored";
+            break;
+         case GBC::Cartridge::SGBFlag::Supported:
+            sgbFlagText = "Supported";
+            break;
+         default:
+            sgbFlagText = "Unknown";
+            break;
+         }
+         ImGui::Text("SGB: %s", sgbFlagText);
+         ImGui::NextColumn();
+
+         bool supportsGBC = (Enum::cast(header.cgbFlag) & Enum::cast(GBC::Cartridge::CGBFlag::Supported)) != 0x00;
+         if (supportsGBC)
+         {
+            ImGui::Text("Manufacturer Code: 0x%02X%02X%02X%02X", header.manufacturerCode[0], header.manufacturerCode[1], header.manufacturerCode[2], header.manufacturerCode[3]);
+         }
+         else
+         {
+            ImGui::Text("Manufacturer Code: None");
+         }
+         ImGui::NextColumn();
+
+         ImGui::Columns(1);
+         ImGui::Separator();
+
+         ImGui::EndTabItem();
       }
-      ImGui::Text("CGB: %s", cgbFlagText);
-      ImGui::NextColumn();
 
-      ImGui::Text("Global Checksum: 0x%02X%02X", header.globalChecksum[0], header.globalChecksum[1]);
-      ImGui::NextColumn();
-
-      const char* sgbFlagText = nullptr;
-      switch (header.sgbFlag)
+      if (ImGui::BeginTabItem("Memory Bank Controller"))
       {
-      case GBC::Cartridge::SGBFlag::Ignored:
-         sgbFlagText = "Ignored";
-         break;
-      case GBC::Cartridge::SGBFlag::Supported:
-         sgbFlagText = "Supported";
-         break;
-      default:
-         sgbFlagText = "Unknown";
-         break;
-      }
-      ImGui::Text("SGB: %s", sgbFlagText);
-      ImGui::NextColumn();
+         std::size_t maxRomBank = std::max(gameBoy.cart->cartData.size() / 16384, static_cast<std::size_t>(1)) - 1;
+         std::size_t ramSize = getRAMSizeBytes(header.ramSize);
+         std::size_t maxRamBank = std::max(ramSize / 8192, static_cast<std::size_t>(1)) - 1;
 
-      bool supportsGBC = (Enum::cast(header.cgbFlag) & Enum::cast(GBC::Cartridge::CGBFlag::Supported)) != 0x00;
-      if (supportsGBC)
-      {
-         ImGui::Text("Manufacturer Code: 0x%02X%02X%02X%02X", header.manufacturerCode[0], header.manufacturerCode[1], header.manufacturerCode[2], header.manufacturerCode[3]);
-      }
-      else
-      {
-         ImGui::Text("Manufacturer Code: None");
-      }
-      ImGui::NextColumn();
+         if (GBC::MBCNull* mbcNull = dynamic_cast<GBC::MBCNull*>(mbc))
+         {
+            ImGui::Text("No memory bank controller");
+         }
+         else if (GBC::MBC1* mbc1 = dynamic_cast<GBC::MBC1*>(mbc))
+         {
+            ImGui::Checkbox("RAM enabled", &mbc1->ramEnabled);
+            ImGui::Text("Banking mode: %s", mbc1->bankingMode == GBC::MBC1::BankingMode::ROM ? "ROM" : "RAM");
+            ImGui::SliderScalar("ROM bank number", ImGuiDataType_U8, &mbc1->romBankNumber, &kZero, &maxRomBank);
+            ImGui::SliderScalar("RAM bank number", ImGuiDataType_U8, &mbc1->ramBankNumber, &kZero, &maxRamBank);
+         }
+         else if (GBC::MBC2* mbc2 = dynamic_cast<GBC::MBC2*>(mbc))
+         {
+            ImGui::Checkbox("RAM enabled", &mbc2->ramEnabled);
+            ImGui::SliderScalar("ROM bank number", ImGuiDataType_U8, &mbc2->romBankNumber, &kZero, &maxRomBank);
+         }
+         else if (GBC::MBC3* mbc3 = dynamic_cast<GBC::MBC3*>(mbc))
+         {
+            static const char* kRtcId = "rtc";
+            static const char* kLatchedRtcId = "rtc_latched";
 
-      ImGui::Columns(1);
-      ImGui::Separator();
+            ImGui::Checkbox("RAM / RTC enabled", &mbc3->ramRTCEnabled);
+            ImGui::Checkbox("RTC latched", &mbc3->rtcLatched);
+            ImGui::InputScalar("Latch data", ImGuiDataType_U8, &mbc3->latchData);
+            ImGui::Text("Banking mode: %s", getMbc3BankModeText(mbc3->bankRegisterMode));
+            ImGui::SliderScalar("ROM bank number", ImGuiDataType_U8, &mbc3->romBankNumber, &kZero, &maxRomBank);
+            ImGui::InputDouble("Time remainder", &mbc3->tickTime);
+
+            ImGui::Columns(2, "rtc");
+            ImGui::Separator();
+
+            ImGui::Text("Real-time clock");
+            ImGui::NextColumn();
+            ImGui::Text("Latched real-time clock");
+            ImGui::NextColumn();
+
+            ImGui::Separator();
+
+            ImGui::PushID(kRtcId);
+            ImGui::InputScalar("Seconds", ImGuiDataType_U8, &mbc3->rtc.seconds);
+            ImGui::PopID();
+            ImGui::NextColumn();
+            ImGui::PushID(kLatchedRtcId);
+            ImGui::InputScalar("Seconds", ImGuiDataType_U8, &mbc3->rtcLatchedCopy.seconds);
+            ImGui::PopID();
+            ImGui::NextColumn();
+
+            ImGui::PushID(kRtcId);
+            ImGui::InputScalar("Minutes", ImGuiDataType_U8, &mbc3->rtc.minutes);
+            ImGui::PopID();
+            ImGui::NextColumn();
+            ImGui::PushID(kLatchedRtcId);
+            ImGui::InputScalar("Minutes", ImGuiDataType_U8, &mbc3->rtcLatchedCopy.minutes);
+            ImGui::PopID();
+            ImGui::NextColumn();
+
+            ImGui::PushID(kRtcId);
+            ImGui::InputScalar("Hours", ImGuiDataType_U8, &mbc3->rtc.hours);
+            ImGui::PopID();
+            ImGui::NextColumn();
+            ImGui::PushID(kLatchedRtcId);
+            ImGui::InputScalar("Hours", ImGuiDataType_U8, &mbc3->rtcLatchedCopy.hours);
+            ImGui::PopID();
+            ImGui::NextColumn();
+
+            ImGui::PushID(kRtcId);
+            uint16_t days = (mbc3->rtc.daysMsb << 8) | mbc3->rtc.daysLow;
+            ImGui::InputScalar("Days", ImGuiDataType_U16, &days);
+            mbc3->rtc.daysLow = days & 0x00FF;
+            mbc3->rtc.daysHigh = (days >> 8) & 0x0001;
+            ImGui::PopID();
+            ImGui::NextColumn();
+            ImGui::PushID(kLatchedRtcId);
+            uint16_t daysLatched = (mbc3->rtcLatchedCopy.daysMsb << 8) | mbc3->rtcLatchedCopy.daysLow;
+            ImGui::InputScalar("Days", ImGuiDataType_U16, &daysLatched);
+            mbc3->rtcLatchedCopy.daysLow = daysLatched & 0x00FF;
+            mbc3->rtcLatchedCopy.daysHigh = (daysLatched >> 8) & 0x0001;
+            ImGui::PopID();
+            ImGui::NextColumn();
+
+            ImGui::PushID(kRtcId);
+            bool carry = mbc3->rtc.daysCarry != 0;
+            ImGui::Checkbox("Carry", &carry);
+            mbc3->rtc.daysCarry = carry ? 1 : 0;
+            ImGui::PopID();
+            ImGui::NextColumn();
+            ImGui::PushID(kLatchedRtcId);
+            bool carryLatched = mbc3->rtcLatchedCopy.daysCarry != 0;
+            ImGui::Checkbox("Carry", &carryLatched);
+            mbc3->rtcLatchedCopy.daysCarry = carryLatched ? 1 : 0;
+            ImGui::PopID();
+            ImGui::NextColumn();
+
+            ImGui::PushID(kRtcId);
+            bool halt = mbc3->rtc.halt != 0;
+            ImGui::Checkbox("Halt", &halt);
+            mbc3->rtc.halt = halt ? 1 : 0;
+            ImGui::PopID();
+            ImGui::NextColumn();
+            ImGui::PushID(kLatchedRtcId);
+            bool haltLatched = mbc3->rtcLatchedCopy.halt != 0;
+            ImGui::Checkbox("Halt", &haltLatched);
+            mbc3->rtcLatchedCopy.halt = haltLatched ? 1 : 0;
+            ImGui::PopID();
+            ImGui::NextColumn();
+
+            ImGui::Columns(1);
+         }
+         else if (GBC::MBC5* mbc5 = dynamic_cast<GBC::MBC5*>(mbc))
+         {
+            ImGui::Checkbox("RAM enabled", &mbc5->ramEnabled);
+            ImGui::SliderScalar("ROM bank number", ImGuiDataType_U8, &mbc5->romBankNumber, &kZero, &maxRomBank);
+            ImGui::SliderScalar("RAM bank number", ImGuiDataType_U8, &mbc5->ramBankNumber, &kZero, &maxRamBank);
+         }
+         else
+         {
+            ImGui::Text("Unsupported memory bank controller type");
+         }
+
+         ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("ROM"))
+      {
+         static MemoryEditor memoryEditor;
+         memoryEditor.DrawContents(gameBoy.cart->cartData.data(), gameBoy.cart->cartData.size());
+
+         ImGui::EndTabItem();
+      }
+
+      if (ImGui::BeginTabItem("RAM"))
+      {
+         if (GBC::MBCNull* mbcNull = dynamic_cast<GBC::MBCNull*>(mbc))
+         {
+            ImGui::Text("No RAM");
+         }
+         else if (GBC::MBC1* mbc1 = dynamic_cast<GBC::MBC1*>(mbc))
+         {
+            static MemoryEditor memoryEditor;
+
+            std::size_t ramSize = std::min(getRAMSizeBytes(header.ramSize), mbc1->ramBanks[0].size() * mbc1->ramBanks.size());
+            memoryEditor.DrawContents(mbc1->ramBanks[0].data(), ramSize);
+         }
+         else if (GBC::MBC2* mbc2 = dynamic_cast<GBC::MBC2*>(mbc))
+         {
+            static MemoryEditor memoryEditor;
+
+            std::size_t ramSize = std::min(getRAMSizeBytes(header.ramSize), mbc2->ram.size());
+            memoryEditor.DrawContents(mbc2->ram.data(), ramSize);
+         }
+         else if (GBC::MBC3* mbc3 = dynamic_cast<GBC::MBC3*>(mbc))
+         {
+            static MemoryEditor memoryEditor;
+
+            std::size_t ramSize = std::min(getRAMSizeBytes(header.ramSize), mbc3->ramBanks[0].size() * mbc3->ramBanks.size());
+            memoryEditor.DrawContents(mbc3->ramBanks[0].data(), ramSize);
+         }
+         else if (GBC::MBC5* mbc5 = dynamic_cast<GBC::MBC5*>(mbc))
+         {
+            static MemoryEditor memoryEditor;
+
+            std::size_t ramSize = std::min(getRAMSizeBytes(header.ramSize), mbc5->ramBanks[0].size() * mbc5->ramBanks.size());
+            memoryEditor.DrawContents(mbc5->ramBanks[0].data(), ramSize);
+         }
+         else
+         {
+            ImGui::Text("Unsupported memory bank controller type");
+         }
+
+         ImGui::EndTabItem();
+      }
+
+      ImGui::EndTabBar();
    }
 
    ImGui::End();
