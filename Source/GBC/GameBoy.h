@@ -147,11 +147,6 @@ private:
 
    uint64_t serialCycles;
    SerialCallback serialCallback;
-
-#if GBC_RUN_TESTS
-   bool ignoreMachineCycles = false;
-   bool runningCpuTest = false;
-#endif // GBC_RUN_TESTS
 };
 
 } // namespace GBC

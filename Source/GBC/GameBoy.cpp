@@ -119,17 +119,6 @@ void GameBoy::tick(double dt)
 
 void GameBoy::machineCycle()
 {
-#if GBC_RUN_TESTS
-   if (runningCpuTest)
-   {
-      if (!ignoreMachineCycles)
-      {
-         totalCycles += CPU::kClockCyclesPerMachineCycle;
-      }
-      return;
-   }
-#endif // !GBC_RUN_TESTS
-
    totalCycles += CPU::kClockCyclesPerMachineCycle;
 
    tickJoypad();
