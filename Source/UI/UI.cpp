@@ -49,6 +49,7 @@ void UI::render(Emulator& emulator)
 
    renderScreenWindow(*emulator.renderer);
    renderEmulatorWindow(emulator);
+   renderTimerWindow(*emulator.gameBoy);
    renderJoypadWindow(emulator.gameBoy->joypad);
    renderCPUWindow(emulator.gameBoy->cpu);
    renderMemoryWindow(emulator.gameBoy->memory);

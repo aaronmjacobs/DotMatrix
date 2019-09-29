@@ -47,6 +47,7 @@ private:
 
    void renderScreenWindow(const Renderer& renderer) const;
    void renderEmulatorWindow(Emulator& emulator) const;
+   void renderTimerWindow(GBC::GameBoy& gameBoy) const;
    void renderJoypadWindow(GBC::Joypad& joypad) const;
    void renderCPUWindow(GBC::CPU& cpu) const;
    void renderMemoryWindow(GBC::Memory& memory) const;

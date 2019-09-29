@@ -1,5 +1,7 @@
 #pragma once
 
+#include "UI/UIFriend.h"
+
 #include <array>
 #include <cstdint>
 
@@ -145,6 +147,8 @@ public:
    };
 
 private:
+   DECLARE_UI_FRIEND
+
    Cartridge* cart;
    GameBoy& gameBoy;
 };

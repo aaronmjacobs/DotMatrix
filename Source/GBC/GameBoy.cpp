@@ -29,25 +29,6 @@ enum Enum : uint8_t
 
 } // namespace P1
 
-namespace TAC
-{
-
-enum Enum : uint8_t
-{
-   TimerStartStop = 1 << 2,
-   InputClockSelect = (1 << 1) | (1 << 0)
-};
-
-const std::array<uint16_t, 4> kCounterMasks =
-{
-   0x0200,  // 4096 Hz, increase every 1024 clocks
-   0x0008,  // 262144 Hz, increase every 16 clocks
-   0x0020,  // 65536 Hz, increase every 64 clocks
-   0x0080   // 16384 Hz, increase every 256 clocks
-};
-
-} // namespace TAC
-
 namespace SC
 {
 

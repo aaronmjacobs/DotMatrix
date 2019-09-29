@@ -69,6 +69,7 @@ if(GBC_WITH_UI)
       "${SRC_DIR}/UI/MemoryWindow.cpp"
       "${SRC_DIR}/UI/ScreenWindow.cpp"
       "${SRC_DIR}/UI/SoundControllerWindow.cpp"
+      "${SRC_DIR}/UI/TimerWindow.cpp"
       "${SRC_DIR}/UI/UI.h"
       "${SRC_DIR}/UI/UI.cpp"
       "${SRC_DIR}/UI/UIConfig.h"
