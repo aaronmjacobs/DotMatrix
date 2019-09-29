@@ -500,6 +500,7 @@ void UI::renderCartridgeWindow(GBC::Cartridge* cart) const
             ImGui::NextColumn();
 
             ImGui::Columns(1);
+            ImGui::Separator();
          }
          else if (GBC::MBC5* mbc5 = dynamic_cast<GBC::MBC5*>(mbc))
          {
@@ -515,9 +516,10 @@ void UI::renderCartridgeWindow(GBC::Cartridge* cart) const
          ImGui::EndTabItem();
       }
 
+      static MemoryEditor memoryEditor;
+
       if (ImGui::BeginTabItem("ROM"))
       {
-         static MemoryEditor memoryEditor;
          memoryEditor.DrawContents(cart->cartData.data(), cart->cartData.size());
 
          ImGui::EndTabItem();
@@ -531,29 +533,21 @@ void UI::renderCartridgeWindow(GBC::Cartridge* cart) const
          }
          else if (GBC::MBC1* mbc1 = dynamic_cast<GBC::MBC1*>(mbc))
          {
-            static MemoryEditor memoryEditor;
-
             std::size_t ramSize = std::min(getRAMSizeBytes(header.ramSize), mbc1->ramBanks[0].size() * mbc1->ramBanks.size());
             memoryEditor.DrawContents(mbc1->ramBanks[0].data(), ramSize);
          }
          else if (GBC::MBC2* mbc2 = dynamic_cast<GBC::MBC2*>(mbc))
          {
-            static MemoryEditor memoryEditor;
-
             std::size_t ramSize = std::min(getRAMSizeBytes(header.ramSize), mbc2->ram.size());
             memoryEditor.DrawContents(mbc2->ram.data(), ramSize);
          }
          else if (GBC::MBC3* mbc3 = dynamic_cast<GBC::MBC3*>(mbc))
          {
-            static MemoryEditor memoryEditor;
-
             std::size_t ramSize = std::min(getRAMSizeBytes(header.ramSize), mbc3->ramBanks[0].size() * mbc3->ramBanks.size());
             memoryEditor.DrawContents(mbc3->ramBanks[0].data(), ramSize);
          }
          else if (GBC::MBC5* mbc5 = dynamic_cast<GBC::MBC5*>(mbc))
          {
-            static MemoryEditor memoryEditor;
-
             std::size_t ramSize = std::min(getRAMSizeBytes(header.ramSize), mbc5->ramBanks[0].size() * mbc5->ramBanks.size());
             memoryEditor.DrawContents(mbc5->ramBanks[0].data(), ramSize);
          }
