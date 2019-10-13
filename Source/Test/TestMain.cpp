@@ -46,18 +46,25 @@ struct TestResult
    Result result = Result::Error;
 };
 
-Result runTestCart(UPtr<GBC::Cartridge> cart, float time)
+Result runTestCart(UPtr<GBC::Cartridge> cart, float time, bool checkAllRegisters)
 {
-   UPtr<GBC::GameBoy> gameBoy(std::make_unique<GBC::GameBoy>());
+   UPtr<GBC::GameBoy> gameBoy = std::make_unique<GBC::GameBoy>();
    gameBoy->setCartridge(std::move(cart));
 
    gameBoy->tick(time);
 
    // Magic numbers signal a successful test
-   return gameBoy->cpu.reg.a == 0 ? Result::Pass : Result::Fail;
-   //   && gameBoy.cpu.reg.b == 3 && gameBoy.cpu.reg.c == 5
-   //   && gameBoy.cpu.reg.d == 8 && gameBoy.cpu.reg.e == 13
-   //   && gameBoy.cpu.reg.h == 21 && gameBoy.cpu.reg.l == 34;
+   const GBC::CPU& cpu = gameBoy->cpu;
+   bool success = cpu.reg.a == 0;
+   if (checkAllRegisters)
+   {
+      success = success
+         && cpu.reg.b == 3 && cpu.reg.c == 5
+         && cpu.reg.d == 8 && cpu.reg.e == 13
+         && cpu.reg.h == 21 && cpu.reg.l == 34;
+   }
+
+   return success ? Result::Pass : Result::Fail;
 }
 
 std::vector<TestResult> runTestCarts(const std::vector<std::string>& cartPaths, float time)
@@ -76,7 +83,10 @@ std::vector<TestResult> runTestCarts(const std::vector<std::string>& cartPaths, 
       UPtr<GBC::Cartridge> cartridge = GBC::Cartridge::fromData(std::move(cartData), error);
       if (cartridge)
       {
-         result.result = runTestCart(std::move(cartridge), time);
+         static const std::string kMooneye = "mooneye";
+
+         bool checkAllRegisters = cartPath.find(kMooneye) != std::string::npos;
+         result.result = runTestCart(std::move(cartridge), time, checkAllRegisters);
       }
       else
       {
