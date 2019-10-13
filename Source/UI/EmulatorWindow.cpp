@@ -8,6 +8,8 @@
 
 void UI::renderEmulatorWindow(Emulator& emulator) const
 {
+   ImGui::SetNextWindowPos(ImVec2(577.0f, 201.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowSize(ImVec2(350.0f, 94.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Emulator");
 
    float timeScale = static_cast<float>(emulator.timeScale);

@@ -6,8 +6,8 @@
 
 void UI::renderJoypadWindow(GBC::Joypad& joypad) const
 {
+   ImGui::SetNextWindowPos(ImVec2(646.0f, 353.0f), ImGuiCond_FirstUseEver);
    ImGui::SetNextWindowSize(ImVec2(175.0f, 135.0f));
-   ImGui::SetNextWindowPos(ImVec2(454.0f, 525.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Joypad", nullptr, ImGuiWindowFlags_NoResize);
 
    ImGui::Columns(2, "joypad");

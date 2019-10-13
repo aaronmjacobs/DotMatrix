@@ -18,6 +18,7 @@ uint32_t getClockSpeed(uint8_t tac)
 
 void UI::renderTimerWindow(GBC::GameBoy& gameBoy) const
 {
+   ImGui::SetNextWindowPos(ImVec2(826.0f, 366.0f), ImGuiCond_FirstUseEver);
    ImGui::SetNextWindowSize(ImVec2(450.0f, 110.0f));
    ImGui::Begin("Timer", nullptr, ImGuiWindowFlags_NoResize);
 

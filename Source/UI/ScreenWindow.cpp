@@ -8,8 +8,7 @@
 
 void UI::renderScreenWindow(const Renderer& renderer) const
 {
-   ImGuiIO& io = ImGui::GetIO();
-   ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f - 100.0f, io.DisplaySize.y * 0.5f), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
+   ImGui::SetNextWindowPos(ImVec2(939.0f, 5.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Screen", nullptr, ImGuiWindowFlags_NoResize);
 
    ImGui::Image(renderer.getTextureId(), ImVec2(GBC::kScreenWidth * 2.0f, GBC::kScreenHeight * 2.0f));

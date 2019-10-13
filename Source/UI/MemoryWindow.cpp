@@ -62,8 +62,8 @@ void renderMemoryRegion(GBC::Memory& memory, const char* name, const char* descr
 
 void UI::renderMemoryWindow(GBC::Memory& memory) const
 {
+   ImGui::SetNextWindowPos(ImVec2(5.0f, 5.0f), ImGuiCond_FirstUseEver);
    ImGui::SetNextWindowSize(ImVec2(560.0f, 312.0f), ImGuiCond_FirstUseEver);
-   ImGui::SetNextWindowPos(ImVec2(718.0f, 11.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Memory");
 
    if (ImGui::BeginTabBar("MemoryTabBar"))

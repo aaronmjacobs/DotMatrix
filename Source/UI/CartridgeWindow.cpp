@@ -366,6 +366,8 @@ void renderRtc(GBC::MBC3::RTC& rtc, const char* id)
 
 void UI::renderCartridgeWindow(GBC::Cartridge* cart) const
 {
+   ImGui::SetNextWindowPos(ImVec2(715.0f, 515.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowSize(ImVec2(560.0f, 200.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Cartridge");
 
    if (cart == nullptr)

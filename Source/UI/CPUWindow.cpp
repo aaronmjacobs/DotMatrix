@@ -6,8 +6,8 @@
 
 void UI::renderCPUWindow(GBC::CPU& cpu) const
 {
+   ImGui::SetNextWindowPos(ImVec2(577.0f, 5.0f), ImGuiCond_FirstUseEver);
    ImGui::SetNextWindowSize(ImVec2(350.0f, 165.0f));
-   ImGui::SetNextWindowPos(ImVec2(365.0f, 20.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("CPU", nullptr, ImGuiWindowFlags_NoResize);
 
    ImGui::Columns(3, "cpu");

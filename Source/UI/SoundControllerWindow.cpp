@@ -56,6 +56,8 @@ std::string getPitch(uint32_t timerPeriod)
 
 void UI::renderSoundControllerWindow(GBC::SoundController& soundController) const
 {
+   ImGui::SetNextWindowPos(ImVec2(5.0f, 319.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowSize(ImVec2(636.0f, 400.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Sound Controller");
 
    if (ImGui::CollapsingHeader("Output", ImGuiTreeNodeFlags_DefaultOpen))
