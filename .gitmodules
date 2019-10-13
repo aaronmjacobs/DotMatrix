@@ -21,4 +21,4 @@
 	url = https://github.com/ocornut/imgui.git
 [submodule "Libraries/imgui_club"]
 	path = Libraries/imgui_club
-	url = https://github.com/ocornut/imgui_club.git
+	url = https://github.com/aaronmjacobs/imgui_club.git
