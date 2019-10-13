@@ -17,7 +17,6 @@ class CPU;
 class DutyUnit;
 class EnvelopeUnit;
 class GameBoy;
-class Joypad;
 class LengthUnit;
 class LFSRUnit;
 class Memory;
@@ -27,6 +26,7 @@ class SweepUnit;
 class WaveUnit;
 template<typename T>
 class SoundTimer;
+struct Joypad;
 } // namespace GBC
 
 struct GLFWwindow;
