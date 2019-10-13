@@ -8,8 +8,6 @@
 
 #include "Core/Assert.h"
 
-#include <glad/glad.h>
-
 //---- Define assertion handler. Defaults to calling assert().
 #define IM_ASSERT(_EXPR) ASSERT(_EXPR)
 
@@ -23,4 +21,4 @@
 #endif // !GBC_DEBUG
 
 // Avoid unnecessary reinterpret_cast calls
-#define ImTextureID GLuint
+#define ImTextureID unsigned int
