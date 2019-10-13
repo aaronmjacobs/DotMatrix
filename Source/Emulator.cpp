@@ -408,6 +408,12 @@ void Emulator::onKeyChanged(int key, int scancode, int action, int mods)
       else if (key == GLFW_KEY_SPACE)
       {
          renderUi = !renderUi;
+
+         // Hide the cursor if we're in full screen with no UI
+         if (!renderUi && glfwGetWindowMonitor(window) != nullptr)
+         {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+         }
       }
 #endif // GBC_WITH_UI
    }
@@ -441,7 +447,14 @@ void Emulator::toggleFullScreen()
          if (const GLFWvidmode* vidMode = glfwGetVideoMode(newMonitor))
          {
             glfwSetWindowMonitor(window, newMonitor, 0, 0, vidMode->width, vidMode->height, vidMode->refreshRate);
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+#if GBC_WITH_UI
+            // Don't want to hide the cursor when showing the UI (used for input)
+            if (!renderUi)
+#endif // GBC_WITH_UI
+            {
+               glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+            }
 
             // Due to a bug, the previously set swap interval is ignored on Windows 10 when transitioning to full screen, so we set it again here
             // See: https://github.com/glfw/glfw/issues/1072
