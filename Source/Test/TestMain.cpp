@@ -72,10 +72,15 @@ std::vector<TestResult> runTestCarts(const std::vector<std::string>& cartPaths, 
       result.cartPath = cartPath;
 
       std::vector<uint8_t> cartData = IOUtils::readBinaryFile(cartPath);
-      UPtr<GBC::Cartridge> cartridge(GBC::Cartridge::fromData(std::move(cartData)));
+      std::string error;
+      UPtr<GBC::Cartridge> cartridge = GBC::Cartridge::fromData(std::move(cartData), error);
       if (cartridge)
       {
          result.result = runTestCart(std::move(cartridge), time);
+      }
+      else
+      {
+         std::printf("%s\n", error.c_str());
       }
 
       results.push_back(result);
