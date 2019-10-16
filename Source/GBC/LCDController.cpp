@@ -116,6 +116,7 @@ LCDController::LCDController(GameBoy& gb)
    : gameBoy(gb)
    , modeCyclesRemaining(kCyclesPerLine)
    , dmaRequested(false)
+   , dmaPending(false)
    , dmaInProgress(false)
    , dmaIndex(0)
    , dmaSource(0)
@@ -292,6 +293,17 @@ void LCDController::write(uint16_t address, uint8_t value)
 
 void LCDController::updateDMA()
 {
+   if (dmaPending)
+   {
+      dmaPending = false;
+
+      dmaInProgress = true;
+      dmaIndex = 0x00;
+
+      ASSERT(dma <= 0xF1);
+      dmaSource = dma << 8;
+   }
+
    if (dmaInProgress)
    {
       if (dmaIndex <= 0x9F)
@@ -309,11 +321,7 @@ void LCDController::updateDMA()
    if (dmaRequested)
    {
       dmaRequested = false;
-      dmaInProgress = true;
-      dmaIndex = 0x00;
-
-      ASSERT(dma <= 0xF1);
-      dmaSource = dma << 8;
+      dmaPending = true;
    }
 }
 

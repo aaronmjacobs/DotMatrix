@@ -121,6 +121,7 @@ private:
    uint32_t modeCyclesRemaining;
 
    bool dmaRequested;
+   bool dmaPending;
    bool dmaInProgress;
    uint8_t dmaIndex;
    uint16_t dmaSource;
