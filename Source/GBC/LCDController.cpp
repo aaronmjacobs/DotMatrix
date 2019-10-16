@@ -418,6 +418,12 @@ void LCDController::setMode(Mode::Enum newMode)
          mem.ifr |= Interrupt::LCDState;
       }
 
+      // If bit 5 (mode 2 OAM interrupt) is set, an interrupt is also triggered at line 144 when vblank starts
+      if (stat & STAT::Mode2OAMInterrupt)
+      {
+         mem.ifr |= Interrupt::LCDState;
+      }
+
       // When stopped, fill the screen with white
       if (gameBoy.getCPU().isStopped())
       {
