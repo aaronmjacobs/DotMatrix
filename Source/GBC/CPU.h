@@ -190,6 +190,39 @@ public:
       return (high << 8) | low;
    }
 
+#if GBC_WITH_UI
+   bool isInBreakMode()
+   {
+      return inBreakMode;
+   }
+
+   void debugBreak()
+   {
+      inBreakMode = true;
+   }
+
+   void debugContinue()
+   {
+      inBreakMode = false;
+      stepping = true;
+   }
+
+   bool isStepping()
+   {
+      return stepping;
+   }
+
+   void step()
+   {
+      stepping = true;
+   }
+
+   bool setBreakpoint(uint16_t address);
+   bool clearBreakpoint(uint16_t address);
+
+   bool shouldBreak();
+#endif // GBC_WITH_UI
+
 private:
    DECLARE_UI_FRIEND
 
@@ -301,6 +334,18 @@ private:
    bool stopped;
    bool interruptEnableRequested;
    bool freezePC;
+
+#if GBC_WITH_UI
+   struct Breakpoint
+   {
+      uint16_t address = 0x0000;
+      bool set = false;
+   };
+
+   bool inBreakMode = false;
+   bool stepping = false;
+   std::array<Breakpoint, 16> breakpoints;
+#endif // GBC_WITH_UI
 };
 
 } // namespace GBC

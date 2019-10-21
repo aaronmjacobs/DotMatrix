@@ -356,6 +356,23 @@ CPU::CPU(GameBoy& gb)
 
 void CPU::tick()
 {
+#if GBC_WITH_UI
+   if (!stepping)
+   {
+      if (!inBreakMode)
+      {
+         inBreakMode = shouldBreak();
+      }
+
+      if (inBreakMode)
+      {
+         return;
+      }
+   }
+
+   stepping = false;
+#endif // GBC_WITH_UI
+
    if (halted)
    {
       if (hasInterrupt())
@@ -379,6 +396,53 @@ void CPU::tick()
 
    execute(operation);
 }
+
+#if GBC_WITH_UI
+bool CPU::setBreakpoint(uint16_t address)
+{
+   for (Breakpoint& breakpoint : breakpoints)
+   {
+      if (!breakpoint.set)
+      {
+         breakpoint.address = address;
+         breakpoint.set = true;
+
+         return true;
+      }
+   }
+
+   return false;
+}
+
+bool CPU::clearBreakpoint(uint16_t address)
+{
+   bool anyCleared = false;
+
+   for (Breakpoint& breakpoint : breakpoints)
+   {
+      if (breakpoint.address == address)
+      {
+         breakpoint.set = false;
+         anyCleared = true;
+      }
+   }
+
+   return anyCleared;
+}
+
+bool CPU::shouldBreak()
+{
+   for (Breakpoint breakpoint : breakpoints)
+   {
+      if (breakpoint.set && reg.pc == breakpoint.address)
+      {
+         return true;
+      }
+   }
+
+   return false;
+}
+#endif // GBC_WITH_UI
 
 void CPU::push(uint16_t value)
 {

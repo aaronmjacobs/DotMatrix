@@ -64,6 +64,7 @@ if(GBC_WITH_UI)
    target_sources(${PROJECT_NAME} PRIVATE
       "${SRC_DIR}/UI/CartridgeWindow.cpp"
       "${SRC_DIR}/UI/CPUWindow.cpp"
+      "${SRC_DIR}/UI/DebuggerWindow.cpp"
       "${SRC_DIR}/UI/EmulatorWindow.cpp"
       "${SRC_DIR}/UI/JoypadWindow.cpp"
       "${SRC_DIR}/UI/MemoryWindow.cpp"

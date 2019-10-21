@@ -53,6 +53,7 @@ private:
    void renderMemoryWindow(GBC::Memory& memory) const;
    void renderSoundControllerWindow(GBC::SoundController& soundController) const;
    void renderCartridgeWindow(GBC::Cartridge* cart) const;
+   void renderDebuggerWindow(GBC::GameBoy& gameBoy) const;
 
    void renderSoundChannel(GBC::SoundChannel& soundChannel, std::vector<float>& samples, int offset) const;
    template<typename T>

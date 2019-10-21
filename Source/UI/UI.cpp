@@ -55,6 +55,7 @@ void UI::render(Emulator& emulator)
    renderMemoryWindow(emulator.gameBoy->memory);
    renderSoundControllerWindow(emulator.gameBoy->soundController);
    renderCartridgeWindow(emulator.gameBoy->cart.get());
+   renderDebuggerWindow(*emulator.gameBoy);
 
    ImGui::Render();
 
