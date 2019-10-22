@@ -11,7 +11,12 @@ if(MSVC)
 endif()
 option(GBC_LOG_MSVC_STYLE "Format logs for MSVC" ${GBC_LOG_MSVC_STYLE_DEFAULT})
 option(GBC_RUN_TESTS "Run emulator tests" OFF)
-option(GBC_WITH_UI "Enable UI" ON)
+option(GBC_ENABLE_UI "Enable UI" ON)
+if(${GBC_ENABLE_UI} AND NOT ${GBC_RUN_TESTS})
+   set(GBC_WITH_UI ON)
+else()
+   set(GBC_WITH_UI OFF)
+endif()
 
 ### Target ###
 
