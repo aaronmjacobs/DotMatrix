@@ -147,7 +147,6 @@ uint8_t CPU::Operand::read8() const
    switch (opr)
    {
       case Opr::None:
-      case Opr::CB:
       case Opr::Bit0:
       case Opr::Bit1:
       case Opr::Bit2:

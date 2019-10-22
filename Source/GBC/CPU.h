@@ -112,8 +112,6 @@ enum class Opr : uint8_t
    DerefImm8,
    DerefImm16,
 
-   CB,
-
    // flags (for jumps)
    FlagC,
    FlagNC,

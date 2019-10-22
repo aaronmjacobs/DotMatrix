@@ -87,7 +87,7 @@ namespace
       case GBC::Ins::RET: return "RET";
       case GBC::Ins::RETI: return "RETI";
 
-      case GBC::Ins::PREFIX: return "PREFIX";
+      case GBC::Ins::PREFIX: return "PREFIX CB";
 
       default: return "Unknown";
       }
@@ -128,8 +128,6 @@ namespace
       case GBC::Opr::DerefImm8: return "(a8)";
       case GBC::Opr::DerefImm16: return "(a16)";
 
-      case GBC::Opr::CB: return "CB";
-
       case GBC::Opr::FlagC: return "C";
       case GBC::Opr::FlagNC: return "NC";
       case GBC::Opr::FlagZ: return "Z";
@@ -165,7 +163,7 @@ namespace
       Immediate
    };
 
-   bool renderOperationText(GBC::Memory& memory, uint16_t address, uint16_t pc, bool* breakpoint)
+   bool renderOperation(GBC::Memory& memory, uint16_t address, uint16_t pc, bool* breakpoint)
    {
       ImGui::PushID(address);
 
@@ -374,7 +372,7 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
             ASSERT(line >= 0 && line <= 0xFFFF);
             uint16_t address = static_cast<uint16_t>(line);
 
-            bool breakpointToggled = renderOperationText(gameBoy.memory, address, gameBoy.cpu.reg.pc, &breakpoints[line]);
+            bool breakpointToggled = renderOperation(gameBoy.memory, address, gameBoy.cpu.reg.pc, &breakpoints[line]);
             if (breakpointToggled)
             {
                updateBreakpoint(address);
