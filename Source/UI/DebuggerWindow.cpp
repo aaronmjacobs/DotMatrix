@@ -271,6 +271,28 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
 {
    ImGui::Begin("Debugger");
 
+   static std::array<bool, 0x10000> breakpoints;
+
+   auto updateBreakpoint = [&gameBoy](uint16_t address)
+   {
+      if (breakpoints[address])
+      {
+         gameBoy.cpu.setBreakpoint(address);
+      }
+      else
+      {
+         gameBoy.cpu.clearBreakpoint(address);
+      }
+   };
+
+   if (isNewGameBoy())
+   {
+      for (std::size_t i = 0; i < breakpoints.size(); ++i)
+      {
+         updateBreakpoint(static_cast<uint16_t>(i));
+      }
+   }
+
    bool scroll = false;
    uint16_t scrollAddress = 0;
    {
@@ -352,19 +374,10 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
             ASSERT(line >= 0 && line <= 0xFFFF);
             uint16_t address = static_cast<uint16_t>(line);
 
-            static std::array<bool, 0x10000> breakpoints;
             bool breakpointToggled = renderOperationText(gameBoy.memory, address, gameBoy.cpu.reg.pc, &breakpoints[line]);
-
             if (breakpointToggled)
             {
-               if (breakpoints[line])
-               {
-                  gameBoy.cpu.setBreakpoint(address);
-               }
-               else
-               {
-                  gameBoy.cpu.clearBreakpoint(address);
-               }
+               updateBreakpoint(address);
             }
          }
       }

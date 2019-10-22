@@ -188,6 +188,7 @@ Emulator::Emulator()
 #if GBC_WITH_UI
    , timeScale(1.0)
    , renderUi(true)
+   , skipNextTick(false)
 #endif // GBC_WITH_UI
    , cartWroteToRamLastFrame(false)
    , exiting(false)
@@ -273,10 +274,7 @@ bool Emulator::init()
    glfwSetKeyCallback(window, keyCallback);
    glfwSetWindowRefreshCallback(window, windowRefreshCallback);
 
-   gameBoy = std::make_unique<GBC::GameBoy>();
-
-   // Don't generate audio data if the audio manager isn't valid
-   gameBoy->getSoundController().setGenerateAudioData(audioManager.isValid());
+   resetGameBoy(nullptr);
 
    saveThread = std::thread([this]
    {
@@ -293,6 +291,12 @@ bool Emulator::init()
 void Emulator::tick(double dt)
 {
 #if GBC_WITH_UI
+   if (skipNextTick)
+   {
+      skipNextTick = false;
+      return;
+   }
+
    dt *= timeScale;
 #endif // GBC_WITH_UI
 
@@ -361,9 +365,7 @@ void Emulator::setRom(const char* romPath)
 
       if (cartridge)
       {
-         gameBoy = std::make_unique<GBC::GameBoy>();
-         gameBoy->getSoundController().setGenerateAudioData(audioManager.isValid());
-         gameBoy->setCartridge(std::move(cartridge));
+         resetGameBoy(std::move(cartridge));
 
          std::string windowTitle = getWindowTitle(gameBoy.get());
          glfwSetWindowTitle(window, windowTitle.c_str());
@@ -424,6 +426,20 @@ void Emulator::onWindowRefreshRequested()
    // This will get called whenever the window has been dirtied and needs to be refreshed (e.g. when it is being resized)
    // We just re-render the last frame
    render();
+}
+
+void Emulator::resetGameBoy(UPtr<GBC::Cartridge> cartridge)
+{
+   gameBoy = std::make_unique<GBC::GameBoy>();
+   gameBoy->setCartridge(std::move(cartridge));
+
+   // Don't generate audio data if the audio manager isn't valid
+   gameBoy->getSoundController().setGenerateAudioData(audioManager.isValid());
+
+#if GBC_WITH_UI
+   // Render once before ticking (to make sure we hit any initial breakpoints)
+   skipNextTick = true;
+#endif // GBC_WITH_UI
 }
 
 void Emulator::toggleFullScreen()

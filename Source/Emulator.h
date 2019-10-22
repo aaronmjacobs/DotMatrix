@@ -20,6 +20,7 @@ class Renderer;
 
 namespace GBC
 {
+class Cartridge;
 class GameBoy;
 } // namespace GBC
 
@@ -60,6 +61,7 @@ public:
 private:
    DECLARE_UI_FRIEND
 
+   void resetGameBoy(UPtr<GBC::Cartridge> cartridge);
    void toggleFullScreen();
    void loadGame();
    void saveGameAsync();
@@ -74,6 +76,7 @@ private:
    UPtr<UI> ui;
    double timeScale;
    bool renderUi;
+   bool skipNextTick;
 #endif // GBC_WITH_UI
 
    KeyboardInputDevice keyboardInputDevice;

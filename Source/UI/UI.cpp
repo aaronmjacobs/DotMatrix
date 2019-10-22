@@ -23,6 +23,8 @@ int UI::getDesiredWindowHeight()
 }
 
 UI::UI(GLFWwindow* window)
+   : lastGameBoy(nullptr)
+   , newGameBoy(false)
 {
    IMGUI_CHECKVERSION();
 
@@ -43,6 +45,11 @@ UI::~UI()
 
 void UI::render(Emulator& emulator)
 {
+   ASSERT(emulator.gameBoy);
+
+   newGameBoy = lastGameBoy != emulator.gameBoy.get();
+   lastGameBoy = emulator.gameBoy.get();
+
    ImGui_ImplOpenGL3_NewFrame();
    ImGui_ImplGlfw_NewFrame();
    ImGui::NewFrame();

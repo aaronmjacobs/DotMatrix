@@ -45,6 +45,11 @@ public:
 private:
    static const uint64_t kZero;
 
+   bool isNewGameBoy() const
+   {
+      return newGameBoy;
+   }
+
    void renderScreenWindow(const Renderer& renderer) const;
    void renderEmulatorWindow(Emulator& emulator) const;
    void renderTimerWindow(GBC::GameBoy& gameBoy) const;
@@ -64,4 +69,7 @@ private:
    void renderSweepUnit(GBC::SweepUnit& sweepUnit) const;
    void renderWaveUnit(GBC::WaveUnit& waveUnit) const;
    void renderLFSRUnit(GBC::LFSRUnit& lfsrUnit) const;
+
+   GBC::GameBoy* lastGameBoy;
+   bool newGameBoy;
 };
