@@ -72,5 +72,10 @@ void UI::render(Emulator& emulator)
    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+void UI::onRomLoaded(const char* romPath)
+{
+   onRomLoaded_Debugger(romPath);
+}
+
 // static
 const uint64_t UI::kZero = 0;

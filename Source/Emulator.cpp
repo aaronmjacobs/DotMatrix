@@ -372,6 +372,10 @@ void Emulator::setRom(const char* romPath)
 
          // Try to load a save file
          loadGame();
+
+#if GBC_WITH_UI
+         ui->onRomLoaded(romPath);
+#endif // GBC_WITH_UI
       }
       else
       {

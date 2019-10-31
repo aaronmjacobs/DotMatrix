@@ -2,16 +2,178 @@
 #include "GBC/GameBoy.h"
 #include "GBC/Operations.h"
 
+#include "Platform/Utils/IOUtils.h"
+
 #include "UI/UI.h"
 
 #include <imgui.h>
 
+#include <array>
+#include <cstdio>
 #include <iomanip>
+#include <map>
+#include <optional>
 #include <sstream>
 #include <string>
 
 namespace
 {
+   struct Label
+   {
+      std::string name;
+      uint16_t address = 0;
+      uint16_t size = 0;
+   };
+
+   class Symbols
+   {
+   public:
+      static std::optional<Symbols> load(const std::string& symbolFile);
+
+      const Label* findLabelByAddress(uint16_t address) const;
+      const Label* findLabelByIndex(std::size_t index) const;
+
+      std::size_t getNumLabels() const
+      {
+         return labels.size();
+      }
+
+   private:
+      std::map<uint16_t, Label> labels;
+   };
+
+   // static
+   std::optional<Symbols> Symbols::load(const std::string& symbolFile)
+   {
+      static const unsigned int kNameMaxSize = 256;
+
+      std::string symbolFileString;
+      if (!IOUtils::readTextFile(symbolFile, symbolFileString))
+      {
+         return std::nullopt;
+      }
+
+      std::size_t parseLocation = 0;
+      Symbols symbols;
+      std::map<std::string, uint16_t> nameToAddress;
+
+      static const std::string kLabels = "[labels]\n";
+      std::size_t labelsLocation = symbolFileString.find(kLabels);
+      if (labelsLocation == std::string::npos)
+      {
+         return std::nullopt;
+      }
+      parseLocation = labelsLocation + kLabels.size() + 1;
+
+      uint8_t bank = 0;
+      uint16_t parsedAddress = 0;
+      std::array<char, kNameMaxSize> parsedName{};
+      while (sscanf_s(&symbolFileString[parseLocation], "%hhx:%hx %s\n", &bank, &parsedAddress, parsedName.data(), kNameMaxSize) == 3)
+      {
+         Label newLabel;
+         newLabel.name = parsedName.data();
+         newLabel.address = parsedAddress;
+
+         bank = 0;
+         parsedAddress = 0;
+         parsedName[0] = '\0';
+
+         symbols.labels.emplace(newLabel.address, newLabel);
+         nameToAddress.emplace(newLabel.name, newLabel.address);
+
+         parseLocation = symbolFileString.find('\n', parseLocation);
+         if (parseLocation != std::string::npos)
+         {
+            ++parseLocation;
+         }
+      }
+
+      static const std::string kDefinitions = "[definitions]\n";
+      std::size_t definitionsLocation = symbolFileString.find("[definitions]");
+      if (definitionsLocation == std::string::npos)
+      {
+         return std::nullopt;
+      }
+      parseLocation = definitionsLocation + kDefinitions.size() + 1;
+
+      unsigned int sizeVal = 0;
+      std::array<char, kNameMaxSize> parsedSizeStr{};
+      while (sscanf_s(&symbolFileString[parseLocation], "%x %s", &sizeVal, parsedSizeStr.data(), kNameMaxSize) == 2)
+      {
+         static const std::string kSizeofPrefix = "_sizeof_";
+
+         std::string sizeStr = parsedSizeStr.data();
+         parsedSizeStr[0] = '\0';
+
+         std::size_t sizeofLocation = sizeStr.find(kSizeofPrefix);
+         if (sizeofLocation != std::string::npos)
+         {
+            std::string name = sizeStr.substr(sizeofLocation + kSizeofPrefix.size());
+
+            auto nameToAddressItr = nameToAddress.find(name);
+            if (nameToAddressItr != nameToAddress.end())
+            {
+               uint16_t address = nameToAddressItr->second;
+
+               auto labelItr = symbols.labels.find(address);
+               if (labelItr != symbols.labels.end())
+               {
+                  labelItr->second.size = sizeVal;
+               }
+            }
+         }
+
+         parseLocation = symbolFileString.find('\n', parseLocation);
+         if (parseLocation != std::string::npos)
+         {
+            ++parseLocation;
+         }
+      }
+
+      return symbols;
+   }
+
+   const Label* Symbols::findLabelByAddress(uint16_t address) const
+   {
+      auto itr = labels.find(address);
+      if (itr != labels.end())
+      {
+         return &itr->second;
+      }
+
+      return nullptr;
+   }
+
+   const Label* Symbols::findLabelByIndex(std::size_t index) const
+   {
+      auto itr = labels.begin();
+      for (std::size_t i = 0; i < index; ++i)
+      {
+         ++itr;
+      }
+
+      if (itr != labels.end())
+      {
+         return &itr->second;
+      }
+
+      return nullptr;
+   }
+
+   std::optional<Symbols> symbols;
+
+   bool stringReplace(std::string& str, const std::string& from, const std::string& to)
+   {
+      std::size_t startPos = str.rfind(from);
+      if (startPos == std::string::npos)
+      {
+         return false;
+      }
+
+      str.replace(startPos, from.length(), to);
+      return true;
+   }
+
    bool usesImm8(GBC::Operation operation)
    {
       return operation.param1 == GBC::Opr::Imm8 || operation.param2 == GBC::Opr::Imm8
@@ -257,6 +419,16 @@ namespace
          ImGui::PopStyleColor();
       }
 
+      if (symbols)
+      {
+         if (const Label* label = symbols->findLabelByAddress(address))
+         {
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("[%s]", label->name.c_str());
+         }
+         ImGui::NextColumn();
+      }
+
       ImGui::Separator();
 
       ImGui::PopID();
@@ -347,6 +519,32 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
             scroll = true;
             scrollAddress = targetAddress;
          }
+
+         if (symbols)
+         {
+            static int currentLabel = 0;
+            bool goToLabel = ImGui::Combo("Go to label", &currentLabel, [](void* data, int idx, const char** out_text)
+            {
+               Symbols& symbolsData = *reinterpret_cast<Symbols*>(data);
+
+               if (const Label* label = symbolsData.findLabelByIndex(idx))
+               {
+                  *out_text = label->name.data();
+                  return true;
+               }
+
+               return false;
+            }, static_cast<void*>(&symbols.value()), static_cast<int>(symbols->getNumLabels()));
+
+            if (goToLabel)
+            {
+               if (const Label* label = symbols->findLabelByIndex(currentLabel))
+               {
+                  scroll = true;
+                  scrollAddress = label->address;
+               }
+            }
+         }
       }
 
       ImGui::Columns(1);
@@ -356,8 +554,9 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
 
    {
       ImGui::BeginChild("##scrolling", ImVec2(0, 0), false, ImGuiWindowFlags_NoMove);
-      ImGui::Columns(2);
+      ImGui::Columns(symbols ? 3 : 2);
       ImGui::SetColumnWidth(0, 40.0f);
+      ImGui::SetColumnWidth(1, 200.0f);
 
       ImGuiListClipper clipper(0x10000);
       while (clipper.Step())
@@ -388,4 +587,17 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
    ImGui::End();
 
    ImGui::ShowDemoWindow();
+}
+
+void UI::onRomLoaded_Debugger(const char* romPath) const
+{
+   std::string symbolPath = romPath;
+   if (stringReplace(symbolPath, ".gb", ".sym"))
+   {
+      symbols = Symbols::load(symbolPath);
+   }
+   else
+   {
+      symbols = std::nullopt;
+   }
 }

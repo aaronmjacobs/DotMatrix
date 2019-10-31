@@ -42,6 +42,8 @@ public:
 
    void render(Emulator& emulator);
 
+   void onRomLoaded(const char* romPath);
+
 private:
    static const uint64_t kZero;
 
@@ -69,6 +71,8 @@ private:
    void renderSweepUnit(GBC::SweepUnit& sweepUnit) const;
    void renderWaveUnit(GBC::WaveUnit& waveUnit) const;
    void renderLFSRUnit(GBC::LFSRUnit& lfsrUnit) const;
+
+   void onRomLoaded_Debugger(const char* romPath) const;
 
    GBC::GameBoy* lastGameBoy;
    bool newGameBoy;

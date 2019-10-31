@@ -29,7 +29,7 @@ bool readTextFile(const std::string& fileName, std::string& data)
       return false;
    }
 
-   data = std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+   data = std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
    return true;
 }
 
