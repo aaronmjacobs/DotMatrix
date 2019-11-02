@@ -386,6 +386,13 @@ namespace
       }
       std::string text = ss.str();
 
+      bool breakpointToggled = ImGui::Checkbox("", breakpoint);
+      ImGui::NextColumn();
+
+      ImGui::AlignTextToFramePadding();
+      ImGui::Text("%04X", address);
+      ImGui::NextColumn();
+
       if (type != OperationType::Normal)
       {
          ImVec4 color;
@@ -407,11 +414,8 @@ namespace
          ImGui::PushStyleColor(ImGuiCol_Text, color);
       }
 
-      bool breakpointToggled = ImGui::Checkbox("", breakpoint);
-      ImGui::NextColumn();
-
       ImGui::AlignTextToFramePadding();
-      ImGui::Text("%04X: %s", address, text.c_str());
+      ImGui::Text("%s", text.c_str());
       ImGui::NextColumn();
 
       if (type != OperationType::Normal)
@@ -467,7 +471,7 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
    uint16_t scrollAddress = 0;
    {
       ImGui::Columns(2);
-      ImGui::SetColumnWidth(0, 100.0f);
+      ImGui::SetColumnWidth(0, 93.0f);
 
       if (gameBoy.cpu.isInBreakMode())
       {
@@ -502,7 +506,7 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
          ImGui::SameLine();
 
          static bool lockToPc = false;
-         ImGui::Checkbox("Lock to PC", &lockToPc);
+         ImGui::Checkbox("Lock", &lockToPc);
 
          if (goToPc || lockToPc)
          {
@@ -510,9 +514,11 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
             scrollAddress = gameBoy.cpu.reg.pc;
          }
 
+         bool goToAddress = ImGui::Button("Go to address");
+         ImGui::SameLine();
          ImGui::SetNextItemWidth(50.0f);
          static uint16_t targetAddress = 0;
-         bool goToAddress = ImGui::InputScalar("Go to address", ImGuiDataType_U16, &targetAddress, nullptr, nullptr, "%X", ImGuiInputTextFlags_CharsHexadecimal);
+         goToAddress |= ImGui::InputScalar("##address", ImGuiDataType_U16, &targetAddress, nullptr, nullptr, "%X", ImGuiInputTextFlags_CharsHexadecimal);
 
          if (goToAddress)
          {
@@ -523,7 +529,9 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
          if (symbols)
          {
             static int currentLabel = 0;
-            bool goToLabel = ImGui::Combo("Go to label", &currentLabel, [](void* data, int idx, const char** out_text)
+            bool goToLabel = ImGui::Button("Go to label");
+            ImGui::SameLine();
+            goToLabel |= ImGui::Combo("##label", &currentLabel, [](void* data, int idx, const char** out_text)
             {
                Symbols& symbolsData = *reinterpret_cast<Symbols*>(data);
 
@@ -550,13 +558,44 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
       ImGui::Columns(1);
    }
 
+   {
+      ImGui::Columns(symbols ? 4 : 3);
+      ImGui::SetColumnWidth(0, 48.0f);
+      ImGui::SetColumnWidth(1, 45.0f);
+      ImGui::SetColumnWidth(2, 125.0f);
+
+      ImGui::Separator();
+
+      ImGui::AlignTextToFramePadding();
+      ImGui::Text("Break");
+      ImGui::NextColumn();
+
+      ImGui::AlignTextToFramePadding();
+      ImGui::Text("Addr");
+      ImGui::NextColumn();
+
+      ImGui::AlignTextToFramePadding();
+      ImGui::Text("Instruction");
+      ImGui::NextColumn();
+
+      if (symbols)
+      {
+         ImGui::AlignTextToFramePadding();
+         ImGui::Text("Label");
+         ImGui::NextColumn();
+      }
+
+      ImGui::Columns(1);
+   }
+
    ImGui::Separator();
 
    {
       ImGui::BeginChild("##scrolling", ImVec2(0, 0), false, ImGuiWindowFlags_NoMove);
-      ImGui::Columns(symbols ? 3 : 2);
+      ImGui::Columns(symbols ? 4 : 3);
       ImGui::SetColumnWidth(0, 40.0f);
-      ImGui::SetColumnWidth(1, 200.0f);
+      ImGui::SetColumnWidth(1, 45.0f);
+      ImGui::SetColumnWidth(2, 125.0f);
 
       ImGuiListClipper clipper(0x10000);
       while (clipper.Step())
