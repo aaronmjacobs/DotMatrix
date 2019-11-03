@@ -4,10 +4,23 @@
 
 #include <imgui.h>
 
+namespace
+{
+   bool displayRegister(void* data, bool twoByte, const char* name, const char* id)
+   {
+      ImGui::AlignTextToFramePadding();
+      ImGui::Text(name);
+
+      ImGui::SameLine(0.0f, 2.0f);
+      ImGui::SetNextItemWidth(22.0f * (twoByte ? 2 : 1));
+      return ImGui::InputScalar(id, twoByte ? ImGuiDataType_U16 : ImGuiDataType_U8, data, nullptr, nullptr, twoByte ? "%04X" : "%02X", ImGuiInputTextFlags_CharsHexadecimal);
+   }
+}
+
 void UI::renderCPUWindow(GBC::CPU& cpu) const
 {
    ImGui::SetNextWindowPos(ImVec2(577.0f, 5.0f), ImGuiCond_FirstUseEver);
-   ImGui::SetNextWindowSize(ImVec2(350.0f, 165.0f));
+   ImGui::SetNextWindowSize(ImVec2(350.0f, 200.0f));
    ImGui::Begin("CPU", nullptr, ImGuiWindowFlags_NoResize);
 
    ImGui::Columns(3, "cpu");
@@ -25,12 +38,18 @@ void UI::renderCPUWindow(GBC::CPU& cpu) const
    ImGui::Separator();
 
    float registerPadding = 15.0f;
-   ImGui::Text("A: %02X", cpu.reg.a); ImGui::SameLine(0.0f, registerPadding); ImGui::Text("F: %02X", cpu.reg.f);
-   ImGui::Text("B: %02X", cpu.reg.b); ImGui::SameLine(0.0f, registerPadding); ImGui::Text("C: %02X", cpu.reg.c);
-   ImGui::Text("D: %02X", cpu.reg.d); ImGui::SameLine(0.0f, registerPadding); ImGui::Text("E: %02X", cpu.reg.e);
-   ImGui::Text("H: %02X", cpu.reg.h); ImGui::SameLine(0.0f, registerPadding); ImGui::Text("L: %02X", cpu.reg.l);
-   ImGui::Text("SP: %04X", cpu.reg.sp);
-   ImGui::Text("PC: %04X", cpu.reg.pc);
+   uint8_t regF = cpu.reg.f;
+   bool wroteF = false;
+   displayRegister(&cpu.reg.a, false, "A:", "##register-a"); ImGui::SameLine(0.0f, registerPadding); wroteF = displayRegister(&regF, false, "F:", "##register-f");
+   displayRegister(&cpu.reg.b, false, "B:", "##register-b"); ImGui::SameLine(0.0f, registerPadding); displayRegister(&cpu.reg.c, false, "C:", "##register-c");
+   displayRegister(&cpu.reg.d, false, "D:", "##register-d"); ImGui::SameLine(0.0f, registerPadding); displayRegister(&cpu.reg.e, false, "E:", "##register-e");
+   displayRegister(&cpu.reg.h, false, "H:", "##register-h"); ImGui::SameLine(0.0f, registerPadding); displayRegister(&cpu.reg.l, false, "L:", "##register-l");
+   displayRegister(&cpu.reg.sp, true, "SP:", "##register-sp");
+   displayRegister(&cpu.reg.pc, true, "PC:", "##register-pc");
+   if (wroteF)
+   {
+      cpu.reg.f = regF & 0xF0;
+   }
    ImGui::NextColumn();
 
    unsigned int* flags = reinterpret_cast<unsigned int*>(&cpu.reg.f);
