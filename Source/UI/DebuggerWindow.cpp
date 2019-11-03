@@ -628,8 +628,6 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
    }
 
    ImGui::End();
-
-   ImGui::ShowDemoWindow();
 }
 
 void UI::onRomLoaded_Debugger(const char* romPath) const
