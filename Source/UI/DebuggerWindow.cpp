@@ -68,7 +68,7 @@ namespace
       uint8_t bank = 0;
       uint16_t parsedAddress = 0;
       std::array<char, kNameMaxSize> parsedName{};
-      while (sscanf_s(&symbolFileString[parseLocation], "%hhx:%hx %s\n", &bank, &parsedAddress, parsedName.data(), kNameMaxSize) == 3)
+      while (std::sscanf(&symbolFileString[parseLocation], "%hhx:%hx %256s\n", &bank, &parsedAddress, parsedName.data()) == 3)
       {
          Label newLabel;
          newLabel.name = parsedName.data();
@@ -98,7 +98,7 @@ namespace
 
       unsigned int sizeVal = 0;
       std::array<char, kNameMaxSize> parsedSizeStr{};
-      while (sscanf_s(&symbolFileString[parseLocation], "%x %s", &sizeVal, parsedSizeStr.data(), kNameMaxSize) == 2)
+      while (std::sscanf(&symbolFileString[parseLocation], "%x %256s", &sizeVal, parsedSizeStr.data()) == 2)
       {
          static const std::string kSizeofPrefix = "_sizeof_";
 

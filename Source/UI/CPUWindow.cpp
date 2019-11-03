@@ -9,7 +9,7 @@ namespace
    bool displayRegister(void* data, bool twoByte, const char* name, const char* id)
    {
       ImGui::AlignTextToFramePadding();
-      ImGui::Text(name);
+      ImGui::Text("%s:", name);
 
       ImGui::SameLine(0.0f, 2.0f);
       ImGui::SetNextItemWidth(22.0f * (twoByte ? 2 : 1));
@@ -40,12 +40,12 @@ void UI::renderCPUWindow(GBC::CPU& cpu) const
    float registerPadding = 15.0f;
    uint8_t regF = cpu.reg.f;
    bool wroteF = false;
-   displayRegister(&cpu.reg.a, false, "A:", "##register-a"); ImGui::SameLine(0.0f, registerPadding); wroteF = displayRegister(&regF, false, "F:", "##register-f");
-   displayRegister(&cpu.reg.b, false, "B:", "##register-b"); ImGui::SameLine(0.0f, registerPadding); displayRegister(&cpu.reg.c, false, "C:", "##register-c");
-   displayRegister(&cpu.reg.d, false, "D:", "##register-d"); ImGui::SameLine(0.0f, registerPadding); displayRegister(&cpu.reg.e, false, "E:", "##register-e");
-   displayRegister(&cpu.reg.h, false, "H:", "##register-h"); ImGui::SameLine(0.0f, registerPadding); displayRegister(&cpu.reg.l, false, "L:", "##register-l");
-   displayRegister(&cpu.reg.sp, true, "SP:", "##register-sp");
-   displayRegister(&cpu.reg.pc, true, "PC:", "##register-pc");
+   displayRegister(&cpu.reg.a, false, "A", "##register-a"); ImGui::SameLine(0.0f, registerPadding); wroteF = displayRegister(&regF, false, "F:", "##register-f");
+   displayRegister(&cpu.reg.b, false, "B", "##register-b"); ImGui::SameLine(0.0f, registerPadding); displayRegister(&cpu.reg.c, false, "C:", "##register-c");
+   displayRegister(&cpu.reg.d, false, "D", "##register-d"); ImGui::SameLine(0.0f, registerPadding); displayRegister(&cpu.reg.e, false, "E:", "##register-e");
+   displayRegister(&cpu.reg.h, false, "H", "##register-h"); ImGui::SameLine(0.0f, registerPadding); displayRegister(&cpu.reg.l, false, "L:", "##register-l");
+   displayRegister(&cpu.reg.sp, true, "SP", "##register-sp");
+   displayRegister(&cpu.reg.pc, true, "PC", "##register-pc");
    if (wroteF)
    {
       cpu.reg.f = regF & 0xF0;
