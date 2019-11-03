@@ -1,5 +1,3 @@
-#include "Core/Log.h"
-
 #include "GBC/CPU.h"
 #include "GBC/SoundController.h"
 
@@ -646,7 +644,6 @@ uint8_t SoundController::read(uint16_t address) const
          value = readNr52();
          break;
       default:
-         ASSERT(false, "Trying to read value at invalid address from sound controller: %s", Log::hex(address).c_str());
          break;
       }
    }
@@ -697,7 +694,6 @@ void SoundController::write(uint16_t address, uint8_t value)
          writeNr52(value);
          break;
       default:
-         ASSERT(false, "Trying to write value at invalid address from sound controller: %s at %s", Log::hex(value).c_str(), Log::hex(address).c_str());
          break;
       }
    }

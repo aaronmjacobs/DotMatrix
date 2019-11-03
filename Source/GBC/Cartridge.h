@@ -28,8 +28,6 @@ public:
 
    uint8_t data(size_t address) const
    {
-      ASSERT(address < cartData.size());
-
       if (address >= cartData.size())
       {
          return Memory::kInvalidAddressByte;
