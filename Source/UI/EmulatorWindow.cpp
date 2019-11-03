@@ -8,7 +8,7 @@
 
 void UI::renderEmulatorWindow(Emulator& emulator) const
 {
-   ImGui::SetNextWindowPos(ImVec2(577.0f, 201.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowPos(ImVec2(577.0f, 218.0f), ImGuiCond_FirstUseEver);
    ImGui::SetNextWindowSize(ImVec2(350.0f, 74.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Emulator");
 
