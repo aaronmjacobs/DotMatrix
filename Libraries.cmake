@@ -98,6 +98,7 @@ set(ALSOFT_CONFIG OFF CACHE INTERNAL "Install alsoft.conf sample configuration f
 set(ALSOFT_HRTF_DEFS OFF CACHE INTERNAL "Install HRTF definition files")
 set(ALSOFT_AMBDEC_PRESETS OFF CACHE INTERNAL "Install AmbDec preset files")
 set(ALSOFT_INSTALL OFF CACHE INTERNAL "Install headers and libraries")
+set(ALSOFT_UPDATE_BUILD_VERSION OFF CACHE INTERNAL "Update git build version info")
 add_subdirectory("${LIB_DIR}/openal-soft")
 target_link_libraries(${PROJECT_NAME} PUBLIC OpenAL)
 # openal-soft doesn't populate INTERFACE_INCLUDE_DIRECTORIES, so we need to manually add the includes here
