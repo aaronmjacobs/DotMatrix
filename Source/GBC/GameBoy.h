@@ -151,6 +151,7 @@ private:
    SoundController soundController;
    UPtr<Cartridge> cart;
 
+   uint64_t targetCycles;
    uint64_t totalCycles;
 
    bool cartWroteToRam;

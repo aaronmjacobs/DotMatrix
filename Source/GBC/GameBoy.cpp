@@ -49,6 +49,7 @@ GameBoy::GameBoy()
    , lcdController(*this)
    , soundController()
    , cart(nullptr)
+   , targetCycles(0)
    , totalCycles(0)
    , cartWroteToRam(false)
    , joypad({})
@@ -70,13 +71,14 @@ GameBoy::~GameBoy()
 
 void GameBoy::tick(double dt)
 {
-   uint64_t targetCycles = totalCycles + static_cast<uint64_t>(CPU::kClockSpeed * dt + 0.5);
+   targetCycles += static_cast<uint64_t>(CPU::kClockSpeed * dt + 0.5);
 
    while (totalCycles < targetCycles)
    {
 #if GBC_WITH_UI
       if (cpu.isInBreakMode() && !cpu.isStepping())
       {
+         targetCycles = totalCycles;
          break;
       }
 #endif // GBC_WITH_UI
@@ -89,8 +91,12 @@ void GameBoy::tick(double dt)
       {
          tickJoypad();
 
-         // Not going to tick any cycles, so break to avoid an infinite loop
-         break;
+         if (cpu.isStopped())
+         {
+            // Not going to tick any cycles, so break to avoid an infinite loop
+            targetCycles = totalCycles;
+            break;
+         }
       }
    }
 
