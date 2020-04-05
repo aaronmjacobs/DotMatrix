@@ -8,7 +8,11 @@
 
 #include "Platform/Utils/IOUtils.h"
 
+#include <readerwriterqueue.h>
+
+#include <future>
 #include <sstream>
+#include <thread>
 
 namespace
 {
@@ -46,6 +50,25 @@ struct TestResult
    Result result = Result::Error;
 };
 
+struct TestWorkerData
+{
+   TestWorkerData(std::vector<TestResult>& results, moodycamel::ReaderWriterQueue<std::string>& queue, std::size_t first, std::size_t last, float time)
+      : testResults(results)
+      , messageQueue(queue)
+      , firstIndex(first)
+      , lastIndex(last)
+      , testTime(time)
+   {
+   }
+
+   std::vector<TestResult>& testResults;
+   moodycamel::ReaderWriterQueue<std::string>& messageQueue;
+
+   std::size_t firstIndex;
+   std::size_t lastIndex;
+   float testTime;
+};
+
 Result runTestCart(UPtr<GBC::Cartridge> cart, float time, bool checkAllRegisters)
 {
    UPtr<GBC::GameBoy> gameBoy = std::make_unique<GBC::GameBoy>();
@@ -67,64 +90,120 @@ Result runTestCart(UPtr<GBC::Cartridge> cart, float time, bool checkAllRegisters
    return success ? Result::Pass : Result::Fail;
 }
 
-std::vector<TestResult> runTestCarts(const std::vector<std::string>& cartPaths, float time)
+void runTestCartRange(TestWorkerData data)
 {
-   std::vector<TestResult> results;
-
-   for (const std::string& cartPath : cartPaths)
+   for (std::size_t i = data.firstIndex; i <= data.lastIndex; ++i)
    {
-      std::printf("Running %s...\n", cartPath.c_str());
+      TestResult& result = data.testResults[i];
 
-      TestResult result;
-      result.cartPath = cartPath;
-
-      std::vector<uint8_t> cartData = IOUtils::readBinaryFile(cartPath);
+      std::vector<uint8_t> cartData = IOUtils::readBinaryFile(result.cartPath);
       std::string error;
-      UPtr<GBC::Cartridge> cartridge = GBC::Cartridge::fromData(std::move(cartData), error);
-      if (cartridge)
+      if (UPtr<GBC::Cartridge> cartridge = GBC::Cartridge::fromData(std::move(cartData), error))
       {
          static const std::string kMooneye = "mooneye";
 
-         bool checkAllRegisters = cartPath.find(kMooneye) != std::string::npos;
-         result.result = runTestCart(std::move(cartridge), time, checkAllRegisters);
+         bool checkAllRegisters = result.cartPath.find(kMooneye) != std::string::npos;
+         result.result = runTestCart(std::move(cartridge), data.testTime, checkAllRegisters);
       }
-      else
+
+      std::string message = result.cartPath + ": " + getResultName(result.result);
+      if (!error.empty())
       {
-         std::printf("%s\n", error.c_str());
+         message += " (" + error + ")";
       }
-
-      results.push_back(result);
-
-      const char* resultName = getResultName(result.result);
-      std::printf("%s\n\n", resultName);
+      data.messageQueue.enqueue(std::move(message));
    }
-
-   return results;
 }
 
 void runTestCartsInPath(std::string path, std::string resultPath, float time)
 {
    IOUtils::standardizePath(path);
 
-   std::vector<std::string> filePaths = IOUtils::getAllFilePathsRecursive(path);
-
    // Only try to run .gb files
-   filePaths.erase(std::remove_if(filePaths.begin(), filePaths.end(), [](const std::string& fileName) { return !endsWith(fileName, ".gb"); }), filePaths.end());
+   std::vector<std::string> filePaths = IOUtils::getAllFilePathsRecursive(path);
+   filePaths.erase(std::remove_if(filePaths.begin(), filePaths.end(), [](const std::string& filePath) { return !endsWith(filePath, ".gb"); }), filePaths.end());
+   std::size_t numTests = filePaths.size();
 
-   std::vector<TestResult> results = runTestCarts(filePaths, time);
+   if (numTests == 0)
+   {
+      std::printf("No tests found\n");
+      return;
+   }
+
+   std::vector<TestResult> testResults(numTests);
+   for (std::size_t i = 0; i < numTests; ++i)
+   {
+      testResults[i].cartPath = std::move(filePaths[i]);
+   }
+
+   std::size_t numWorkers = std::min(numTests, static_cast<std::size_t>(std::max(1U, std::thread::hardware_concurrency())));
+   std::size_t numTestsPerWorker = numTests / numWorkers;
+   std::size_t numLeftoverTests = numTests % numWorkers;
+
+   std::vector<std::future<void>> futures;
+   moodycamel::ReaderWriterQueue<std::string> messageQueue;
+
+   std::size_t firstIndex = 0;
+   for (std::size_t i = 0; i < numWorkers; ++i)
+   {
+      std::size_t lastIndex = firstIndex + numTestsPerWorker - 1;
+      if (numLeftoverTests > 0)
+      {
+         ++lastIndex;
+         --numLeftoverTests;
+      }
+
+      futures.push_back(std::async(std::launch::async, runTestCartRange, TestWorkerData(testResults, messageQueue, firstIndex, lastIndex, time)));
+
+      firstIndex = lastIndex + 1;
+   }
+
+   auto allWorkersDone = [&futures]()
+   {
+      for (const std::future<void>& future : futures)
+      {
+         if (future.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+         {
+            return false;
+         }
+      }
+
+      return true;
+   };
+
+   auto processMessages = [&messageQueue]()
+   {
+      std::string message;
+      while (messageQueue.try_dequeue(message))
+      {
+         std::printf("%s\n", message.c_str());
+      }
+   };
+
+   bool done = false;
+   while (!done)
+   {
+      done = allWorkersDone();
+      processMessages();
+
+      if (!done)
+      {
+         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+   }
 
    std::string output;
-   for (const TestResult& result : results)
+   for (const TestResult& result : testResults)
    {
       std::string relativePath = result.cartPath;
 
       size_t basePathpos = relativePath.rfind(path);
       if (basePathpos != std::string::npos)
       {
-         relativePath = relativePath.substr(basePathpos + path.size());
+         relativePath = relativePath.substr(basePathpos + path.size() + 1);
       }
 
-      output += relativePath + ";" + getResultName(result.result) + "\n";
+      output += relativePath + "|" + getResultName(result.result) + "\n";
    }
 
    IOUtils::writeTextFile(resultPath, output);
