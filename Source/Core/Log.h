@@ -116,11 +116,11 @@ namespace Log
 // Error   : For logging errors that do not prevent the program from continuing
 // Fatal   : For logging fatal errors that prevent the program from continuing
 
-#define LOG(_log_message_, _log_title_, _log_severity_) \
-do \
-{ \
-   TEMPLOG_LOG(Log::cerr_logger, _log_severity_, templog::aud_developer) << _log_message_; \
-} while (0)
+#if GBC_DEBUG
+#  define LOG(_log_message_, _log_title_, _log_severity_) do { TEMPLOG_LOG(Log::cerr_logger, _log_severity_, templog::aud_developer) << _log_message_; } while (0)
+#else
+#  define LOG(_log_message_, _log_title_, _log_severity_) do {} while (0)
+#endif
 
 #define LOG_DEBUG(_log_message_) LOG(_log_message_, LOG_SEV_DEBUG, templog::sev_debug)
 #define LOG_INFO(_log_message_) LOG(_log_message_, LOG_SEV_INFO, templog::sev_info)
@@ -136,7 +136,11 @@ do \
    TEMPLOG_LOG(Log::boxer_logger, _log_severity_, templog::aud_user) << _log_title_ << LOG_BOXER_MESSAGE_SPLIT << _log_message_; \
 } while (0)
 
-#define LOG_DEBUG_MSG_BOX(_log_message_) LOG_MSG_BOX(_log_message_, LOG_SEV_DEBUG, templog::sev_debug)
+#if GBC_DEBUG
+#  define LOG_DEBUG_MSG_BOX(_log_message_) LOG_MSG_BOX(_log_message_, LOG_SEV_DEBUG, templog::sev_debug)
+#else
+#  define LOG_DEBUG_MSG_BOX(_log_message_) do {} while (0)
+#endif
 #define LOG_INFO_MSG_BOX(_log_message_) LOG_MSG_BOX(_log_message_, LOG_SEV_INFO, templog::sev_info)
 #define LOG_MESSAGE_MSG_BOX(_log_message_) LOG_MSG_BOX(_log_message_, LOG_SEV_MESSAGE, templog::sev_message)
 #define LOG_WARNING_MSG_BOX(_log_message_) LOG_MSG_BOX(_log_message_, LOG_SEV_WARNING, templog::sev_warning)
