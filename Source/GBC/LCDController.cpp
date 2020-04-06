@@ -168,7 +168,7 @@ uint8_t LCDController::read(uint16_t address) const
          value = lcdc;
          break;
       case 0xFF41: // LCD status
-         value = stat;
+         value = stat | 0x80;
          break;
       case 0xFF42: // Scroll y
          value = scy;
@@ -240,7 +240,11 @@ void LCDController::write(uint16_t address, uint8_t value)
          lcdc = value;
          break;
       case 0xFF41: // LCD status
-         stat = value;
+      {
+         // Mode flag should be unaffected by memory writes
+         static const uint8_t kModeFlagMask = 0b00000011;
+         stat = (value & ~kModeFlagMask) | (stat & kModeFlagMask);
+      }
          break;
       case 0xFF42: // Scroll y
          scy = value;

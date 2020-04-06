@@ -55,56 +55,81 @@ const std::array<uint8_t, 256> kBootstrap =
 const uint8_t Memory::kInvalidAddressByte;
 
 Memory::Memory(GameBoy& gb)
-   : raw{}
-   , cart(nullptr)
-   , gameBoy(gb)
+   : gameBoy(gb)
 {
-   // If no cartridge is available, all cartridge reads return 0xFF
-   romb.fill(0xFF);
-   roms.fill(0xFF);
-   eram.fill(0xFF);
 }
 
 uint8_t Memory::readDirect(uint16_t address) const
 {
    uint8_t value = kInvalidAddressByte;
 
-   if (boot == Enum::cast(Boot::Booting) && address <= 0x00FF)
+   switch (address & 0xF000)
    {
-      value = kBootstrap[address];
-   }
-   else if ((address >= 0x8000 && address <= 0x9FFF) || (address >= 0xFE00 && address <= 0xFEFF) || (address >= 0xFF40 && address <= 0xFF4F))
-   {
+   // Permanently-mapped ROM bank
+   case 0x0000:
+      if (address <= 0x00FF && boot == Enum::cast(Boot::Booting))
+      {
+         value = kBootstrap[address];
+         break;
+      }
+   case 0x1000:
+   case 0x2000:
+   case 0x3000:
+   // Switchable ROM bank
+   case 0x4000:
+   case 0x5000:
+   case 0x6000:
+   case 0x7000:
+      if (cart)
+      {
+         value = cart->read(address);
+      }
+      break;
+   // Video RAM
+   case 0x8000:
+   case 0x9000:
       value = gameBoy.getLCDController().read(address);
-   }
-   else if (cart && address < 0x8000)
-   {
-      value = cart->read(address);
-   }
-   else if (cart && address >= 0xA000 && address < 0xC000)
-   {
-      value = cart->read(address);
-   }
-   else if (address >= 0xFF10 && address < 0xFF40)
-   {
-      // Sound registers
-      value = gameBoy.getSoundController().read(address);
-   }
-   else
-   {
-      if (address >= 0xE000 && address < 0xFE00)
+      break;
+   // Switchable external RAM bank
+   case 0xA000:
+   case 0xB000:
+      if (cart)
       {
-         // Mirror of working ram
-         address -= 0x2000;
+         value = cart->read(address);
       }
-
-      value = raw[address];
-
-      if (address == 0xFF0F)
+      break;
+   // Working RAM bank 0
+   case 0xC000:
+      value = ram0[address - 0xC000];
+      break;
+   // Working RAM bank 1
+   case 0xD000:
+      value = ram1[address - 0xD000];
+      break;
+   // Mirror of working ram
+   case 0xE000:
+      value = ram0[address - 0xE000];
+      break;
+   case 0xF000:
+      switch (address & 0x0F00)
       {
-         // IF reads are masked (upper 3 bits are unused)
-         value |= 0xE0;
+      // Mirror of working ram
+      default:
+         value = ram1[address - 0xF000];
+         break;
+      // Sprite attribute table
+      case 0x0E00:
+         value = gameBoy.getLCDController().read(address);
+         break;
+      // I/O device mappings
+      case 0x0F00:
+         value = readIO(address);
+         break;
       }
+      break;
+   default:
+      ASSERT(false);
+      break;
    }
 
    return value;
@@ -112,75 +137,73 @@ uint8_t Memory::readDirect(uint16_t address) const
 
 void Memory::writeDirect(uint16_t address, uint8_t value)
 {
-   if (boot == Enum::cast(Boot::Booting) && address <= 0x00FF)
+   switch (address & 0xF000)
    {
-      // Bootstrap is read only
-   }
-   else if ((address >= 0x8000 && address <= 0x9FFF) || (address >= 0xFE00 && address <= 0xFEFF) || (address >= 0xFF40 && address <= 0xFF4F))
-   {
+   // Permanently-mapped ROM bank
+   case 0x0000:
+      if (address <= 0x00FF && boot == Enum::cast(Boot::Booting))
+      {
+         // Bootstrap is read only
+         break;
+      }
+   case 0x1000:
+   case 0x2000:
+   case 0x3000:
+   // Switchable ROM bank
+   case 0x4000:
+   case 0x5000:
+   case 0x6000:
+   case 0x7000:
+      if (cart)
+      {
+         cart->write(address, value);
+      }
+      break;
+   // Video RAM
+   case 0x8000:
+   case 0x9000:
       gameBoy.getLCDController().write(address, value);
-   }
-   else if (cart && address < 0x8000)
-   {
-      cart->write(address, value);
-   }
-   else if (cart && address >= 0xA000 && address < 0xC000)
-   {
-      cart->write(address, value);
-   }
-   else if (address >= 0xFF10 && address < 0xFF40)
-   {
-      // Sound registers
-      gameBoy.getSoundController().write(address, value);
-   }
-   else
-   {
-      if (address >= 0xE000 && address < 0xFE00)
+      break;
+   // Switchable external RAM bank
+   case 0xA000:
+   case 0xB000:
+      if (cart)
       {
-         // Mirror of working ram
-         address -= 0x2000;
+         cart->write(address, value);
       }
-
-      if (address == 0xFF04)
+      break;
+   // Working RAM bank 0
+   case 0xC000:
+      ram0[address - 0xC000] = value;
+      break;
+   // Working RAM bank 1
+   case 0xD000:
+      ram1[address - 0xD000] = value;
+      break;
+   // Mirror of working ram
+   case 0xE000:
+      ram0[address - 0xE000] = value;
+      break;
+   case 0xF000:
+      switch (address & 0x0F00)
       {
-         // Divider register
-         gameBoy.onDivWrite();
+      // Mirror of working ram
+      default:
+         ram1[address - 0xF000] = value;
+         break;
+      // Sprite attribute table
+      case 0x0E00:
+         gameBoy.getLCDController().write(address, value);
+         break;
+      // I/O device mappings
+      case 0x0F00:
+         writeIO(address, value);
+         break;
       }
-
-      if (address == 0xFF05)
-      {
-         // TIMA
-         gameBoy.onTimaWrite();
-
-         // If TIMA was reloaded with TMA this machine cycle, the write is ignored
-         if (gameBoy.wasTimaReloadedWithTma())
-         {
-            return;
-         }
-      }
-
-      if (address == 0xFF06 && gameBoy.wasTimaReloadedWithTma())
-      {
-         // TMA
-
-         // If TIMA was reloaded with TMA this machine cycle, then the value written to TMA gets propagated to TIMA as well
-         tima = value;
-      }
-
-      if (address == 0xFF0F)
-      {
-         // IF
-         gameBoy.onIfWrite();
-      }
-
-      if (address == 0xFF41)
-      {
-         // LCD status - mode flag should be unaffected by memory writes
-         static const uint8_t kModeFlagMask = 0b00000011;
-         value = (value & ~kModeFlagMask) | (stat & kModeFlagMask);
-      }
-
-      raw[address] = value;
+      break;
+   default:
+      ASSERT(false);
+      break;
    }
 }
 
@@ -196,6 +219,197 @@ void Memory::write(uint16_t address, uint8_t value)
    gameBoy.machineCycle();
 
    writeDirect(address, value);
+}
+
+uint8_t Memory::readIO(uint16_t address) const
+{
+   ASSERT(address >= 0xFF00);
+
+   uint8_t value = kInvalidAddressByte;
+
+   switch (address & 0x00F0)
+   {
+   // General
+   case 0x0000:
+      switch (address)
+      {
+      case 0xFF00:
+         value = p1 | 0xC0;
+         break;
+      case 0xFF01:
+         value = sb;
+         break;
+      case 0xFF02:
+         value = sc | 0x7E;
+         break;
+      case 0xFF04:
+         value = div;
+         break;
+      case 0xFF05:
+         value = tima;
+         break;
+      case 0xFF06:
+         value = tma;
+         break;
+      case 0xFF07:
+         value = tac | 0xF8;
+         break;
+      case 0xFF0F:
+         value = ifr | 0xE0;
+         break;
+      default:
+         break;
+      }
+      break;
+   // Sound
+   case 0x0010:
+   case 0x0020:
+   case 0x0030:
+      value = gameBoy.getSoundController().read(address);
+      break;
+   // LCD
+   case 0x0040:
+      value = gameBoy.getLCDController().read(address);
+      break;
+   // Bootstrap
+   case 0x0050:
+   case 0x0060:
+   case 0x0070:
+      break;
+   // High RAM area
+   case 0x0080:
+   case 0x0090:
+   case 0x00A0:
+   case 0x00B0:
+   case 0x00C0:
+   case 0x00D0:
+   case 0x00E0:
+      value = ramh[address - 0xFF80];
+      break;
+   case 0x00F0:
+      switch (address & 0x000F)
+      {
+      default:
+         value = ramh[address - 0xFF80];
+         break;
+      // Interrupt enable register
+      case 0x000F:
+         value = ie;
+         break;
+      }
+      break;
+   default:
+      ASSERT(false);
+      break;
+   }
+
+   return value;
+}
+
+void Memory::writeIO(uint16_t address, uint8_t value)
+{
+   ASSERT(address >= 0xFF00);
+
+   switch (address & 0x00F0)
+   {
+   // General
+   case 0x0000:
+      switch (address)
+      {
+      case 0xFF00:
+         p1 = value & 0x3F;
+         break;
+      case 0xFF01:
+         sb = value;
+         break;
+      case 0xFF02:
+         sc = value & 0x81;
+         break;
+      case 0xFF04:
+         div = value;
+         gameBoy.onDivWrite();
+         break;
+      case 0xFF05:
+         // If TIMA was reloaded with TMA this machine cycle, the write is ignored
+         if (!gameBoy.wasTimaReloadedWithTma())
+         {
+            tima = value;
+         }
+
+         gameBoy.onTimaWrite();
+         break;
+      case 0xFF06:
+         tma = value;
+
+         if (gameBoy.wasTimaReloadedWithTma())
+         {
+            tima = value;
+         }
+         break;
+      case 0xFF07:
+         tac = value & 0x07;
+         break;
+      case 0xFF0F:
+         ifr = value & 0x1F;
+         gameBoy.onIfWrite();
+         break;
+      default:
+         break;
+      }
+      break;
+   // Sound
+   case 0x0010:
+   case 0x0020:
+   case 0x0030:
+      gameBoy.getSoundController().write(address, value);
+      break;
+   // LCD
+   case 0x0040:
+      gameBoy.getLCDController().write(address, value);
+      break;
+   // Bootstrap
+   case 0x0050:
+      switch (address)
+      {
+      case 0xFF50:
+         if (value == 0x01)
+         {
+            boot = value;
+         }
+         break;
+      default:
+         break;
+      }
+      break;
+   case 0x0060:
+   case 0x0070:
+      break;
+   // High RAM area
+   case 0x0080:
+   case 0x0090:
+   case 0x00A0:
+   case 0x00B0:
+   case 0x00C0:
+   case 0x00D0:
+   case 0x00E0:
+      ramh[address - 0xFF80] = value;
+      break;
+   case 0x00F0:
+      switch (address & 0x000F)
+      {
+      default:
+         ramh[address - 0xFF80] = value;
+         break;
+      // Interrupt enable register
+      case 0x000F:
+         ie = value;
+         break;
+      }
+      break;
+   default:
+      ASSERT(false);
+      break;
+   }
 }
 
 } // namespace GBC
