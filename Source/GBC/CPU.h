@@ -9,6 +9,10 @@
 
 #include <cstdint>
 
+#if GBC_WITH_UI
+#include <vector>
+#endif // GBC_WITH_UI
+
 namespace GBC
 {
 
@@ -215,8 +219,8 @@ public:
       stepping = true;
    }
 
-   bool setBreakpoint(uint16_t address);
-   bool clearBreakpoint(uint16_t address);
+   void setBreakpoint(uint16_t address);
+   void clearBreakpoint(uint16_t address);
 
    bool shouldBreak();
 #endif // GBC_WITH_UI
@@ -334,15 +338,9 @@ private:
    bool freezePC;
 
 #if GBC_WITH_UI
-   struct Breakpoint
-   {
-      uint16_t address = 0x0000;
-      bool set = false;
-   };
-
    bool inBreakMode = false;
    bool stepping = false;
-   std::array<Breakpoint, 16> breakpoints;
+   std::vector<uint16_t> breakpoints;
 #endif // GBC_WITH_UI
 };
 

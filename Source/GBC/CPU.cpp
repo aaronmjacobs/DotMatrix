@@ -397,43 +397,29 @@ void CPU::tick()
 }
 
 #if GBC_WITH_UI
-bool CPU::setBreakpoint(uint16_t address)
+void CPU::setBreakpoint(uint16_t address)
 {
-   for (Breakpoint& breakpoint : breakpoints)
+   for (uint16_t breakpoint : breakpoints)
    {
-      if (!breakpoint.set)
+      if (breakpoint == address)
       {
-         breakpoint.address = address;
-         breakpoint.set = true;
-
-         return true;
+         return;
       }
    }
 
-   return false;
+   breakpoints.push_back(address);
 }
 
-bool CPU::clearBreakpoint(uint16_t address)
+void CPU::clearBreakpoint(uint16_t address)
 {
-   bool anyCleared = false;
-
-   for (Breakpoint& breakpoint : breakpoints)
-   {
-      if (breakpoint.address == address)
-      {
-         breakpoint.set = false;
-         anyCleared = true;
-      }
-   }
-
-   return anyCleared;
+   breakpoints.erase(std::remove_if(breakpoints.begin(), breakpoints.end(), [address](uint16_t breakpoint) { return breakpoint == address; }), breakpoints.end());
 }
 
 bool CPU::shouldBreak()
 {
-   for (Breakpoint breakpoint : breakpoints)
+   for (uint16_t breakpoint : breakpoints)
    {
-      if (breakpoint.set && reg.pc == breakpoint.address)
+      if (reg.pc == breakpoint)
       {
          return true;
       }

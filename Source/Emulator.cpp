@@ -163,7 +163,7 @@ std::string getSaveName(const char* title)
    std::string fileName = title;
 
    // Remove all non-letters
-   fileName.erase(std::remove_if(fileName.begin(), fileName.end(), [](char c) { return !isalpha(c); }));
+   fileName.erase(std::remove_if(fileName.begin(), fileName.end(), [](char c) { return !isalpha(c); }), fileName.end());
 
    // Lower case
    std::transform(fileName.begin(), fileName.end(), fileName.begin(), ::tolower);
