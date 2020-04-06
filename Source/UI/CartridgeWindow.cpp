@@ -473,9 +473,6 @@ void UI::renderCartridgeWindow(GBC::Cartridge* cart) const
          }
          else if (GBC::MBC3* mbc3 = dynamic_cast<GBC::MBC3*>(mbc))
          {
-            static const char* kRtcId = "rtc";
-            static const char* kLatchedRtcId = "rtc_latched";
-
             ImGui::Text("Banking mode: %s", getMbc3BankModeText(mbc3->bankRegisterMode));
             ImGui::Checkbox("RAM / RTC enabled", &mbc3->ramRTCEnabled);
             ImGui::Checkbox("RTC latched", &mbc3->rtcLatched);

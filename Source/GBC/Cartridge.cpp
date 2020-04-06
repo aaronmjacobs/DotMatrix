@@ -42,6 +42,7 @@ bool performHeaderChecksum(const Cartridge::Header& header, const std::vector<ui
    return x == header.headerChecksum;
 }
 
+#if GBC_DEBUG
 bool performGlobalChecksum(const Cartridge::Header& header, const std::vector<uint8_t>& data)
 {
    // Checksum (higher byte first) produced by adding all bytes of a cartridge except for two checksum bytes and taking
@@ -62,6 +63,7 @@ bool performGlobalChecksum(const Cartridge::Header& header, const std::vector<ui
 
    return header.globalChecksum[0] == high && header.globalChecksum[1] == low;
 }
+#endif // GBC_DEBUG
 
 bool cartHasRAM(Cartridge::Type type)
 {
