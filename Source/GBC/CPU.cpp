@@ -355,7 +355,7 @@ CPU::CPU(GameBoy& gb)
 
 void CPU::tick()
 {
-#if GBC_WITH_UI
+#if GBC_WITH_DEBUGGER
    if (!stepping)
    {
       if (!inBreakMode)
@@ -370,7 +370,7 @@ void CPU::tick()
    }
 
    stepping = false;
-#endif // GBC_WITH_UI
+#endif // GBC_WITH_DEBUGGER
 
    if (halted)
    {
@@ -396,7 +396,7 @@ void CPU::tick()
    execute(operation);
 }
 
-#if GBC_WITH_UI
+#if GBC_WITH_DEBUGGER
 void CPU::setBreakpoint(uint16_t address)
 {
    for (uint16_t breakpoint : breakpoints)
@@ -427,7 +427,7 @@ bool CPU::shouldBreak()
 
    return false;
 }
-#endif // GBC_WITH_UI
+#endif // GBC_WITH_DEBUGGER
 
 void CPU::push(uint16_t value)
 {

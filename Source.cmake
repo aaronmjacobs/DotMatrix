@@ -64,7 +64,6 @@ if(GBC_WITH_UI)
    target_sources(${PROJECT_NAME} PRIVATE
       "${SRC_DIR}/UI/CartridgeWindow.cpp"
       "${SRC_DIR}/UI/CPUWindow.cpp"
-      "${SRC_DIR}/UI/DebuggerWindow.cpp"
       "${SRC_DIR}/UI/EmulatorWindow.cpp"
       "${SRC_DIR}/UI/JoypadWindow.cpp"
       "${SRC_DIR}/UI/MemoryWindow.cpp"
@@ -75,6 +74,12 @@ if(GBC_WITH_UI)
       "${SRC_DIR}/UI/UI.cpp"
       "${SRC_DIR}/UI/UIConfig.h"
    )
+
+   if (GBC_WITH_DEBUGGER)
+      target_sources(${PROJECT_NAME} PRIVATE
+         "${SRC_DIR}/UI/DebuggerWindow.cpp"
+      )
+   endif()
 endif()
 
 if(GBC_RUN_TESTS)

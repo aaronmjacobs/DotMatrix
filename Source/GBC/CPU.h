@@ -9,9 +9,9 @@
 
 #include <cstdint>
 
-#if GBC_WITH_UI
+#if GBC_WITH_DEBUGGER
 #include <vector>
-#endif // GBC_WITH_UI
+#endif // GBC_WITH_DEBUGGER
 
 namespace GBC
 {
@@ -192,7 +192,7 @@ public:
       return (high << 8) | low;
    }
 
-#if GBC_WITH_UI
+#if GBC_WITH_DEBUGGER
    bool isInBreakMode()
    {
       return inBreakMode;
@@ -223,7 +223,7 @@ public:
    void clearBreakpoint(uint16_t address);
 
    bool shouldBreak();
-#endif // GBC_WITH_UI
+#endif // GBC_WITH_DEBUGGER
 
 private:
    DECLARE_UI_FRIEND
@@ -337,11 +337,11 @@ private:
    bool interruptEnableRequested;
    bool freezePC;
 
-#if GBC_WITH_UI
+#if GBC_WITH_DEBUGGER
    bool inBreakMode = false;
    bool stepping = false;
    std::vector<uint16_t> breakpoints;
-#endif // GBC_WITH_UI
+#endif // GBC_WITH_DEBUGGER
 };
 
 } // namespace GBC

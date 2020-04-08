@@ -75,13 +75,13 @@ void GameBoy::tick(double dt)
 
    while (totalCycles < targetCycles)
    {
-#if GBC_WITH_UI
+#if GBC_WITH_DEBUGGER
       if (cpu.isInBreakMode() && !cpu.isStepping())
       {
          targetCycles = totalCycles;
          break;
       }
-#endif // GBC_WITH_UI
+#endif // GBC_WITH_DEBUGGER
 
       if (!cpu.isStopped())
       {

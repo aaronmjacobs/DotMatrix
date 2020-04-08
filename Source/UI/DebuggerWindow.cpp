@@ -1,3 +1,7 @@
+#if !GBC_WITH_DEBUGGER
+#   error "Compiling debugger, but GBC_WITH_DEBUGGER is not set!"
+#endif // !GBC_WITH_DEBUGGER
+
 #ifdef _WIN32
 #  define _CRT_SECURE_NO_WARNINGS
 #endif // _WIN32

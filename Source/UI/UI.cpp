@@ -62,7 +62,9 @@ void UI::render(Emulator& emulator)
    renderMemoryWindow(emulator.gameBoy->memory);
    renderSoundControllerWindow(emulator.gameBoy->soundController);
    renderCartridgeWindow(emulator.gameBoy->cart.get());
+#if GBC_WITH_DEBUGGER
    renderDebuggerWindow(*emulator.gameBoy);
+#endif // GBC_WITH_DEBUGGER
 
    ImGui::Render();
 
@@ -74,7 +76,9 @@ void UI::render(Emulator& emulator)
 
 void UI::onRomLoaded(const char* romPath)
 {
+#if GBC_WITH_DEBUGGER
    onRomLoaded_Debugger(romPath);
+#endif // GBC_WITH_DEBUGGER
 }
 
 // static

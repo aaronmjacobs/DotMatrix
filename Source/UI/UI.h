@@ -60,7 +60,9 @@ private:
    void renderMemoryWindow(GBC::Memory& memory) const;
    void renderSoundControllerWindow(GBC::SoundController& soundController) const;
    void renderCartridgeWindow(GBC::Cartridge* cart) const;
+#if GBC_WITH_DEBUGGER
    void renderDebuggerWindow(GBC::GameBoy& gameBoy) const;
+#endif // GBC_WITH_DEBUGGER
 
    void renderSoundChannel(GBC::SoundChannel& soundChannel, std::vector<float>& samples, int offset) const;
    template<typename T>
@@ -72,7 +74,9 @@ private:
    void renderWaveUnit(GBC::WaveUnit& waveUnit) const;
    void renderLFSRUnit(GBC::LFSRUnit& lfsrUnit) const;
 
+#if GBC_WITH_DEBUGGER
    void onRomLoaded_Debugger(const char* romPath) const;
+#endif // GBC_WITH_DEBUGGER
 
    GBC::GameBoy* lastGameBoy;
    bool newGameBoy;
