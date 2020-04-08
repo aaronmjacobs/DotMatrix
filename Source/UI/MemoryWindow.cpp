@@ -14,14 +14,14 @@ struct MemoryHelper
    uint16_t address = 0;
 };
 
-MemoryEditor::u8 readMemory(const MemoryEditor::u8* data, std::size_t offset)
+ImU8 readMemory(const ImU8* data, std::size_t offset)
 {
    const MemoryHelper* memoryHelper = reinterpret_cast<const MemoryHelper*>(data);
 
    return memoryHelper->memory->readDirect(memoryHelper->address + static_cast<uint16_t>(offset));
 }
 
-void writeMemory(MemoryEditor::u8* data, std::size_t offset, MemoryEditor::u8 value)
+void writeMemory(ImU8* data, std::size_t offset, ImU8 value)
 {
    MemoryHelper* memoryHelper = reinterpret_cast<MemoryHelper*>(data);
 
