@@ -19,7 +19,6 @@ class EnvelopeUnit;
 class GameBoy;
 class LengthUnit;
 class LFSRUnit;
-class Memory;
 class SoundChannel;
 class SoundController;
 class SweepUnit;
@@ -57,7 +56,7 @@ private:
    void renderTimerWindow(GBC::GameBoy& gameBoy) const;
    void renderJoypadWindow(GBC::Joypad& joypad) const;
    void renderCPUWindow(GBC::CPU& cpu) const;
-   void renderMemoryWindow(GBC::Memory& memory) const;
+   void renderMemoryWindow(GBC::GameBoy& gameBoy) const;
    void renderSoundControllerWindow(GBC::SoundController& soundController) const;
    void renderCartridgeWindow(GBC::Cartridge* cart) const;
 #if GBC_WITH_DEBUGGER

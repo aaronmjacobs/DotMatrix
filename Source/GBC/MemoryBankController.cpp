@@ -3,7 +3,7 @@
 #include "Core/Log.h"
 
 #include "GBC/Cartridge.h"
-#include "GBC/Memory.h"
+#include "GBC/GameBoy.h"
 #include "GBC/MemoryBankController.h"
 
 #include <ctime>
@@ -60,7 +60,7 @@ MBC1::MBC1(const Cartridge& cartridge)
 
 uint8_t MBC1::read(uint16_t address) const
 {
-   uint8_t value = Memory::kInvalidAddressByte;
+   uint8_t value = GameBoy::kInvalidAddressByte;
 
    switch (address & 0xF000)
    {
@@ -221,7 +221,7 @@ MBC2::MBC2(const Cartridge& cartridge)
 
 uint8_t MBC2::read(uint16_t address) const
 {
-   uint8_t value = Memory::kInvalidAddressByte;
+   uint8_t value = GameBoy::kInvalidAddressByte;
 
    switch (address & 0xF000)
    {
@@ -362,7 +362,7 @@ MBC3::MBC3(const Cartridge& cartridge)
 
 uint8_t MBC3::read(uint16_t address) const
 {
-   uint8_t value = Memory::kInvalidAddressByte;
+   uint8_t value = GameBoy::kInvalidAddressByte;
 
    switch (address & 0xF000)
    {
@@ -628,7 +628,7 @@ MBC5::MBC5(const Cartridge& cartridge)
 
 uint8_t MBC5::read(uint16_t address) const
 {
-   uint8_t value = Memory::kInvalidAddressByte;
+   uint8_t value = GameBoy::kInvalidAddressByte;
 
    switch (address & 0xF000)
    {

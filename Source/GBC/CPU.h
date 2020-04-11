@@ -3,8 +3,6 @@
 #include "Core/Assert.h"
 #include "Core/Enum.h"
 
-#include "GBC/Memory.h"
-
 #include "UI/UIFriend.h"
 
 #include <cstdint>
@@ -17,6 +15,8 @@ namespace GBC
 {
 
 class GameBoy;
+
+enum class Interrupt : uint8_t;
 
 // Instructions
 enum class Ins : uint8_t
@@ -180,16 +180,14 @@ public:
       stopped = false;
    }
 
-   uint8_t readPC()
+   uint16_t getPC() const
    {
-      return mem.read(reg.pc++);
+      return reg.pc;
    }
 
-   uint16_t readPC16()
+   void setPC(uint16_t address)
    {
-      uint8_t low = readPC();
-      uint8_t high = readPC();
-      return (high << 8) | low;
+      reg.pc = address;
    }
 
 #if GBC_WITH_DEBUGGER
@@ -312,16 +310,14 @@ private:
       return (reg.f & Enum::cast(flag)) != 0;
    }
 
+   uint8_t readPC();
+   uint16_t readPC16();
+
    void push(uint16_t value);
    uint16_t pop();
 
-   bool hasInterrupt() const
-   {
-      return (mem.ie & mem.ifr & 0x1F) != 0;
-   }
-
    bool handleInterrupts();
-   bool handleInterrupt(Interrupt::Enum interrupt);
+   bool handleInterrupt(Interrupt interrupt);
 
    Operation fetch();
    void execute(Operation operation);
@@ -329,7 +325,6 @@ private:
 
    Registers reg;
    GameBoy& gameBoy;
-   Memory& mem;
    bool ime;
 
    bool halted;

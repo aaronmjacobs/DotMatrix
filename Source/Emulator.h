@@ -72,6 +72,10 @@ private:
    UPtr<Renderer> renderer;
    AudioManager audioManager;
 
+#if GBC_WITH_BOOTSTRAP
+   std::vector<uint8_t> bootstrap;
+#endif // GBC_WITH_BOOTSTRAP
+
 #if GBC_WITH_UI
    UPtr<UI> ui;
    double timeScale;

@@ -1,4 +1,5 @@
 #include "GBC/CPU.h"
+#include "GBC/GameBoy.h"
 #include "GBC/SoundController.h"
 
 #include <cmath>
@@ -165,7 +166,7 @@ uint8_t SquareWaveChannel::read(uint16_t address) const
       break;
    default:
       ASSERT(false);
-      value = Memory::kInvalidAddressByte;
+      value = GameBoy::kInvalidAddressByte;
       break;
    }
 
@@ -274,7 +275,7 @@ uint8_t WaveChannel::read(uint16_t address) const
       else
       {
          ASSERT(false);
-         value = Memory::kInvalidAddressByte;
+         value = GameBoy::kInvalidAddressByte;
       }
       break;
    }
@@ -370,7 +371,7 @@ uint8_t NoiseChannel::read(uint16_t address) const
       break;
    default:
       ASSERT(false);
-      value = Memory::kInvalidAddressByte;
+      value = GameBoy::kInvalidAddressByte;
       break;
    }
 
@@ -607,7 +608,7 @@ void SoundController::machineCycle()
 
 uint8_t SoundController::read(uint16_t address) const
 {
-   uint8_t value = Memory::kInvalidAddressByte;
+   uint8_t value = GameBoy::kInvalidAddressByte;
 
    if (address >= 0xFF10 && address <= 0xFF14)
    {

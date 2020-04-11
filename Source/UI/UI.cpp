@@ -1,5 +1,7 @@
 #include "Emulator.h"
 
+#include "Core/Constants.h"
+
 #include "GBC/GameBoy.h"
 
 #include "UI/UI.h"
@@ -45,8 +47,6 @@ UI::~UI()
 
 void UI::render(Emulator& emulator)
 {
-   ASSERT(emulator.gameBoy);
-
    newGameBoy = lastGameBoy != emulator.gameBoy.get();
    lastGameBoy = emulator.gameBoy.get();
 
@@ -54,17 +54,26 @@ void UI::render(Emulator& emulator)
    ImGui_ImplGlfw_NewFrame();
    ImGui::NewFrame();
 
-   renderScreenWindow(*emulator.renderer);
-   renderEmulatorWindow(emulator);
-   renderTimerWindow(*emulator.gameBoy);
-   renderJoypadWindow(emulator.gameBoy->joypad);
-   renderCPUWindow(emulator.gameBoy->cpu);
-   renderMemoryWindow(emulator.gameBoy->memory);
-   renderSoundControllerWindow(emulator.gameBoy->soundController);
-   renderCartridgeWindow(emulator.gameBoy->cart.get());
+   if (emulator.gameBoy)
+   {
+      renderScreenWindow(*emulator.renderer);
+      renderEmulatorWindow(emulator);
+      renderTimerWindow(*emulator.gameBoy);
+      renderJoypadWindow(emulator.gameBoy->joypad);
+      renderCPUWindow(emulator.gameBoy->cpu);
+      renderMemoryWindow(*emulator.gameBoy);
+      renderSoundControllerWindow(emulator.gameBoy->soundController);
+      renderCartridgeWindow(emulator.gameBoy->cart.get());
 #if GBC_WITH_DEBUGGER
-   renderDebuggerWindow(*emulator.gameBoy);
+      renderDebuggerWindow(*emulator.gameBoy);
 #endif // GBC_WITH_DEBUGGER
+   }
+   else
+   {
+      ImGui::Begin(kProjectDisplayName);
+      ImGui::Text("Drag & drop a ROM file");
+      ImGui::End();
+   }
 
    ImGui::Render();
 

@@ -4,6 +4,7 @@
 
 #include "UI/UIFriend.h"
 
+#include <array>
 #include <cstdint>
 #include <vector>
 

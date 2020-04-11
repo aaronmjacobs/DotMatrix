@@ -181,6 +181,10 @@ std::string getSaveName(const char* title)
    return saveName;
 }
 
+#if GBC_WITH_BOOTSTRAP
+const std::size_t kBootstrapSize = 256;
+#endif // GBC_WITH_BOOTSTRAP
+
 } // namespace
 
 Emulator::Emulator()
@@ -274,7 +278,14 @@ bool Emulator::init()
    glfwSetKeyCallback(window, keyCallback);
    glfwSetWindowRefreshCallback(window, windowRefreshCallback);
 
-   resetGameBoy(nullptr);
+#if GBC_WITH_BOOTSTRAP
+   bootstrap = IOUtils::readBinaryFile("boot.bin");
+
+   if (bootstrap.size() == kBootstrapSize)
+   {
+      resetGameBoy(nullptr);
+   }
+#endif // GBC_WITH_BOOTSTRAP
 
    saveThread = std::thread([this]
    {
@@ -322,9 +333,12 @@ void Emulator::tick(double dt)
 
 void Emulator::render()
 {
-   if (gameBoy && renderer)
+   if (renderer)
    {
-      renderer->draw(gameBoy->getLCDController().getFramebuffer());
+      if (gameBoy)
+      {
+         renderer->draw(gameBoy->getLCDController().getFramebuffer());
+      }
 
 #if GBC_WITH_UI
       if (renderUi)
@@ -333,7 +347,7 @@ void Emulator::render()
       }
 #endif // GBC_WITH_UI
 
-      if (audioManager.canQueue())
+      if (gameBoy && audioManager.canQueue())
       {
          const std::vector<GBC::AudioSample>& audioData = gameBoy->getSoundController().swapAudioBuffers();
 
@@ -435,6 +449,14 @@ void Emulator::onWindowRefreshRequested()
 void Emulator::resetGameBoy(UPtr<GBC::Cartridge> cartridge)
 {
    gameBoy = std::make_unique<GBC::GameBoy>();
+
+#if GBC_WITH_BOOTSTRAP
+   if (bootstrap.size() == kBootstrapSize)
+   {
+      gameBoy->setBootstrap(bootstrap);
+   }
+#endif // GBC_WITH_BOOTSTRAP
+
    gameBoy->setCartridge(std::move(cartridge));
 
    // Don't generate audio data if the audio manager isn't valid

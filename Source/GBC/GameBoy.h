@@ -1,19 +1,48 @@
 #pragma once
 
 #include "Core/Archive.h"
+#include "Core/Assert.h"
+#include "Core/Enum.h"
 #include "Core/Pointers.h"
 
 #include "GBC/CPU.h"
 #include "GBC/LCDController.h"
-#include "GBC/Memory.h"
 #include "GBC/SoundController.h"
 
 #include "UI/UIFriend.h"
+
+#include <array>
 
 namespace GBC
 {
 
 class Cartridge;
+
+enum class Interrupt : uint8_t
+{
+   VBlank = 1 << 0,
+   LCDState = 1 << 1,
+   Timer = 1 << 2,
+   Serial = 1 << 3,
+   Joypad = 1 << 4,
+};
+
+namespace TAC
+{
+   enum Enum : uint8_t
+   {
+      TimerStartStop = 1 << 2,
+      InputClockSelect = (1 << 1) | (1 << 0)
+   };
+
+   const std::array<uint16_t, 4> kCounterMasks =
+   {
+      0x0200, // 4096 Hz, increase every 1024 clocks
+      0x0008, // 262144 Hz, increase every 16 clocks
+      0x0020, // 65536 Hz, increase every 64 clocks
+      0x0080  // 16384 Hz, increase every 256 clocks
+   };
+}
 
 struct Joypad
 {
@@ -43,28 +72,11 @@ struct Joypad
    }
 };
 
-namespace TAC
-{
-
-enum Enum : uint8_t
-{
-   TimerStartStop = 1 << 2,
-   InputClockSelect = (1 << 1) | (1 << 0)
-};
-
-const std::array<uint16_t, 4> kCounterMasks =
-{
-   0x0200, // 4096 Hz, increase every 1024 clocks
-   0x0008, // 262144 Hz, increase every 16 clocks
-   0x0020, // 65536 Hz, increase every 64 clocks
-   0x0080  // 16384 Hz, increase every 256 clocks
-};
-
-} // namespace TAC
-
 class GameBoy
 {
 public:
+   static const inline uint8_t kInvalidAddressByte = 0xFF;
+
    using SerialCallback = uint8_t (*)(uint8_t);
 
    GameBoy();
@@ -73,21 +85,17 @@ public:
    void tick(double dt);
    void machineCycle();
 
+#if GBC_WITH_BOOTSTRAP
+   void setBootstrap(std::vector<uint8_t> data);
+#endif // GBC_WITH_BOOTSTRAP
+
    void setCartridge(UPtr<Cartridge> cartridge);
    Archive saveCartRAM() const;
    bool loadCartRAM(Archive& ram);
 
    const char* title() const;
 
-   Memory& getMemory()
-   {
-      return memory;
-   }
-
-   CPU& getCPU()
-   {
-      return cpu;
-   }
+   void onCPUStopped();
 
    LCDController& getLCDController()
    {
@@ -109,27 +117,16 @@ public:
       joypad = joypadState;
    }
 
-   void onDivWrite()
+   uint8_t read(uint16_t address)
    {
-      // Counter is reset when anything is written to DIV
-      counter = 0;
+      machineCycle();
+      return readDirect(address);
    }
 
-   void onTimaWrite()
+   void write(uint16_t address, uint8_t value)
    {
-      // Writing to TIMA during the delay will prevent the TMA copy and the interrupt
-      timaOverloaded = false;
-   }
-
-   void onIfWrite()
-   {
-      // Writing to IF during the delay between TIMA overflow and interrupt request overrides the IF change
-      ifWritten = true;
-   }
-
-   bool wasTimaReloadedWithTma() const
-   {
-      return timaReloadedWithTma;
+      machineCycle();
+      writeDirect(address, value);
    }
 
    bool cartWroteToRamThisFrame() const
@@ -137,36 +134,82 @@ public:
       return cartWroteToRam;
    }
 
+   bool isAnyInterruptActive() const
+   {
+      ASSERT((ifr & 0xE0) == 0);
+      return (ifr & ie) != 0;
+   }
+
+   bool isInterruptActive(Interrupt interrupt) const
+   {
+      return (ifr & Enum::cast(interrupt)) && (ie & Enum::cast(interrupt));
+   }
+
+   void requestInterrupt(Interrupt interrupt)
+   {
+      ifr |= Enum::cast(interrupt);
+   }
+
+   void clearInterruptRequest(Interrupt interrupt)
+   {
+      ifr &= ~Enum::cast(interrupt);
+   }
+
 private:
    DECLARE_UI_FRIEND
 
    void tickJoypad();
-   void tickDiv();
    void tickTima();
    void tickSerial();
 
-   Memory memory;
+   uint8_t readIO(uint16_t address) const;
+   void writeIO(uint16_t address, uint8_t value);
+
+public:
+   uint8_t readDirect(uint16_t address) const;
+   void writeDirect(uint16_t address, uint8_t value);
+
+private:
    CPU cpu;
    LCDController lcdController;
    SoundController soundController;
    UPtr<Cartridge> cart;
 
-   uint64_t targetCycles;
-   uint64_t totalCycles;
+   uint64_t targetCycles = 0;
+   uint64_t totalCycles = 0;
 
-   bool cartWroteToRam;
+   bool cartWroteToRam = false;
 
    Joypad joypad;
    uint8_t lastInputVals;
 
-   uint16_t counter;
-   bool timaOverloaded;
-   bool ifWritten;
-   bool timaReloadedWithTma;
-   bool lastTimerBit;
+   uint16_t counter = 0;
+   bool timaOverloaded = false;
+   bool ifWritten = false;
+   bool timaReloadedWithTma = false;
+   bool lastTimerBit = false;
 
-   uint64_t serialCycles;
-   SerialCallback serialCallback;
+   uint64_t serialCycles = 0;
+   SerialCallback serialCallback = nullptr;
+
+#if GBC_WITH_BOOTSTRAP
+   std::vector<uint8_t> bootstrap;
+   bool booting = true;
+#endif // GBC_WITH_BOOTSTRAP
+
+   std::array<uint8_t, 0x1000> ram0 = {}; // Working RAM bank 0 (0xC000-0xCFFF)
+   std::array<uint8_t, 0x1000> ram1 = {}; // Working RAM bank 1 (0xD000-0xDFFF)
+   std::array<uint8_t, 0x007F> ramh = {}; // High RAM area (0xFF80-0xFFFE)
+
+   uint8_t p1 = 0x00; // Joy pad / system info (0xFF00)
+   uint8_t sb = 0x00; // Serial transfer data (0xFF01)
+   uint8_t sc = 0x00; // Serial IO control (0xFF02)
+   uint8_t tima = 0x00; // Timer counter (0xFF05)
+   uint8_t tma = 0x00; // Timer modulo (0xFF06)
+   uint8_t tac = 0x00; // Timer control (0xFF07)
+
+   uint8_t ifr = 0x00; // Interrupt flag (0xFF0F)
+   uint8_t ie = 0x00; // Interrupt enable register (0xFFFF)
 };
 
 } // namespace GBC

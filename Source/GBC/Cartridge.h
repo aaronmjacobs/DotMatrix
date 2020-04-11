@@ -4,7 +4,7 @@
 #include "Core/Assert.h"
 #include "Core/Pointers.h"
 
-#include "GBC/Memory.h"
+#include "GBC/GameBoy.h"
 #include "GBC/MemoryBankController.h"
 
 #include "UI/UIFriend.h"
@@ -30,7 +30,7 @@ public:
    {
       if (address >= cartData.size())
       {
-         return Memory::kInvalidAddressByte;
+         return GameBoy::kInvalidAddressByte;
       }
 
       return cartData[address];

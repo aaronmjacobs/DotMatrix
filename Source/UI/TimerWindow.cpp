@@ -1,5 +1,4 @@
 #include "GBC/GameBoy.h"
-#include "GBC/Memory.h"
 
 #include "UI/UI.h"
 
@@ -25,17 +24,21 @@ void UI::renderTimerWindow(GBC::GameBoy& gameBoy) const
    ImGui::Columns(2, "joypad");
    ImGui::Separator();
 
-   unsigned int tac = gameBoy.memory.tac;
+   unsigned int tac = gameBoy.tac;
    ImGui::CheckboxFlags("Enabled", &tac, GBC::TAC::TimerStartStop);
-   gameBoy.memory.tac = static_cast<uint8_t>(tac);
-   uint32_t clockSpeed = getClockSpeed(gameBoy.memory.tac);
+   gameBoy.tac = static_cast<uint8_t>(tac);
+   uint32_t clockSpeed = getClockSpeed(gameBoy.tac);
    ImGui::InputScalar("Frequency", ImGuiDataType_U32, &clockSpeed);
-   ImGui::InputScalar("TIMA", ImGuiDataType_U8, &gameBoy.memory.tima);
+   ImGui::InputScalar("TIMA", ImGuiDataType_U8, &gameBoy.tima);
    ImGui::NextColumn();
 
    ImGui::InputScalar("Counter", ImGuiDataType_U16, &gameBoy.counter);
-   ImGui::InputScalar("DIV", ImGuiDataType_U8, &gameBoy.memory.div);
-   ImGui::InputScalar("TMA", ImGuiDataType_U8, &gameBoy.memory.tma);
+   uint8_t div = gameBoy.readIO(0xFF04);
+   if (ImGui::InputScalar("DIV", ImGuiDataType_U8, &div))
+   {
+      gameBoy.writeIO(0xFF04, div);
+   }
+   ImGui::InputScalar("TMA", ImGuiDataType_U8, &gameBoy.tma);
    ImGui::NextColumn();
 
    ImGui::Columns(1);

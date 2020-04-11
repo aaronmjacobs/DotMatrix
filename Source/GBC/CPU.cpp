@@ -116,9 +116,9 @@ bool evalJumpCondition(Opr operand, bool zero, bool carry)
 class CPU::Operand
 {
 public:
-   Operand(CPU::Registers& registers, Memory& memory, Opr op, uint8_t immediate8, uint16_t immediate16)
+   Operand(CPU::Registers& registers, GameBoy& gameBoy, Opr op, uint8_t immediate8, uint16_t immediate16)
       : reg(registers)
-      , mem(memory)
+      , gb(gameBoy)
       , opr(op)
       , imm8(immediate8)
       , imm16(immediate16)
@@ -133,7 +133,7 @@ public:
 
 private:
    CPU::Registers& reg;
-   Memory& mem;
+   GameBoy& gb;
 
    Opr opr;
    uint8_t imm8;
@@ -142,7 +142,7 @@ private:
 
 uint8_t CPU::Operand::read8() const
 {
-   uint8_t value = Memory::kInvalidAddressByte;
+   uint8_t value = GameBoy::kInvalidAddressByte;
 
    switch (opr)
    {
@@ -185,22 +185,22 @@ uint8_t CPU::Operand::read8() const
          value = imm8;
          break;
       case Opr::DerefC:
-         value = mem.read(0xFF00 + reg.c);
+         value = gb.read(0xFF00 + reg.c);
          break;
       case Opr::DerefBC:
-         value = mem.read(reg.bc);
+         value = gb.read(reg.bc);
          break;
       case Opr::DerefDE:
-         value = mem.read(reg.de);
+         value = gb.read(reg.de);
          break;
       case Opr::DerefHL:
-         value = mem.read(reg.hl);
+         value = gb.read(reg.hl);
          break;
       case Opr::DerefImm8:
-         value = mem.read(0xFF00 + imm8);
+         value = gb.read(0xFF00 + imm8);
          break;
       case Opr::DerefImm16:
-         value = mem.read(imm16);
+         value = gb.read(imm16);
          break;
       default:
          ASSERT(false, "Invalid 8-bit operand: %hhu", opr);
@@ -288,22 +288,22 @@ void CPU::Operand::write8(uint8_t value)
          reg.l = value;
          break;
       case Opr::DerefC:
-         mem.write(0xFF00 + reg.c, value);
+         gb.write(0xFF00 + reg.c, value);
          break;
       case Opr::DerefBC:
-         mem.write(reg.bc, value);
+         gb.write(reg.bc, value);
          break;
       case Opr::DerefDE:
-         mem.write(reg.de, value);
+         gb.write(reg.de, value);
          break;
       case Opr::DerefHL:
-         mem.write(reg.hl, value);
+         gb.write(reg.hl, value);
          break;
       case Opr::DerefImm8:
-         mem.write(0xFF00 + imm8, value);
+         gb.write(0xFF00 + imm8, value);
          break;
       case Opr::DerefImm16:
-         mem.write(imm16, value);
+         gb.write(imm16, value);
          break;
       default:
          ASSERT(false, "Invalid / unwritable 8-bit operand: %hhu", opr);
@@ -333,8 +333,8 @@ void CPU::Operand::write16(uint16_t value)
          reg.pc = value;
          break;
       case Opr::DerefImm16:
-         mem.write(imm16, value & 0x00FF);
-         mem.write(imm16 + 1, (value >> 8) & 0x00FF);
+         gb.write(imm16, value & 0x00FF);
+         gb.write(imm16 + 1, (value >> 8) & 0x00FF);
          break;
       default:
          ASSERT(false, "Invalid / unwritable 16-bit operand: %hhu", opr);
@@ -344,13 +344,18 @@ void CPU::Operand::write16(uint16_t value)
 CPU::CPU(GameBoy& gb)
    : reg({})
    , gameBoy(gb)
-   , mem(gameBoy.getMemory())
    , ime(false)
    , halted(false)
    , stopped(false)
    , interruptEnableRequested(false)
    , freezePC(false)
 {
+   reg.af = 0x01B0;
+   reg.bc = 0x0013;
+   reg.de = 0x00D8;
+   reg.hl = 0x014D;
+   reg.sp = 0xFFFE;
+   reg.pc = 0x0100;
 }
 
 void CPU::tick()
@@ -374,7 +379,7 @@ void CPU::tick()
 
    if (halted)
    {
-      if (hasInterrupt())
+      if (gameBoy.isAnyInterruptActive())
       {
          halted = false;
       }
@@ -429,17 +434,29 @@ bool CPU::shouldBreak()
 }
 #endif // GBC_WITH_DEBUGGER
 
+uint8_t CPU::readPC()
+{
+   return gameBoy.read(reg.pc++);
+}
+
+uint16_t CPU::readPC16()
+{
+   uint8_t low = readPC();
+   uint8_t high = readPC();
+   return (high << 8) | low;
+}
+
 void CPU::push(uint16_t value)
 {
    reg.sp -= 2;
-   mem.write(reg.sp + 1, (value & 0xFF00) >> 8);
-   mem.write(reg.sp, value & 0x00FF);
+   gameBoy.write(reg.sp + 1, (value & 0xFF00) >> 8);
+   gameBoy.write(reg.sp, value & 0x00FF);
 }
 
 uint16_t CPU::pop()
 {
-   uint8_t low = mem.read(reg.sp);
-   uint8_t high = mem.read(reg.sp + 1);
+   uint8_t low = gameBoy.read(reg.sp);
+   uint8_t high = gameBoy.read(reg.sp + 1);
    reg.sp += 2;
    return (high << 8) | low;
 }
@@ -451,23 +468,23 @@ bool CPU::handleInterrupts()
       return false;
    }
 
-   if ((mem.ie & Interrupt::VBlank) && (mem.ifr & Interrupt::VBlank))
+   if (gameBoy.isInterruptActive(Interrupt::VBlank))
    {
       return handleInterrupt(Interrupt::VBlank);
    }
-   else if ((mem.ie & Interrupt::LCDState) && (mem.ifr & Interrupt::LCDState))
+   else if (gameBoy.isInterruptActive(Interrupt::LCDState))
    {
       return handleInterrupt(Interrupt::LCDState);
    }
-   else if ((mem.ie & Interrupt::Timer) && (mem.ifr & Interrupt::Timer))
+   else if (gameBoy.isInterruptActive(Interrupt::Timer))
    {
       return handleInterrupt(Interrupt::Timer);
    }
-   else if ((mem.ie & Interrupt::Serial) && (mem.ifr & Interrupt::Serial))
+   else if (gameBoy.isInterruptActive(Interrupt::Serial))
    {
       return handleInterrupt(Interrupt::Serial);
    }
-   else if ((mem.ie & Interrupt::Joypad) && (mem.ifr & Interrupt::Joypad))
+   else if (gameBoy.isInterruptActive(Interrupt::Joypad))
    {
       return handleInterrupt(Interrupt::Joypad);
    }
@@ -475,9 +492,9 @@ bool CPU::handleInterrupts()
    return false;
 }
 
-bool CPU::handleInterrupt(Interrupt::Enum interrupt)
+bool CPU::handleInterrupt(Interrupt interrupt)
 {
-   ASSERT((ime || halted) && (mem.ie & interrupt) && (mem.ifr & interrupt));
+   ASSERT((ime || halted) && gameBoy.isInterruptActive(interrupt));
 
    if (halted && !ime)
    {
@@ -489,7 +506,7 @@ bool CPU::handleInterrupt(Interrupt::Enum interrupt)
 
    ime = false;
    interruptEnableRequested = false;
-   mem.ifr &= ~interrupt;
+   gameBoy.clearInterruptRequest(interrupt);
    halted = false;
 
    // two wait states
@@ -526,12 +543,12 @@ bool CPU::handleInterrupt(Interrupt::Enum interrupt)
 
 GBC::Operation CPU::fetch()
 {
-   uint8_t opcode = mem.read(reg.pc);
+   uint8_t opcode = gameBoy.read(reg.pc);
 
    bool handledInterrupt = handleInterrupts();
    if (handledInterrupt)
    {
-      opcode = mem.read(reg.pc);
+      opcode = gameBoy.read(reg.pc);
    }
 
    if (freezePC)
@@ -579,8 +596,8 @@ void CPU::execute(Operation operation)
       imm16 = readPC16();
    }
 
-   Operand param1(reg, mem, operation.param1, imm8, imm16);
-   Operand param2(reg, mem, operation.param2, imm8, imm16);
+   Operand param1(reg, gameBoy, operation.param1, imm8, imm16);
+   Operand param2(reg, gameBoy, operation.param2, imm8, imm16);
 
    switch (operation.ins)
    {
@@ -851,7 +868,7 @@ void CPU::execute(Operation operation)
          ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
 
          halted = true;
-         if (!ime && hasInterrupt())
+         if (!ime && gameBoy.isAnyInterruptActive())
          {
             // HALT bug
             freezePC = true;
@@ -864,6 +881,7 @@ void CPU::execute(Operation operation)
          // ASSERT(param1Val == 0x00); // TODO
 
          stopped = true;
+         gameBoy.onCPUStopped();
          break;
       }
       case Ins::DI:
@@ -1076,8 +1094,8 @@ void CPU::execute16(Operation operation)
       imm16 = readPC16();
    }
 
-   Operand param1(reg, mem, operation.param1, imm8, imm16);
-   Operand param2(reg, mem, operation.param2, imm8, imm16);
+   Operand param1(reg, gameBoy, operation.param1, imm8, imm16);
+   Operand param2(reg, gameBoy, operation.param2, imm8, imm16);
 
    switch (operation.ins)
    {

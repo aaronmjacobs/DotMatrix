@@ -3,7 +3,6 @@
 #include "GBC/CPU.h"
 #include "GBC/LCDController.h"
 #include "GBC/GameBoy.h"
-#include "GBC/Memory.h"
 
 #include <array>
 
@@ -144,9 +143,15 @@ void LCDController::machineCycle()
    updateMode();
 }
 
+void LCDController::onCPUStopped()
+{
+   // When stopped, fill the screen with white
+   framebuffers.writeBuffer().fill(Color::kWhite);
+}
+
 uint8_t LCDController::read(uint16_t address) const
 {
-   uint8_t value = Memory::kInvalidAddressByte;
+   uint8_t value = GameBoy::kInvalidAddressByte;
 
    if (address >= 0x8000 && address <= 0x9FFF)
    {
@@ -312,7 +317,7 @@ void LCDController::updateDMA()
    {
       if (dmaIndex <= 0x9F)
       {
-         oam[dmaIndex] = gameBoy.getMemory().readDirect(dmaSource + dmaIndex);
+         oam[dmaIndex] = gameBoy.readDirect(dmaSource + dmaIndex);
          ++dmaIndex;
       }
       else
@@ -403,8 +408,7 @@ void LCDController::updateLYC()
 
    if (coincident && (stat & STAT::LycLyCoincidence))
    {
-      Memory& mem = gameBoy.getMemory();
-      mem.ifr |= Interrupt::LCDState;
+      gameBoy.requestInterrupt(Interrupt::LCDState);
    }
 }
 
@@ -413,33 +417,26 @@ void LCDController::setMode(Mode::Enum newMode)
    ASSERT(modeCyclesRemaining == 0);
    stat = (stat & ~STAT::ModeFlag) | newMode;
 
-   Memory& mem = gameBoy.getMemory();
    switch (newMode)
    {
    case Mode::HBlank:
       if (stat & STAT::Mode0HBlankInterrupt)
       {
-         mem.ifr |= Interrupt::LCDState;
+         gameBoy.requestInterrupt(Interrupt::LCDState);
       }
       break;
    case Mode::VBlank:
-      mem.ifr |= Interrupt::VBlank;
+      gameBoy.requestInterrupt(Interrupt::VBlank);
 
       if (stat & STAT::Mode1VBlankInterrupt)
       {
-         mem.ifr |= Interrupt::LCDState;
+         gameBoy.requestInterrupt(Interrupt::LCDState);
       }
 
       // If bit 5 (mode 2 OAM interrupt) is set, an interrupt is also triggered at line 144 when vblank starts
       if (stat & STAT::Mode2OAMInterrupt)
       {
-         mem.ifr |= Interrupt::LCDState;
-      }
-
-      // When stopped, fill the screen with white
-      if (gameBoy.getCPU().isStopped())
-      {
-         framebuffers.writeBuffer().fill(Color::kWhite);
+         gameBoy.requestInterrupt(Interrupt::LCDState);
       }
 
       framebuffers.flip();
@@ -448,7 +445,7 @@ void LCDController::setMode(Mode::Enum newMode)
    case Mode::SearchOAM:
       if (stat & STAT::Mode2OAMInterrupt)
       {
-         mem.ifr |= Interrupt::LCDState;
+         gameBoy.requestInterrupt(Interrupt::LCDState);
       }
       break;
    case Mode::DataTransfer:

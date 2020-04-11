@@ -333,11 +333,11 @@ namespace
       Immediate
    };
 
-   bool renderOperation(GBC::Memory& memory, uint16_t address, uint16_t pc, bool* breakpoint)
+   bool renderOperation(GBC::GameBoy& gameBoy, uint16_t address, uint16_t pc, bool* breakpoint)
    {
       ImGui::PushID(address);
 
-      uint8_t opcode = memory.readDirect(address);
+      uint8_t opcode = gameBoy.readDirect(address);
       GBC::Operation operation = GBC::kOperations[opcode];
 
       OperationType type = OperationType::Normal;
@@ -347,7 +347,7 @@ namespace
       }
       else if (address == pc + 1)
       {
-         uint8_t previousOpcode = memory.readDirect(address - 1);
+         uint8_t previousOpcode = gameBoy.readDirect(address - 1);
          GBC::Operation previousOperation = GBC::kOperations[previousOpcode];
 
          if (previousOperation.ins == GBC::Ins::PREFIX)
@@ -362,7 +362,7 @@ namespace
       }
       else if (address == pc + 2)
       {
-         uint8_t previousPreviousOpcode = memory.readDirect(address - 2);
+         uint8_t previousPreviousOpcode = gameBoy.readDirect(address - 2);
          GBC::Operation previousPreviousOperation = GBC::kOperations[previousPreviousOpcode];
 
          if (usesImm16(previousPreviousOperation))
@@ -618,7 +618,7 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
             ASSERT(line >= 0 && line <= 0xFFFF);
             uint16_t address = static_cast<uint16_t>(line);
 
-            bool breakpointToggled = renderOperation(gameBoy.memory, address, gameBoy.cpu.reg.pc, &breakpoints[line]);
+            bool breakpointToggled = renderOperation(gameBoy, address, gameBoy.cpu.reg.pc, &breakpoints[line]);
             if (breakpointToggled)
             {
                updateBreakpoint(address);
