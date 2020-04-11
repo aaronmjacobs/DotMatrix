@@ -3,7 +3,9 @@
 #include "Core/Archive.h"
 #include "Core/Pointers.h"
 
+#if GBC_WITH_AUDIO
 #include "Platform/Audio/AudioManager.h"
+#endif // GBC_WITH_AUDIO
 #include "Platform/Input/ControllerInputDevice.h"
 #include "Platform/Input/KeyboardInputDevice.h"
 
@@ -70,7 +72,9 @@ private:
    GLFWwindow* window;
    UPtr<GBC::GameBoy> gameBoy;
    UPtr<Renderer> renderer;
+#if GBC_WITH_AUDIO
    AudioManager audioManager;
+#endif // GBC_WITH_AUDIO
 
 #if GBC_WITH_BOOTSTRAP
    std::vector<uint8_t> bootstrap;

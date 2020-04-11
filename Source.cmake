@@ -28,9 +28,6 @@ target_sources(${PROJECT_NAME} PRIVATE
    "${SRC_DIR}/GBC/SoundController.h"
    "${SRC_DIR}/GBC/SoundController.cpp"
 
-   "${SRC_DIR}/Platform/Audio/AudioManager.h"
-   "${SRC_DIR}/Platform/Audio/AudioManager.cpp"
-
    "${SRC_DIR}/Platform/Input/InputDevice.h"
    "${SRC_DIR}/Platform/Input/ControllerInputDevice.h"
    "${SRC_DIR}/Platform/Input/ControllerInputDevice.cpp"
@@ -57,6 +54,13 @@ target_sources(${PROJECT_NAME} PRIVATE
 
    "${SRC_DIR}/UI/UIFriend.h"
 )
+
+if(GBC_WITH_AUDIO)
+   target_sources(${PROJECT_NAME} PRIVATE
+      "${SRC_DIR}/Platform/Audio/AudioManager.h"
+      "${SRC_DIR}/Platform/Audio/AudioManager.cpp"
+   )
+endif()
 
 if(GBC_WITH_UI)
    target_sources(${PROJECT_NAME} PRIVATE

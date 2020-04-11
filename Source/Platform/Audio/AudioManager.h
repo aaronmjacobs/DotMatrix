@@ -1,5 +1,9 @@
 #pragma once
 
+#if !GBC_WITH_AUDIO
+#   error "Including AudioManager header, but GBC_WITH_AUDIO is not set!"
+#endif // !GBC_WITH_AUDIO
+
 #include "Core/Pointers.h"
 
 #include "GBC/SoundController.h"

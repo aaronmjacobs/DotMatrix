@@ -592,15 +592,15 @@ void SoundController::machineCycle()
    waveChannel.machineCycle();
    noiseChannel.machineCycle();
 
-   if (generateData)
+   cyclesSinceLastSample += CPU::kClockCyclesPerMachineCycle;
+
+   if (cyclesSinceLastSample >= kCyclesPerSample)
    {
-      cyclesSinceLastSample += CPU::kClockCyclesPerMachineCycle;
+      cyclesSinceLastSample -= kCyclesPerSample;
+      ASSERT(cyclesSinceLastSample < kCyclesPerSample);
 
-      if (cyclesSinceLastSample >= kCyclesPerSample)
+      if (generateData)
       {
-         cyclesSinceLastSample -= kCyclesPerSample;
-         ASSERT(cyclesSinceLastSample < kCyclesPerSample);
-
          pushSample();
       }
    }

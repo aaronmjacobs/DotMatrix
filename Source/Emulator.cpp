@@ -347,6 +347,7 @@ void Emulator::render()
       }
 #endif // GBC_WITH_UI
 
+#if GBC_WITH_AUDIO
       if (gameBoy && audioManager.canQueue())
       {
          const std::vector<GBC::AudioSample>& audioData = gameBoy->getSoundController().swapAudioBuffers();
@@ -356,6 +357,7 @@ void Emulator::render()
             audioManager.queue(audioData);
          }
       }
+#endif // GBC_WITH_AUDIO
    }
 
    glfwSwapBuffers(window);
@@ -459,8 +461,13 @@ void Emulator::resetGameBoy(UPtr<GBC::Cartridge> cartridge)
 
    gameBoy->setCartridge(std::move(cartridge));
 
+#if GBC_WITH_AUDIO
    // Don't generate audio data if the audio manager isn't valid
-   gameBoy->getSoundController().setGenerateAudioData(audioManager.isValid());
+   const bool generateAudioData = audioManager.isValid();
+#else
+   const bool generateAudioData = false;
+#endif
+   gameBoy->getSoundController().setGenerateAudioData(generateAudioData);
 
 #if GBC_WITH_UI
    // Render once before ticking (to make sure we hit any initial breakpoints)

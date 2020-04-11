@@ -89,21 +89,23 @@ target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
 list(APPEND COPY_LIBS glfw)
 
 # OpenAL
-set(OPENAL_DIR "${LIB_DIR}/openal-soft")
-set(ALSOFT_UTILS OFF CACHE INTERNAL "Build and install utility programs")
-set(ALSOFT_NO_CONFIG_UTIL ON CACHE INTERNAL "Disable building the alsoft-config utility")
-set(ALSOFT_EXAMPLES OFF CACHE INTERNAL "Build and install example programs")
-set(ALSOFT_TESTS OFF CACHE INTERNAL "Build and install test programs")
-set(ALSOFT_CONFIG OFF CACHE INTERNAL "Install alsoft.conf sample configuration file")
-set(ALSOFT_HRTF_DEFS OFF CACHE INTERNAL "Install HRTF definition files")
-set(ALSOFT_AMBDEC_PRESETS OFF CACHE INTERNAL "Install AmbDec preset files")
-set(ALSOFT_INSTALL OFF CACHE INTERNAL "Install headers and libraries")
-set(ALSOFT_UPDATE_BUILD_VERSION OFF CACHE INTERNAL "Update git build version info")
-add_subdirectory("${LIB_DIR}/openal-soft")
-target_link_libraries(${PROJECT_NAME} PUBLIC OpenAL)
-# openal-soft doesn't populate INTERFACE_INCLUDE_DIRECTORIES, so we need to manually add the includes here
-target_include_directories(${PROJECT_NAME} PUBLIC $<TARGET_PROPERTY:OpenAL,INCLUDE_DIRECTORIES>)
-list(APPEND COPY_LIBS OpenAL)
+if(GBC_WITH_AUDIO)
+   set(OPENAL_DIR "${LIB_DIR}/openal-soft")
+   set(ALSOFT_UTILS OFF CACHE INTERNAL "Build and install utility programs")
+   set(ALSOFT_NO_CONFIG_UTIL ON CACHE INTERNAL "Disable building the alsoft-config utility")
+   set(ALSOFT_EXAMPLES OFF CACHE INTERNAL "Build and install example programs")
+   set(ALSOFT_TESTS OFF CACHE INTERNAL "Build and install test programs")
+   set(ALSOFT_CONFIG OFF CACHE INTERNAL "Install alsoft.conf sample configuration file")
+   set(ALSOFT_HRTF_DEFS OFF CACHE INTERNAL "Install HRTF definition files")
+   set(ALSOFT_AMBDEC_PRESETS OFF CACHE INTERNAL "Install AmbDec preset files")
+   set(ALSOFT_INSTALL OFF CACHE INTERNAL "Install headers and libraries")
+   set(ALSOFT_UPDATE_BUILD_VERSION OFF CACHE INTERNAL "Update git build version info")
+   add_subdirectory("${LIB_DIR}/openal-soft")
+   target_link_libraries(${PROJECT_NAME} PUBLIC OpenAL)
+   # openal-soft doesn't populate INTERFACE_INCLUDE_DIRECTORIES, so we need to manually add the includes here
+   target_include_directories(${PROJECT_NAME} PUBLIC $<TARGET_PROPERTY:OpenAL,INCLUDE_DIRECTORIES>)
+   list(APPEND COPY_LIBS OpenAL)
+endif()
 
 ## Post-Build ##
 
