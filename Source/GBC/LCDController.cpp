@@ -135,6 +135,10 @@ LCDController::LCDController(GameBoy& gb)
    , oam{}
    , bgPaletteIndices{}
 {
+   framebuffers.writeBuffer().fill(Color::kWhite);
+   framebuffers.flip();
+   framebuffers.writeBuffer().fill(Color::kWhite);
+   framebuffers.flip();
 }
 
 void LCDController::machineCycle()

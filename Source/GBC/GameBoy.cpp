@@ -49,29 +49,32 @@ GameBoy::~GameBoy()
 
 void GameBoy::tick(double dt)
 {
-   if (cpu.isStopped()
-      && (joypad.right || joypad.left || joypad.up || joypad.down
-      || joypad.a || joypad.b || joypad.select || joypad.start))
+   if (cpu.isStopped() && joypad.anyPressed())
    {
       // The STOP state is exited when any button is pressed
       cpu.resume();
    }
 
-   if (!cpu.isStopped())
+#if GBC_WITH_DEBUGGER
+   const bool stepCPU = !cpu.isStopped() && !inBreakMode;
+#else
+   const bool stepCPU = !cpu.isStopped();
+#endif
+
+   if (stepCPU)
    {
       targetCycles += static_cast<uint64_t>(CPU::kClockSpeed * dt + 0.5);
 
       while (totalCycles < targetCycles)
       {
+         cpu.step();
+
 #if GBC_WITH_DEBUGGER
-         if (cpu.isInBreakMode() && !cpu.isStepping())
+         if (shouldBreak())
          {
-            targetCycles = totalCycles;
-            break;
+            debugBreak();
          }
 #endif // GBC_WITH_DEBUGGER
-
-         cpu.tick();
       }
    }
 
@@ -91,9 +94,9 @@ void GameBoy::machineCycle()
    totalCycles += CPU::kClockCyclesPerMachineCycle;
    counter += CPU::kClockCyclesPerMachineCycle;
 
-   tickJoypad();
-   tickTima();
-   tickSerial();
+   machineCycleJoypad();
+   machineCycleTima();
+   machineCycleSerial();
    lcdController.machineCycle();
    soundController.machineCycle();
 }
@@ -149,7 +152,59 @@ void GameBoy::onCPUStopped()
    lcdController.onCPUStopped();
 }
 
-void GameBoy::tickJoypad()
+#if GBC_WITH_DEBUGGER
+void GameBoy::debugBreak()
+{
+   inBreakMode = true;
+   targetCycles = totalCycles;
+}
+
+void GameBoy::debugContinue()
+{
+   inBreakMode = false;
+}
+
+void GameBoy::debugStep()
+{
+   if (inBreakMode && !cpu.isStopped())
+   {
+      cpu.step();
+   }
+}
+
+void GameBoy::setBreakpoint(uint16_t address)
+{
+   for (uint16_t breakpoint : breakpoints)
+   {
+      if (breakpoint == address)
+      {
+         return;
+      }
+   }
+
+   breakpoints.push_back(address);
+}
+
+void GameBoy::clearBreakpoint(uint16_t address)
+{
+   breakpoints.erase(std::remove_if(breakpoints.begin(), breakpoints.end(), [address](uint16_t breakpoint) { return breakpoint == address; }), breakpoints.end());
+}
+
+bool GameBoy::shouldBreak() const
+{
+   for (uint16_t breakpoint : breakpoints)
+   {
+      if (cpu.getPC() == breakpoint)
+      {
+         return true;
+      }
+   }
+
+   return false;
+}
+#endif // GBC_WITH_DEBUGGER
+
+void GameBoy::machineCycleJoypad()
 {
    uint8_t dpadVals = P1::InMask;
    if ((p1 & P1::P14OutPort) == 0x00)
@@ -185,7 +240,7 @@ void GameBoy::tickJoypad()
    p1 = (p1 & P1::OutMask) | (inputVals & P1::InMask);
 }
 
-void GameBoy::tickTima()
+void GameBoy::machineCycleTima()
 {
    timaReloadedWithTma = false;
 
@@ -225,7 +280,7 @@ void GameBoy::tickTima()
    lastTimerBit = timerBit;
 }
 
-void GameBoy::tickSerial()
+void GameBoy::machineCycleSerial()
 {
    static const uint64_t kSerialFrequency = 8192; // 8192Hz
    static const uint64_t kCyclesPerSerialBit = CPU::kClockSpeed / kSerialFrequency; // 512

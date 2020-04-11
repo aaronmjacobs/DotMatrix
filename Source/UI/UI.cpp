@@ -25,8 +25,6 @@ int UI::getDesiredWindowHeight()
 }
 
 UI::UI(GLFWwindow* window)
-   : lastGameBoy(nullptr)
-   , newGameBoy(false)
 {
    IMGUI_CHECKVERSION();
 
@@ -47,9 +45,6 @@ UI::~UI()
 
 void UI::render(Emulator& emulator)
 {
-   newGameBoy = lastGameBoy != emulator.gameBoy.get();
-   lastGameBoy = emulator.gameBoy.get();
-
    ImGui_ImplOpenGL3_NewFrame();
    ImGui_ImplGlfw_NewFrame();
    ImGui::NewFrame();
@@ -83,10 +78,10 @@ void UI::render(Emulator& emulator)
    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void UI::onRomLoaded(const char* romPath)
+void UI::onRomLoaded(GBC::GameBoy& gameBoy, const char* romPath)
 {
 #if GBC_WITH_DEBUGGER
-   onRomLoaded_Debugger(romPath);
+   onRomLoaded_Debugger(gameBoy, romPath);
 #endif // GBC_WITH_DEBUGGER
 }
 

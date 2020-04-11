@@ -388,7 +388,7 @@ void Emulator::setRom(const char* romPath)
          loadGame();
 
 #if GBC_WITH_UI
-         ui->onRomLoaded(romPath);
+         ui->onRomLoaded(*gameBoy, romPath);
 #endif // GBC_WITH_UI
       }
       else

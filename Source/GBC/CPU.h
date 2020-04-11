@@ -7,10 +7,6 @@
 
 #include <cstdint>
 
-#if GBC_WITH_DEBUGGER
-#include <vector>
-#endif // GBC_WITH_DEBUGGER
-
 namespace GBC
 {
 
@@ -168,7 +164,7 @@ public:
 
    CPU(GameBoy& gb);
 
-   void tick();
+   void step();
 
    bool isStopped() const
    {
@@ -189,39 +185,6 @@ public:
    {
       reg.pc = address;
    }
-
-#if GBC_WITH_DEBUGGER
-   bool isInBreakMode()
-   {
-      return inBreakMode;
-   }
-
-   void debugBreak()
-   {
-      inBreakMode = true;
-   }
-
-   void debugContinue()
-   {
-      inBreakMode = false;
-      stepping = true;
-   }
-
-   bool isStepping()
-   {
-      return stepping;
-   }
-
-   void step()
-   {
-      stepping = true;
-   }
-
-   void setBreakpoint(uint16_t address);
-   void clearBreakpoint(uint16_t address);
-
-   bool shouldBreak();
-#endif // GBC_WITH_DEBUGGER
 
 private:
    DECLARE_UI_FRIEND
@@ -331,12 +294,6 @@ private:
    bool stopped;
    bool interruptEnableRequested;
    bool freezePC;
-
-#if GBC_WITH_DEBUGGER
-   bool inBreakMode = false;
-   bool stepping = false;
-   std::vector<uint16_t> breakpoints;
-#endif // GBC_WITH_DEBUGGER
 };
 
 } // namespace GBC

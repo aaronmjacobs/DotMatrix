@@ -41,15 +41,10 @@ public:
 
    void render(Emulator& emulator);
 
-   void onRomLoaded(const char* romPath);
+   void onRomLoaded(GBC::GameBoy& gameBoy, const char* romPath);
 
 private:
    static const uint64_t kZero;
-
-   bool isNewGameBoy() const
-   {
-      return newGameBoy;
-   }
 
    void renderScreenWindow(const Renderer& renderer) const;
    void renderEmulatorWindow(Emulator& emulator) const;
@@ -74,9 +69,6 @@ private:
    void renderLFSRUnit(GBC::LFSRUnit& lfsrUnit) const;
 
 #if GBC_WITH_DEBUGGER
-   void onRomLoaded_Debugger(const char* romPath) const;
+   void onRomLoaded_Debugger(GBC::GameBoy& gameBoy, const char* romPath) const;
 #endif // GBC_WITH_DEBUGGER
-
-   GBC::GameBoy* lastGameBoy;
-   bool newGameBoy;
 };

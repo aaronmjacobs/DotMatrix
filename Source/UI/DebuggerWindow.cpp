@@ -447,33 +447,25 @@ namespace
 
       return breakpointToggled;
    }
+
+   std::array<bool, 0x10000> breakpoints;
+
+   void updateBreakpoint(GBC::GameBoy& gameBoy, uint16_t address)
+   {
+      if (breakpoints[address])
+      {
+         gameBoy.setBreakpoint(address);
+      }
+      else
+      {
+         gameBoy.clearBreakpoint(address);
+      }
+   }
 }
 
 void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
 {
    ImGui::Begin("Debugger");
-
-   static std::array<bool, 0x10000> breakpoints;
-
-   auto updateBreakpoint = [&gameBoy](uint16_t address)
-   {
-      if (breakpoints[address])
-      {
-         gameBoy.cpu.setBreakpoint(address);
-      }
-      else
-      {
-         gameBoy.cpu.clearBreakpoint(address);
-      }
-   };
-
-   if (isNewGameBoy())
-   {
-      for (std::size_t i = 0; i < breakpoints.size(); ++i)
-      {
-         updateBreakpoint(static_cast<uint16_t>(i));
-      }
-   }
 
    bool scroll = false;
    uint16_t scrollAddress = 0;
@@ -481,18 +473,18 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
       ImGui::Columns(2);
       ImGui::SetColumnWidth(0, 93.0f);
 
-      if (gameBoy.cpu.isInBreakMode())
+      if (gameBoy.isInBreakMode())
       {
          bool debugContinue = ImGui::Button("Continue");
          if (debugContinue)
          {
-            gameBoy.cpu.debugContinue();
+            gameBoy.debugContinue();
          }
 
          bool step = ImGui::Button("Step");
          if (step)
          {
-            gameBoy.cpu.step();
+            gameBoy.debugStep();
          }
       }
       else
@@ -500,7 +492,7 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
          bool debugBreak = ImGui::Button("Break");
          if (debugBreak)
          {
-            gameBoy.cpu.debugBreak();
+            gameBoy.debugBreak();
 
             scroll = true;
             scrollAddress = gameBoy.cpu.reg.pc;
@@ -621,7 +613,7 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
             bool breakpointToggled = renderOperation(gameBoy, address, gameBoy.cpu.reg.pc, &breakpoints[line]);
             if (breakpointToggled)
             {
-               updateBreakpoint(address);
+               updateBreakpoint(gameBoy, address);
             }
          }
       }
@@ -634,7 +626,7 @@ void UI::renderDebuggerWindow(GBC::GameBoy& gameBoy) const
    ImGui::End();
 }
 
-void UI::onRomLoaded_Debugger(const char* romPath) const
+void UI::onRomLoaded_Debugger(GBC::GameBoy& gameBoy, const char* romPath) const
 {
    std::string symbolPath = romPath;
    if (stringReplace(symbolPath, ".gb", ".sym"))
@@ -644,5 +636,15 @@ void UI::onRomLoaded_Debugger(const char* romPath) const
    else
    {
       symbols = std::nullopt;
+   }
+
+   for (std::size_t i = 0; i < breakpoints.size(); ++i)
+   {
+      updateBreakpoint(gameBoy, static_cast<uint16_t>(i));
+   }
+
+   if (gameBoy.shouldBreak())
+   {
+      gameBoy.debugBreak();
    }
 }

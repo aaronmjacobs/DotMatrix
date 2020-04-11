@@ -12,6 +12,9 @@
 #include "UI/UIFriend.h"
 
 #include <array>
+#if GBC_WITH_DEBUGGER
+#include <vector>
+#endif // GBC_WITH_DEBUGGER
 
 namespace GBC
 {
@@ -70,6 +73,11 @@ struct Joypad
 
       return result;
    }
+
+   bool anyPressed() const
+   {
+      return right || left || up || down || a || b || select || start;
+   }
 };
 
 class GameBoy
@@ -96,6 +104,21 @@ public:
    const char* title() const;
 
    void onCPUStopped();
+
+#if GBC_WITH_DEBUGGER
+   void debugBreak();
+   void debugContinue();
+   void debugStep();
+
+   void setBreakpoint(uint16_t address);
+   void clearBreakpoint(uint16_t address);
+   bool shouldBreak() const;
+
+   bool isInBreakMode() const
+   {
+      return inBreakMode;
+   }
+#endif // GBC_WITH_DEBUGGER
 
    LCDController& getLCDController()
    {
@@ -158,9 +181,9 @@ public:
 private:
    DECLARE_UI_FRIEND
 
-   void tickJoypad();
-   void tickTima();
-   void tickSerial();
+   void machineCycleJoypad();
+   void machineCycleTima();
+   void machineCycleSerial();
 
    uint8_t readIO(uint16_t address) const;
    void writeIO(uint16_t address, uint8_t value);
@@ -196,6 +219,11 @@ private:
    std::vector<uint8_t> bootstrap;
    bool booting = true;
 #endif // GBC_WITH_BOOTSTRAP
+
+#if GBC_WITH_DEBUGGER
+   bool inBreakMode = false;
+   std::vector<uint16_t> breakpoints;
+#endif // GBC_WITH_DEBUGGER
 
    std::array<uint8_t, 0x1000> ram0 = {}; // Working RAM bank 0 (0xC000-0xCFFF)
    std::array<uint8_t, 0x1000> ram1 = {}; // Working RAM bank 1 (0xD000-0xDFFF)

@@ -358,24 +358,9 @@ CPU::CPU(GameBoy& gb)
    reg.pc = 0x0100;
 }
 
-void CPU::tick()
+void CPU::step()
 {
-#if GBC_WITH_DEBUGGER
-   if (!stepping)
-   {
-      if (!inBreakMode)
-      {
-         inBreakMode = shouldBreak();
-      }
-
-      if (inBreakMode)
-      {
-         return;
-      }
-   }
-
-   stepping = false;
-#endif // GBC_WITH_DEBUGGER
+   ASSERT(!stopped);
 
    if (halted)
    {
@@ -400,39 +385,6 @@ void CPU::tick()
 
    execute(operation);
 }
-
-#if GBC_WITH_DEBUGGER
-void CPU::setBreakpoint(uint16_t address)
-{
-   for (uint16_t breakpoint : breakpoints)
-   {
-      if (breakpoint == address)
-      {
-         return;
-      }
-   }
-
-   breakpoints.push_back(address);
-}
-
-void CPU::clearBreakpoint(uint16_t address)
-{
-   breakpoints.erase(std::remove_if(breakpoints.begin(), breakpoints.end(), [address](uint16_t breakpoint) { return breakpoint == address; }), breakpoints.end());
-}
-
-bool CPU::shouldBreak()
-{
-   for (uint16_t breakpoint : breakpoints)
-   {
-      if (reg.pc == breakpoint)
-      {
-         return true;
-      }
-   }
-
-   return false;
-}
-#endif // GBC_WITH_DEBUGGER
 
 uint8_t CPU::readPC()
 {
