@@ -26,6 +26,50 @@
 namespace
 {
 
+#include "Logo.inl"
+
+const GBC::Framebuffer& getLogoFramebuffer()
+{
+   static GBC::Framebuffer logoFramebuffer;
+   static bool initialized = false;
+
+   if (!initialized)
+   {
+      for (std::size_t i = 0; i < kLogo.size(); ++i)
+      {
+         for (std::size_t j = 0; j < 4; ++j)
+         {
+            uint8_t index = (kLogo[i] & (0x03 << (j * 2))) >> (j * 2);
+            logoFramebuffer[4 * i + j] = index;
+         }
+      }
+
+      initialized = true;
+   }
+
+   return logoFramebuffer;
+}
+
+void framebufferToPixels(const GBC::Framebuffer& framebuffer, PixelArray& pixels)
+{
+   // Green / blue (trying to approximate original Game Boy screen colors)
+   static const std::array<Pixel, 4> kColors =
+   {
+      Pixel(0xAC, 0xCD, 0x4A),
+      Pixel(0x7B, 0xAC, 0x6A),
+      Pixel(0x20, 0x6A, 0x62),
+      Pixel(0x08, 0x29, 0x52)
+   };
+
+   ASSERT(pixels.size() == framebuffer.size());
+
+   for (std::size_t i = 0; i < pixels.size(); ++i)
+   {
+      ASSERT(framebuffer[i] < kColors.size());
+      pixels[i] = kColors[framebuffer[i]];
+   }
+}
+
 #if GBC_DEBUG
 const char* getGlErrorName(GLenum error)
 {
@@ -181,14 +225,11 @@ std::string getSaveName(const char* title)
    return saveName;
 }
 
-#if GBC_WITH_BOOTSTRAP
-const std::size_t kBootstrapSize = 256;
-#endif // GBC_WITH_BOOTSTRAP
-
 } // namespace
 
 Emulator::Emulator()
    : window(nullptr)
+   , pixels(std::make_unique<PixelArray>())
 #if GBC_WITH_UI
    , timeScale(1.0)
    , renderUi(true)
@@ -280,12 +321,9 @@ bool Emulator::init()
 
 #if GBC_WITH_BOOTSTRAP
    bootstrap = IOUtils::readBinaryFile("boot.bin");
-
-   if (bootstrap.size() == kBootstrapSize)
-   {
-      resetGameBoy(nullptr);
-   }
 #endif // GBC_WITH_BOOTSTRAP
+
+   resetGameBoy(nullptr);
 
    saveThread = std::thread([this]
    {
@@ -335,10 +373,16 @@ void Emulator::render()
 {
    if (renderer)
    {
-      if (gameBoy)
+      if (gameBoy && gameBoy->hasProgram())
       {
-         renderer->draw(gameBoy->getLCDController().getFramebuffer());
+         framebufferToPixels(gameBoy->getLCDController().getFramebuffer(), *pixels);
       }
+      else
+      {
+         framebufferToPixels(getLogoFramebuffer(), *pixels);
+      }
+
+      renderer->draw(*pixels);
 
 #if GBC_WITH_UI
       if (renderUi)
@@ -453,7 +497,7 @@ void Emulator::resetGameBoy(UPtr<GBC::Cartridge> cartridge)
    gameBoy = std::make_unique<GBC::GameBoy>();
 
 #if GBC_WITH_BOOTSTRAP
-   if (bootstrap.size() == kBootstrapSize)
+   if (bootstrap.size() == 256)
    {
       gameBoy->setBootstrap(bootstrap);
    }

@@ -127,8 +127,10 @@ void Renderer::onFramebufferSizeChanged(int width, int height)
    model.getProgram().setUniformValue("uProj", proj);
 }
 
-void Renderer::draw(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& pixels)
+void Renderer::draw(const PixelArray& pixels)
 {
+   ASSERT(pixels.size() == GBC::kScreenWidth * GBC::kScreenHeight);
+
    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
    glClear(GL_COLOR_BUFFER_BIT);
 

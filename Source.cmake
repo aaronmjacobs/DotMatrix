@@ -92,6 +92,7 @@ else()
    target_sources(${PROJECT_NAME} PRIVATE
       "${SRC_DIR}/Emulator.h"
       "${SRC_DIR}/Emulator.cpp"
+      "${SRC_DIR}/Logo.inl"
       "${SRC_DIR}/Main.cpp"
    )
 endif()

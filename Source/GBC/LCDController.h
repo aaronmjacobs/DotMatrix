@@ -27,22 +27,7 @@ enum Enum : uint8_t
 
 } // namespace Mode
 
-// 15 bits per pixel
-struct Pixel
-{
-   uint8_t r;
-   uint8_t g;
-   uint8_t b;
-
-   Pixel(uint8_t red = 0x00, uint8_t green = 0x00, uint8_t blue = 0x00)
-      : r(red)
-      , g(green)
-      , b(blue)
-   {
-   }
-};
-
-using Framebuffer = std::array<Pixel, kScreenWidth * kScreenHeight>;
+using Framebuffer = std::array<uint8_t, kScreenWidth * kScreenHeight>;
 
 class DoubleBufferedFramebuffer
 {
@@ -106,9 +91,9 @@ private:
    void updateLYC();
    void setMode(Mode::Enum newMode);
 
-   void scan(Framebuffer& framebuffer, uint8_t line, const std::array<Pixel, 4>& colors);
+   void scan(Framebuffer& framebuffer, uint8_t line, const std::array<uint8_t, 4>& paletteColors);
    template<bool isWindow>
-   void scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t line, const std::array<Pixel, 4>& colors);
+   void scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t line, const std::array<uint8_t, 4>& paletteColors);
    void scanSprites(Framebuffer& framebuffer, uint8_t line);
    uint8_t fetchPaletteIndex(uint8_t tileNum, uint8_t row, uint8_t col, bool signedTileOffset, bool flipX) const;
 

@@ -45,30 +45,23 @@ UI::~UI()
 
 void UI::render(Emulator& emulator)
 {
+   ASSERT(emulator.gameBoy);
+
    ImGui_ImplOpenGL3_NewFrame();
    ImGui_ImplGlfw_NewFrame();
    ImGui::NewFrame();
 
-   if (emulator.gameBoy)
-   {
-      renderScreenWindow(*emulator.renderer);
-      renderEmulatorWindow(emulator);
-      renderTimerWindow(*emulator.gameBoy);
-      renderJoypadWindow(emulator.gameBoy->joypad);
-      renderCPUWindow(emulator.gameBoy->cpu);
-      renderMemoryWindow(*emulator.gameBoy);
-      renderSoundControllerWindow(emulator.gameBoy->soundController);
-      renderCartridgeWindow(emulator.gameBoy->cart.get());
+   renderScreenWindow(*emulator.renderer);
+   renderEmulatorWindow(emulator);
+   renderTimerWindow(*emulator.gameBoy);
+   renderJoypadWindow(emulator.gameBoy->joypad);
+   renderCPUWindow(emulator.gameBoy->cpu);
+   renderMemoryWindow(*emulator.gameBoy);
+   renderSoundControllerWindow(emulator.gameBoy->soundController);
+   renderCartridgeWindow(emulator.gameBoy->cart.get());
 #if GBC_WITH_DEBUGGER
-      renderDebuggerWindow(*emulator.gameBoy);
+   renderDebuggerWindow(*emulator.gameBoy);
 #endif // GBC_WITH_DEBUGGER
-   }
-   else
-   {
-      ImGui::Begin(kProjectDisplayName);
-      ImGui::Text("Drag & drop a ROM file");
-      ImGui::End();
-   }
 
    ImGui::Render();
 

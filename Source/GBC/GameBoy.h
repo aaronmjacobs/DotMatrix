@@ -130,6 +130,15 @@ public:
       return soundController;
    }
 
+   bool hasProgram() const
+   {
+      return cart != nullptr
+#if GBC_WITH_BOOTSTRAP
+         || !bootstrap.empty()
+#endif // GBC_WITH_BOOTSTRAP
+         ;
+   }
+
    void setSerialCallback(SerialCallback callback)
    {
       serialCallback = callback;
@@ -180,6 +189,8 @@ public:
 
 private:
    DECLARE_UI_FRIEND
+
+   bool shouldStepCPU() const;
 
    void machineCycleJoypad();
    void machineCycleTima();

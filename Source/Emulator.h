@@ -3,6 +3,8 @@
 #include "Core/Archive.h"
 #include "Core/Pointers.h"
 
+#include "GBC/LCDController.h"
+
 #if GBC_WITH_AUDIO
 #include "Platform/Audio/AudioManager.h"
 #endif // GBC_WITH_AUDIO
@@ -17,6 +19,9 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#if GBC_WITH_BOOTSTRAP
+#include <vector>
+#endif // GBC_WITH_BOOTSTRAP
 
 class Renderer;
 
@@ -27,6 +32,23 @@ class GameBoy;
 } // namespace GBC
 
 struct GLFWwindow;
+
+// 15 bits per pixel
+struct Pixel
+{
+   uint8_t r;
+   uint8_t g;
+   uint8_t b;
+
+   Pixel(uint8_t red = 0x00, uint8_t green = 0x00, uint8_t blue = 0x00)
+      : r(red)
+      , g(green)
+      , b(blue)
+   {
+   }
+};
+
+using PixelArray = std::array<Pixel, GBC::kScreenWidth* GBC::kScreenHeight>;
 
 struct SaveData
 {
@@ -75,6 +97,8 @@ private:
 #if GBC_WITH_AUDIO
    AudioManager audioManager;
 #endif // GBC_WITH_AUDIO
+
+   UPtr<PixelArray> pixels;
 
 #if GBC_WITH_BOOTSTRAP
    std::vector<uint8_t> bootstrap;

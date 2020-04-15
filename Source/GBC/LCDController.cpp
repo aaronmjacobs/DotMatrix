@@ -59,46 +59,15 @@ enum Enum : uint8_t
 
 } // namespace Attrib
 
-namespace ColorIndex
+std::array<uint8_t, 4> extractPaletteColors(uint8_t palette)
 {
-
-enum Enum : uint8_t
-{
-   White = 0,
-   LightGray = 1,
-   DarkGray = 2,
-   Black = 3
-};
-
-} // namespace ColorIndex
-
-namespace Color
-{
-
-// Green / blue (trying to approximate original Game Boy screen colors)
-const Pixel kWhite(0xAC, 0xCD, 0x4A);
-const Pixel kLightGray(0x7B, 0xAC, 0x6A);
-const Pixel kDarkGray(0x20, 0x6A, 0x62);
-const Pixel kBlack(0x08, 0x29, 0x52);
-
-} // namespace Color
-
-std::array<Pixel, 4> extractPaletteColors(uint8_t palette)
-{
-   static const std::array<Pixel, 4> kColorValues =
-   {
-      Color::kWhite,
-      Color::kLightGray,
-      Color::kDarkGray,
-      Color::kBlack,
-   };
    static const uint8_t kMask = 0x03;
 
-   std::array<Pixel, 4> colors;
-   for (size_t i = 0; i < colors.size(); ++i)
+   std::array<uint8_t, 4> colors;
+   for (std::size_t i = 0; i < colors.size(); ++i)
    {
-      size_t shift = i * 2;
-      colors[i] = kColorValues[(palette & (kMask << shift)) >> shift];
+      std::size_t shift = i * 2;
+      colors[i] = (palette & (kMask << shift)) >> shift;
    }
 
    return colors;
@@ -135,10 +104,6 @@ LCDController::LCDController(GameBoy& gb)
    , oam{}
    , bgPaletteIndices{}
 {
-   framebuffers.writeBuffer().fill(Color::kWhite);
-   framebuffers.flip();
-   framebuffers.writeBuffer().fill(Color::kWhite);
-   framebuffers.flip();
 }
 
 void LCDController::machineCycle()
@@ -150,7 +115,7 @@ void LCDController::machineCycle()
 void LCDController::onCPUStopped()
 {
    // When stopped, fill the screen with white
-   framebuffers.writeBuffer().fill(Color::kWhite);
+   framebuffers.writeBuffer().fill(0x00);
 }
 
 uint8_t LCDController::read(uint16_t address) const
@@ -463,18 +428,18 @@ void LCDController::setMode(Mode::Enum newMode)
    }
 }
 
-void LCDController::scan(Framebuffer& framebuffer, uint8_t line, const std::array<Pixel, 4>& colors)
+void LCDController::scan(Framebuffer& framebuffer, uint8_t line, const std::array<uint8_t, 4>& paletteColors)
 {
    if (lcdc & LCDC::DisplayEnable)
    {
       if (lcdc & LCDC::BGDisplay)
       {
-         scanBackgroundOrWindow<false>(framebuffer, line, colors);
+         scanBackgroundOrWindow<false>(framebuffer, line, paletteColors);
       }
 
       if (lcdc & LCDC::WindowDisplayEnable)
       {
-         scanBackgroundOrWindow<true>(framebuffer, line, colors);
+         scanBackgroundOrWindow<true>(framebuffer, line, paletteColors);
       }
 
       if (lcdc & LCDC::ObjSpriteDisplayEnable)
@@ -487,13 +452,13 @@ void LCDController::scan(Framebuffer& framebuffer, uint8_t line, const std::arra
       size_t lineOffset = line * kScreenWidth;
       for (size_t x = 0; x < kScreenWidth; ++x)
       {
-         framebuffer[lineOffset + x] = colors[ColorIndex::White];
+         framebuffer[lineOffset + x] = 0x00;
       }
    }
 }
 
 template<bool isWindow>
-void LCDController::scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t line, const std::array<Pixel, 4>& colors)
+void LCDController::scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t line, const std::array<uint8_t, 4>& paletteColors)
 {
    // 32x32 tiles, 8x8 pixels each
    static const uint16_t kTileWidth = 8;
@@ -547,10 +512,10 @@ void LCDController::scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t lin
       bool signedTileOffset = (lcdc & LCDC::BGAndWindowTileDataSelect) == 0x00;
       uint8_t paletteIndex = fetchPaletteIndex(tileNum, row, col, signedTileOffset, false);
 
-      framebuffer[x + (kScreenWidth * y)] = colors[paletteIndex];
+      framebuffer[x + (kScreenWidth * y)] = paletteColors[paletteIndex];
       if (!isWindow)
       {
-         bgPaletteIndices[x + (kScreenWidth * y)] = paletteIndex;
+         bgPaletteIndices[x + (kScreenWidth * y)] = paletteColors[paletteIndex];
       }
    }
 }
@@ -577,7 +542,7 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line)
       }
 
       bool useObp1 = (attributes.flags & Attrib::PaletteNumber) != 0x00;
-      std::array<Pixel, 4> colors = extractPaletteColors(useObp1 ? obp1 : obp0);
+      std::array<uint8_t, 4> paletteColors = extractPaletteColors(useObp1 ? obp1 : obp0);
 
       uint8_t row = y - spriteY;
       if (attributes.flags & Attrib::YFlip)
@@ -609,7 +574,7 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line)
 
          if (aboveBackground)
          {
-            framebuffer[x + (kScreenWidth * y)] = colors[paletteIndex];
+            framebuffer[x + (kScreenWidth * y)] = paletteColors[paletteIndex];
          }
       }
    }

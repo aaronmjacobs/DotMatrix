@@ -55,11 +55,13 @@ void GameBoy::tick(double dt)
       cpu.resume();
    }
 
+   bool stepCPU = shouldStepCPU();
 #if GBC_WITH_DEBUGGER
-   const bool stepCPU = !cpu.isStopped() && !inBreakMode;
-#else
-   const bool stepCPU = !cpu.isStopped();
-#endif
+   if (inBreakMode)
+   {
+      stepCPU = false;
+   }
+#endif // GBC_WITH_DEBUGGER
 
    if (stepCPU)
    {
@@ -166,7 +168,7 @@ void GameBoy::debugContinue()
 
 void GameBoy::debugStep()
 {
-   if (inBreakMode && !cpu.isStopped())
+   if (inBreakMode && shouldStepCPU())
    {
       cpu.step();
    }
@@ -203,6 +205,11 @@ bool GameBoy::shouldBreak() const
    return false;
 }
 #endif // GBC_WITH_DEBUGGER
+
+bool GameBoy::shouldStepCPU() const
+{
+   return hasProgram() & !cpu.isStopped();
+}
 
 void GameBoy::machineCycleJoypad()
 {

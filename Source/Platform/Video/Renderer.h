@@ -1,11 +1,9 @@
 #pragma once
 
-#include "GBC/LCDController.h"
+#include "Emulator.h"
 
 #include "Platform/Video/Model.h"
 #include "Platform/Video/Texture.h"
-
-#include <array>
 
 class Renderer
 {
@@ -13,7 +11,7 @@ public:
    Renderer(int width, int height);
 
    void onFramebufferSizeChanged(int width, int height);
-   void draw(const std::array<GBC::Pixel, GBC::kScreenWidth * GBC::kScreenHeight>& pixels);
+   void draw(const PixelArray& pixels);
 
    GLuint getTextureId() const
    {
