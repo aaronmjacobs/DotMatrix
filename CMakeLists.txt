@@ -60,6 +60,8 @@ if(WIN32)
    target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX)
 endif()
 
+set_property(DIRECTORY ${CMAKE_PROJECT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+
 ### Source ###
 
 # Source files
