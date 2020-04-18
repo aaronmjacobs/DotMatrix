@@ -1,7 +1,7 @@
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/Source")
-set(BIN_INCLUDE_DIR "${PROJECT_BINARY_DIR}/Include")
+set(GENERATED_DIR "${PROJECT_BINARY_DIR}/Generated")
 
-target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}" "${BIN_INCLUDE_DIR}")
+target_include_directories(${PROJECT_NAME} PUBLIC "${SRC_DIR}" "${GENERATED_DIR}")
 
 target_sources(${PROJECT_NAME} PRIVATE
    "${SRC_DIR}/Core/Archive.h"
@@ -104,6 +104,14 @@ endif()
 get_target_property(SOURCE_FILES ${PROJECT_NAME} SOURCES)
 source_group(TREE ${SRC_DIR} PREFIX Source FILES ${SOURCE_FILES})
 
-configure_file("${SRC_DIR}/Core/Constants.h.in" "${BIN_INCLUDE_DIR}/Core/Constants.h")
-target_sources(${PROJECT_NAME} PRIVATE "${BIN_INCLUDE_DIR}/Core/Constants.h")
-source_group("Source\\Generated" "${BIN_INCLUDE_DIR}/*")
+set(GENERATED_FILE_NAMES "Core/Constants.h")
+
+set(GENERATED_FILES)
+foreach(GENERATED_FILE_NAME ${GENERATED_FILE_NAMES})
+   set(GENERATED_FILE "${GENERATED_DIR}/${GENERATED_FILE_NAME}")
+   configure_file("${SRC_DIR}/${GENERATED_FILE_NAME}.in" "${GENERATED_FILE}")
+   list(APPEND GENERATED_FILES "${GENERATED_FILE}")
+endforeach()
+
+target_sources(${PROJECT_NAME} PRIVATE ${GENERATED_FILES})
+source_group(TREE ${GENERATED_DIR} PREFIX Generated FILES ${GENERATED_FILES})
