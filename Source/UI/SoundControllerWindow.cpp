@@ -12,47 +12,45 @@
 
 namespace
 {
+   const int kNumPlottedSamples = GBC::SoundController::kSampleRate / 4;
 
-const int kNumPlottedSamples = GBC::SoundController::kSampleRate / 4;
-
-float audioSampleGetter(void* data, int index)
-{
-   std::vector<float>* floatSamples = reinterpret_cast<std::vector<float>*>(data);
-
-   return (*floatSamples)[index];
-}
-
-void updateSamples(std::vector<float>& samples, int& offset, const std::vector<int8_t>& audioData)
-{
-   for (int8_t audioSample : audioData)
+   float audioSampleGetter(void* data, int index)
    {
-      samples[offset] = static_cast<float>(audioSample);
-      offset = (offset + 1) % kNumPlottedSamples;
-   }
-}
+      std::vector<float>* floatSamples = reinterpret_cast<std::vector<float>*>(data);
 
-std::string getPitch(uint32_t timerPeriod)
-{
-   static const uint32_t kA4 = 440;
-   static const uint32_t kC0 = Math::round<uint32_t>(kA4 * std::pow(2, -4.75));
-   static const std::array<const char*, 12> kNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-
-   if (timerPeriod == 0)
-   {
-      return "";
+      return (*floatSamples)[index];
    }
 
-   double frequency = GBC::CPU::kClockSpeed / static_cast<double>(timerPeriod);
-   uint32_t halfSteps = Math::round<uint32_t>(12 * std::log2(frequency / kC0));
-   uint32_t octave = halfSteps / 12;
-   uint32_t pitch = halfSteps % 12;
+   void updateSamples(std::vector<float>& samples, int& offset, const std::vector<int8_t>& audioData)
+   {
+      for (int8_t audioSample : audioData)
+      {
+         samples[offset] = static_cast<float>(audioSample);
+         offset = (offset + 1) % kNumPlottedSamples;
+      }
+   }
 
-   std::stringstream ss;
-   ss << kNames[pitch] << " " << octave;
-   return ss.str();
+   std::string getPitch(uint32_t timerPeriod)
+   {
+      static const uint32_t kA4 = 440;
+      static const uint32_t kC0 = Math::round<uint32_t>(kA4 * std::pow(2, -4.75));
+      static const std::array<const char*, 12> kNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+
+      if (timerPeriod == 0)
+      {
+         return "";
+      }
+
+      double frequency = GBC::CPU::kClockSpeed / static_cast<double>(timerPeriod);
+      uint32_t halfSteps = Math::round<uint32_t>(12 * std::log2(frequency / kC0));
+      uint32_t octave = halfSteps / 12;
+      uint32_t pitch = halfSteps % 12;
+
+      std::stringstream ss;
+      ss << kNames[pitch] << " " << octave;
+      return ss.str();
+   }
 }
-
-} // namespace
 
 void UI::renderSoundControllerWindow(GBC::SoundController& soundController) const
 {

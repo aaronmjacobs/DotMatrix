@@ -12,63 +12,62 @@ namespace GBC
 
 namespace
 {
+   const uint16_t kHeaderOffset = 0x0100;
+   const uint16_t kHeaderSize = 0x0050;
 
-const uint16_t kHeaderOffset = 0x0100;
-const uint16_t kHeaderSize = 0x0050;
-
-Cartridge::Header parseHeader(const std::vector<uint8_t>& data)
-{
-   STATIC_ASSERT(sizeof(Cartridge::Header) == kHeaderSize);
-   ASSERT(data.size() >= kHeaderOffset + kHeaderSize);
-
-   Cartridge::Header header;
-   std::memcpy(&header, &data.data()[kHeaderOffset], kHeaderSize);
-
-   return header;
-}
-
-bool performHeaderChecksum(const Cartridge::Header& header, const std::vector<uint8_t>& data)
-{
-   // Complement check, program will not run if incorrect
-   // x=0:FOR i=0134h TO 014Ch:x=x-MEM[i]-1:NEXT
-   const uint8_t* mem = data.data();
-
-   uint8_t x = 0;
-   for (uint16_t i = 0x0134; i <= 0x014C; ++i)
+   Cartridge::Header parseHeader(const std::vector<uint8_t>& data)
    {
-      x = x - mem[i] - 1;
+      STATIC_ASSERT(sizeof(Cartridge::Header) == kHeaderSize);
+      ASSERT(data.size() >= kHeaderOffset + kHeaderSize);
+
+      Cartridge::Header header;
+      std::memcpy(&header, &data.data()[kHeaderOffset], kHeaderSize);
+
+      return header;
    }
 
-   return x == header.headerChecksum;
-}
+   bool performHeaderChecksum(const Cartridge::Header& header, const std::vector<uint8_t>& data)
+   {
+      // Complement check, program will not run if incorrect
+      // x=0:FOR i=0134h TO 014Ch:x=x-MEM[i]-1:NEXT
+      const uint8_t* mem = data.data();
+
+      uint8_t x = 0;
+      for (uint16_t i = 0x0134; i <= 0x014C; ++i)
+      {
+         x = x - mem[i] - 1;
+      }
+
+      return x == header.headerChecksum;
+   }
 
 #if GBC_DEBUG
-bool performGlobalChecksum(const Cartridge::Header& header, const std::vector<uint8_t>& data)
-{
-   // Checksum (higher byte first) produced by adding all bytes of a cartridge except for two checksum bytes and taking
-   // two lower bytes of the result. (GameBoy ignores this value.)
-   const uint8_t* mem = data.data();
-
-   uint16_t x = 0;
-   for (size_t i = 0; i < data.size(); ++i)
+   bool performGlobalChecksum(const Cartridge::Header& header, const std::vector<uint8_t>& data)
    {
-      x += mem[i];
+      // Checksum (higher byte first) produced by adding all bytes of a cartridge except for two checksum bytes and taking
+      // two lower bytes of the result. (GameBoy ignores this value.)
+      const uint8_t* mem = data.data();
+
+      uint16_t x = 0;
+      for (size_t i = 0; i < data.size(); ++i)
+      {
+         x += mem[i];
+      }
+
+      x -= header.globalChecksum[0];
+      x -= header.globalChecksum[1];
+
+      uint8_t low = x & 0x00FF;
+      uint8_t high = (x & 0xFF00) >> 8;
+
+      return header.globalChecksum[0] == high && header.globalChecksum[1] == low;
    }
-
-   x -= header.globalChecksum[0];
-   x -= header.globalChecksum[1];
-
-   uint8_t low = x & 0x00FF;
-   uint8_t high = (x & 0xFF00) >> 8;
-
-   return header.globalChecksum[0] == high && header.globalChecksum[1] == low;
-}
 #endif // GBC_DEBUG
 
-bool cartHasRAM(Cartridge::Type type)
-{
-   switch (type)
+   bool cartHasRAM(Cartridge::Type type)
    {
+      switch (type)
+      {
       case Cartridge::Type::MBC1PlusRAM:
       case Cartridge::Type::MBC1PlusRAMPlusBattery:
       case Cartridge::Type::MBC2:
@@ -91,13 +90,13 @@ bool cartHasRAM(Cartridge::Type type)
          return true;
       default:
          return false;
+      }
    }
-}
 
-bool cartHasBattery(Cartridge::Type type)
-{
-   switch (type)
+   bool cartHasBattery(Cartridge::Type type)
    {
+      switch (type)
+      {
       case Cartridge::Type::MBC1PlusRAMPlusBattery:
       case Cartridge::Type::MBC2PlusBattery:
       case Cartridge::Type::ROMPlusRAMPlusBattery:
@@ -113,25 +112,25 @@ bool cartHasBattery(Cartridge::Type type)
          return true;
       default:
          return false;
+      }
    }
-}
 
-bool cartHasTimer(Cartridge::Type type)
-{
-   switch (type)
+   bool cartHasTimer(Cartridge::Type type)
    {
+      switch (type)
+      {
       case Cartridge::Type::MBC3PlusTimerPlusBattery:
       case Cartridge::Type::MBC3PlusTimerPlusRAMPlusBattery:
          return true;
       default:
          return false;
+      }
    }
-}
 
-bool cartHasRumble(Cartridge::Type type)
-{
-   switch (type)
+   bool cartHasRumble(Cartridge::Type type)
    {
+      switch (type)
+      {
       case Cartridge::Type::MBC5PlusRumble:
       case Cartridge::Type::MBC5PlusRumblePlusRAM:
       case Cartridge::Type::MBC5PlusRumblePlusRAMPlusBattery:
@@ -139,13 +138,12 @@ bool cartHasRumble(Cartridge::Type type)
          return true;
       default:
          return false;
+      }
    }
 }
 
-} // namespace
-
 // static
-UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data, std::string& error)
+UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t> data, std::string& error)
 {
    if (data.size() < kHeaderOffset + kHeaderSize)
    {
@@ -172,41 +170,41 @@ UPtr<Cartridge> Cartridge::fromData(std::vector<uint8_t>&& data, std::string& er
    UPtr<MemoryBankController> mbc;
    switch (header.type)
    {
-      case Type::ROM:
-         LOG_INFO("Null");
-         mbc = std::make_unique<MBCNull>(*cart);
-         break;
-      case Type::MBC1:
-      case Type::MBC1PlusRAM:
-      case Type::MBC1PlusRAMPlusBattery:
-         LOG_INFO("MBC1");
-         mbc = std::make_unique<MBC1>(*cart);
-         break;
-      case Type::MBC2:
-      case Type::MBC2PlusBattery:
-         LOG_INFO("MBC2");
-         mbc = std::make_unique<MBC2>(*cart);
-         break;
-      case Type::MBC3PlusTimerPlusBattery:
-      case Type::MBC3PlusTimerPlusRAMPlusBattery:
-      case Type::MBC3:
-      case Type::MBC3PlusRAM:
-      case Type::MBC3PlusRAMPlusBattery:
-         LOG_INFO("MBC3");
-         mbc = std::make_unique<MBC3>(*cart);
-         break;
-      case Type::MBC5:
-      case Type::MBC5PlusRAM:
-      case Type::MBC5PlusRAMPlusBattery:
-      case Type::MBC5PlusRumble:
-      case Type::MBC5PlusRumblePlusRAM:
-      case Type::MBC5PlusRumblePlusRAMPlusBattery:
-         LOG_INFO("MBC5");
-         mbc = std::make_unique<MBC5>(*cart);
-         break;
-      default:
-         error = std::string("Unimplemented cartridge type: ") + getTypeName(header.type);
-         return nullptr;
+   case Type::ROM:
+      LOG_INFO("Null");
+      mbc = std::make_unique<MBCNull>(*cart);
+      break;
+   case Type::MBC1:
+   case Type::MBC1PlusRAM:
+   case Type::MBC1PlusRAMPlusBattery:
+      LOG_INFO("MBC1");
+      mbc = std::make_unique<MBC1>(*cart);
+      break;
+   case Type::MBC2:
+   case Type::MBC2PlusBattery:
+      LOG_INFO("MBC2");
+      mbc = std::make_unique<MBC2>(*cart);
+      break;
+   case Type::MBC3PlusTimerPlusBattery:
+   case Type::MBC3PlusTimerPlusRAMPlusBattery:
+   case Type::MBC3:
+   case Type::MBC3PlusRAM:
+   case Type::MBC3PlusRAMPlusBattery:
+      LOG_INFO("MBC3");
+      mbc = std::make_unique<MBC3>(*cart);
+      break;
+   case Type::MBC5:
+   case Type::MBC5PlusRAM:
+   case Type::MBC5PlusRAMPlusBattery:
+   case Type::MBC5PlusRumble:
+   case Type::MBC5PlusRumblePlusRAM:
+   case Type::MBC5PlusRumblePlusRAMPlusBattery:
+      LOG_INFO("MBC5");
+      mbc = std::make_unique<MBC5>(*cart);
+      break;
+   default:
+      error = std::string("Unimplemented cartridge type: ") + getTypeName(header.type);
+      return nullptr;
    }
 
    cart->setController(std::move(mbc));
@@ -294,7 +292,7 @@ const char* Cartridge::getTypeName(Type type)
    }
 }
 
-Cartridge::Cartridge(std::vector<uint8_t>&& data, const Header& headerData)
+Cartridge::Cartridge(std::vector<uint8_t> data, const Header& headerData)
    : cartData(std::move(data))
    , header(headerData)
    , cartTitle({})

@@ -13,15 +13,13 @@ namespace GBC
 
 namespace
 {
+   int64_t getPlatformTime()
+   {
+      static_assert(sizeof(std::time_t) <= sizeof(int64_t), "std::time_t will not fit in an int64_t");
 
-int64_t getPlatformTime()
-{
-   static_assert(sizeof(std::time_t) <= sizeof(int64_t), "std::time_t will not fit in an int64_t");
-
-   return static_cast<int64_t>(std::time(nullptr));
+      return static_cast<int64_t>(std::time(nullptr));
+   }
 }
-
-} // namespace
 
 // MBCNull
 
@@ -50,11 +48,6 @@ void MBCNull::write(uint16_t address, uint8_t value)
 
 MBC1::MBC1(const Cartridge& cartridge)
    : MemoryBankController(cartridge)
-   , ramEnabled(false)
-   , romBankNumber(0x01)
-   , ramBankNumber(0x00)
-   , bankingMode(BankingMode::ROM)
-   , ramBanks({})
 {
 }
 
@@ -181,7 +174,7 @@ void MBC1::write(uint16_t address, uint8_t value)
       LOG_WARNING("Trying to write to read-only cartridge location " << Log::hex(address) << ": " << Log::hex(value));
       break;
    }
-   };
+   }
 }
 
 Archive MBC1::saveRAM() const
@@ -213,8 +206,6 @@ bool MBC1::loadRAM(Archive& ramData)
 
 MBC2::MBC2(const Cartridge& cartridge)
    : MemoryBankController(cartridge)
-   , ramEnabled(false)
-   , romBankNumber(0x01)
 {
    ram.fill(0xFF);
 }
@@ -326,7 +317,7 @@ void MBC2::write(uint16_t address, uint8_t value)
       LOG_WARNING("Trying to write to read-only cartridge location " << Log::hex(address) << ": " << Log::hex(value));
       break;
    }
-   };
+   }
 }
 
 Archive MBC2::saveRAM() const
@@ -347,15 +338,6 @@ bool MBC2::loadRAM(Archive& ramData)
 
 MBC3::MBC3(const Cartridge& cartridge)
    : MemoryBankController(cartridge)
-   , ramRTCEnabled(false)
-   , rtcLatched(false)
-   , latchData(0xFF)
-   , romBankNumber(0x01)
-   , bankRegisterMode(BankRegisterMode::BankZero)
-   , rtc({})
-   , rtcLatchedCopy({})
-   , tickTime(0.0)
-   , ramBanks({})
 {
    STATIC_ASSERT(sizeof(RTC) == 5, "Invalid RTC size (check bitfields)");
 }
@@ -534,7 +516,7 @@ void MBC3::write(uint16_t address, uint8_t value)
       LOG_WARNING("Trying to write to read-only cartridge location " << Log::hex(address) << ": " << Log::hex(value));
       break;
    }
-   };
+   }
 }
 
 void MBC3::tick(double dt)
@@ -619,10 +601,6 @@ bool MBC3::loadRAM(Archive& ramData)
 
 MBC5::MBC5(const Cartridge& cartridge)
    : MemoryBankController(cartridge)
-   , ramEnabled(false)
-   , romBankNumber(0x0001)
-   , ramBankNumber(0x00)
-   , ramBanks({})
 {
 }
 
@@ -729,7 +707,7 @@ void MBC5::write(uint16_t address, uint8_t value)
       LOG_WARNING("Trying to write to read-only cartridge location " << Log::hex(address) << ": " << Log::hex(value));
       break;
    }
-   };
+   }
 }
 
 Archive MBC5::saveRAM() const

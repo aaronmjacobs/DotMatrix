@@ -25,218 +25,209 @@
 
 namespace
 {
+   #include "Logo.inl"
 
-#include "Logo.inl"
-
-const GBC::Framebuffer& getLogoFramebuffer()
-{
-   static GBC::Framebuffer logoFramebuffer;
-   static bool initialized = false;
-
-   if (!initialized)
+   const GBC::Framebuffer& getLogoFramebuffer()
    {
-      for (std::size_t i = 0; i < kLogo.size(); ++i)
+      static GBC::Framebuffer logoFramebuffer;
+      static bool initialized = false;
+
+      if (!initialized)
       {
-         for (std::size_t j = 0; j < 4; ++j)
+         for (std::size_t i = 0; i < kLogo.size(); ++i)
          {
-            uint8_t index = (kLogo[i] & (0x03 << (j * 2))) >> (j * 2);
-            logoFramebuffer[4 * i + j] = index;
+            for (std::size_t j = 0; j < 4; ++j)
+            {
+               uint8_t index = (kLogo[i] & (0x03 << (j * 2))) >> (j * 2);
+               logoFramebuffer[4 * i + j] = index;
+            }
+         }
+
+         initialized = true;
+      }
+
+      return logoFramebuffer;
+   }
+
+   void framebufferToPixels(const GBC::Framebuffer& framebuffer, PixelArray& pixels)
+   {
+      // Green / blue (trying to approximate original Game Boy screen colors)
+      static const std::array<Pixel, 4> kColors =
+      {
+         Pixel(0xAC, 0xCD, 0x4A),
+         Pixel(0x7B, 0xAC, 0x6A),
+         Pixel(0x20, 0x6A, 0x62),
+         Pixel(0x08, 0x29, 0x52)
+      };
+
+      ASSERT(pixels.size() == framebuffer.size());
+
+      for (std::size_t i = 0; i < pixels.size(); ++i)
+      {
+         ASSERT(framebuffer[i] < kColors.size());
+         pixels[i] = kColors[framebuffer[i]];
+      }
+   }
+
+#if GBC_DEBUG
+   const char* getGlErrorName(GLenum error)
+   {
+      switch (error)
+      {
+      case GL_NO_ERROR:
+         return "GL_NO_ERROR";
+      case GL_INVALID_ENUM:
+         return "GL_INVALID_ENUM";
+      case GL_INVALID_VALUE:
+         return "GL_INVALID_VALUE";
+      case GL_INVALID_OPERATION:
+         return "GL_INVALID_OPERATION";
+      case GL_INVALID_FRAMEBUFFER_OPERATION:
+         return "GL_INVALID_FRAMEBUFFER_OPERATION";
+      case GL_OUT_OF_MEMORY:
+         return "GL_OUT_OF_MEMORY";
+      default:
+         return "Unknown";
+      }
+   }
+
+   void gladPostCallback(const char* name, void* funcptr, int numArgs, ...)
+   {
+      GLenum errorCode = glad_glGetError();
+      ASSERT(errorCode == GL_NO_ERROR, "OpenGL error %d (%s) in %s", errorCode, getGlErrorName(errorCode), name);
+   }
+#endif // GBC_DEBUG
+
+   bool loadGl()
+   {
+      static bool loaded = false;
+
+      if (!loaded)
+      {
+         loaded = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) != 0;
+
+#if GBC_DEBUG
+         if (loaded)
+         {
+            glad_set_post_callback(gladPostCallback);
+         }
+#endif // GBC_DEBUG
+      }
+
+      return loaded;
+   }
+
+   void framebufferSizeCallback(GLFWwindow* window, int width, int height)
+   {
+      if (Emulator* emulator = static_cast<Emulator*>(glfwGetWindowUserPointer(window)))
+      {
+         emulator->onFramebufferSizeChanged(width, height);
+      }
+   }
+
+   void dropCallback(GLFWwindow* window, int count, const char* paths[])
+   {
+      if (Emulator* emulator = static_cast<Emulator*>(glfwGetWindowUserPointer(window)))
+      {
+         emulator->onFilesDropped(count, paths);
+      }
+   }
+
+   void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+   {
+      if (Emulator* emulator = static_cast<Emulator*>(glfwGetWindowUserPointer(window)))
+      {
+         emulator->onKeyChanged(key, scancode, action, mods);
+      }
+   }
+
+   void windowRefreshCallback(GLFWwindow* window)
+   {
+      if (Emulator* emulator = static_cast<Emulator*>(glfwGetWindowUserPointer(window)))
+      {
+         emulator->onWindowRefreshRequested();
+      }
+   }
+
+   GLFWmonitor* selectFullScreenMonitor(const Bounds& windowBounds)
+   {
+      GLFWmonitor* fullScreenMonitor = glfwGetPrimaryMonitor();
+
+      int windowCenterX = windowBounds.x + (windowBounds.width / 2);
+      int windowCenterY = windowBounds.y + (windowBounds.height / 2);
+
+      int monitorCount = 0;
+      GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
+
+      for (int i = 0; i < monitorCount; ++i)
+      {
+         GLFWmonitor* candidateMonitor = monitors[i];
+
+         if (const GLFWvidmode* vidMode = glfwGetVideoMode(candidateMonitor))
+         {
+            Bounds monitorBounds;
+            glfwGetMonitorPos(candidateMonitor, &monitorBounds.x, &monitorBounds.y);
+            monitorBounds.width = vidMode->width;
+            monitorBounds.height = vidMode->height;
+
+            if (windowCenterX >= monitorBounds.x && windowCenterX < monitorBounds.x + monitorBounds.width &&
+                windowCenterY >= monitorBounds.y && windowCenterY < monitorBounds.y + monitorBounds.height)
+            {
+               fullScreenMonitor = candidateMonitor;
+               break;
+            }
          }
       }
 
-      initialized = true;
+      return fullScreenMonitor;
    }
 
-   return logoFramebuffer;
-}
-
-void framebufferToPixels(const GBC::Framebuffer& framebuffer, PixelArray& pixels)
-{
-   // Green / blue (trying to approximate original Game Boy screen colors)
-   static const std::array<Pixel, 4> kColors =
+   std::string getWindowTitle(const GBC::GameBoy* gameBoy)
    {
-      Pixel(0xAC, 0xCD, 0x4A),
-      Pixel(0x7B, 0xAC, 0x6A),
-      Pixel(0x20, 0x6A, 0x62),
-      Pixel(0x08, 0x29, 0x52)
-   };
+      static const std::string kBaseTitle = kProjectDisplayName;
 
-   ASSERT(pixels.size() == framebuffer.size());
-
-   for (std::size_t i = 0; i < pixels.size(); ++i)
-   {
-      ASSERT(framebuffer[i] < kColors.size());
-      pixels[i] = kColors[framebuffer[i]];
-   }
-}
-
-#if GBC_DEBUG
-const char* getGlErrorName(GLenum error)
-{
-   switch (error)
-   {
-   case GL_NO_ERROR:
-      return "GL_NO_ERROR";
-   case GL_INVALID_ENUM:
-      return "GL_INVALID_ENUM";
-   case GL_INVALID_VALUE:
-      return "GL_INVALID_VALUE";
-   case GL_INVALID_OPERATION:
-      return "GL_INVALID_OPERATION";
-   case GL_INVALID_FRAMEBUFFER_OPERATION:
-      return "GL_INVALID_FRAMEBUFFER_OPERATION";
-   case GL_OUT_OF_MEMORY:
-      return "GL_OUT_OF_MEMORY";
-   default:
-      return "Unknown";
-   }
-}
-
-void gladPostCallback(const char* name, void* funcptr, int numArgs, ...)
-{
-   GLenum errorCode = glad_glGetError();
-   ASSERT(errorCode == GL_NO_ERROR, "OpenGL error %d (%s) in %s", errorCode, getGlErrorName(errorCode), name);
-}
-#endif // GBC_DEBUG
-
-bool loadGl()
-{
-   static bool loaded = false;
-
-   if (!loaded)
-   {
-      loaded = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) != 0;
-
-#if GBC_DEBUG
-      if (loaded)
+      const char* gameTitle = gameBoy ? gameBoy->title() : nullptr;
+      if (gameTitle)
       {
-         glad_set_post_callback(gladPostCallback);
+         return kBaseTitle + " - " + gameTitle;
       }
-#endif // GBC_DEBUG
+
+      return kBaseTitle;
    }
 
-   return loaded;
-}
-
-void framebufferSizeCallback(GLFWwindow* window, int width, int height)
-{
-   if (Emulator* emulator = static_cast<Emulator*>(glfwGetWindowUserPointer(window)))
+   std::string getSaveName(const char* title)
    {
-      emulator->onFramebufferSizeChanged(width, height);
-   }
-}
-
-void dropCallback(GLFWwindow* window, int count, const char* paths[])
-{
-   if (Emulator* emulator = static_cast<Emulator*>(glfwGetWindowUserPointer(window)))
-   {
-      emulator->onFilesDropped(count, paths);
-   }
-}
-
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-   if (Emulator* emulator = static_cast<Emulator*>(glfwGetWindowUserPointer(window)))
-   {
-      emulator->onKeyChanged(key, scancode, action, mods);
-   }
-}
-
-void windowRefreshCallback(GLFWwindow* window)
-{
-   if (Emulator* emulator = static_cast<Emulator*>(glfwGetWindowUserPointer(window)))
-   {
-      emulator->onWindowRefreshRequested();
-   }
-}
-
-GLFWmonitor* selectFullScreenMonitor(const Bounds& windowBounds)
-{
-   GLFWmonitor* fullScreenMonitor = glfwGetPrimaryMonitor();
-
-   int windowCenterX = windowBounds.x + (windowBounds.width / 2);
-   int windowCenterY = windowBounds.y + (windowBounds.height / 2);
-
-   int monitorCount = 0;
-   GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-
-   for (int i = 0; i < monitorCount; ++i)
-   {
-      GLFWmonitor* candidateMonitor = monitors[i];
-
-      if (const GLFWvidmode* vidMode = glfwGetVideoMode(candidateMonitor))
+      if (title)
       {
-         Bounds monitorBounds;
-         glfwGetMonitorPos(candidateMonitor, &monitorBounds.x, &monitorBounds.y);
-         monitorBounds.width = vidMode->width;
-         monitorBounds.height = vidMode->height;
+         // Start with the cartridge title
+         std::string fileName = title;
 
-         if (windowCenterX >= monitorBounds.x && windowCenterX < monitorBounds.x + monitorBounds.width &&
-             windowCenterY >= monitorBounds.y && windowCenterY < monitorBounds.y + monitorBounds.height)
+         // Remove all non-letters
+         fileName.erase(std::remove_if(fileName.begin(), fileName.end(), [](char c) { return !isalpha(c); }), fileName.end());
+
+         // Lower case
+         std::transform(fileName.begin(), fileName.end(), fileName.begin(), ::tolower);
+
+         if (!fileName.empty())
          {
-            fullScreenMonitor = candidateMonitor;
-            break;
+            // Extension
+            fileName += ".sav";
+
+            // Relative to the app data directory
+            std::string saveName;
+            if (IOUtils::appDataPath(kProjectName, fileName, saveName))
+            {
+               return saveName;
+            }
          }
       }
-   }
 
-   return fullScreenMonitor;
-}
-
-std::string getWindowTitle(const GBC::GameBoy* gameBoy)
-{
-   static const std::string kBaseTitle = kProjectDisplayName;
-
-   const char* gameTitle = gameBoy ? gameBoy->title() : nullptr;
-   if (gameTitle)
-   {
-      return kBaseTitle + " - " + gameTitle;
-   }
-
-   return kBaseTitle;
-}
-
-std::string getSaveName(const char* title)
-{
-   if (!title)
-   {
       return "";
    }
-
-   // Start with the cartridge title
-   std::string fileName = title;
-
-   // Remove all non-letters
-   fileName.erase(std::remove_if(fileName.begin(), fileName.end(), [](char c) { return !isalpha(c); }), fileName.end());
-
-   // Lower case
-   std::transform(fileName.begin(), fileName.end(), fileName.begin(), ::tolower);
-
-   // Extension
-   fileName += ".sav";
-
-   // Relative to the app data directory
-   std::string saveName;
-   if (!IOUtils::appDataPath(kProjectName, fileName, saveName))
-   {
-      return "";
-   }
-
-   return saveName;
 }
-
-} // namespace
 
 Emulator::Emulator()
-   : window(nullptr)
-   , pixels(std::make_unique<PixelArray>())
-#if GBC_WITH_UI
-   , timeScale(1.0)
-   , renderUi(true)
-   , skipNextTick(false)
-#endif // GBC_WITH_UI
-   , cartWroteToRamLastFrame(false)
-   , exiting(false)
+   : pixels(std::make_unique<PixelArray>(PixelArray{}))
 {
 }
 
@@ -585,7 +576,7 @@ void Emulator::saveGameAsync()
       saveData.archive = gameBoy->saveCartRAM();
       saveData.gameTitle = title;
 
-      if (saveData.archive.getData().size() > 0)
+      if (!saveData.archive.getData().empty())
       {
          {
             std::lock_guard<std::mutex> lock(saveThreadMutex);

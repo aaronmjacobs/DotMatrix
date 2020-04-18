@@ -36,6 +36,6 @@ public:
 private:
    UPtr<ALCdevice, std::function<void(ALCdevice*)>> device;
    UPtr<ALCcontext, std::function<void(ALCcontext*)>> context;
-   ALuint source;
-   std::array<ALuint, 3> buffers;
+   ALuint source = 0;
+   std::array<ALuint, 3> buffers = {};
 };

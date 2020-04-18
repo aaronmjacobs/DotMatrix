@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Enum.h"
 #include "Core/Pointers.h"
 
 #include <array>
@@ -14,10 +15,7 @@ class GameBoy;
 constexpr size_t kScreenWidth = 160;
 constexpr size_t kScreenHeight = 144;
 
-namespace Mode
-{
-
-enum Enum : uint8_t
+enum class Mode : uint8_t
 {
    HBlank = 0,
    VBlank = 1,
@@ -25,19 +23,16 @@ enum Enum : uint8_t
    DataTransfer = 3
 };
 
-} // namespace Mode
-
 using Framebuffer = std::array<uint8_t, kScreenWidth * kScreenHeight>;
 
 class DoubleBufferedFramebuffer
 {
 public:
    DoubleBufferedFramebuffer()
-      : writeIndex(0)
    {
-      for (size_t i = 0; i < buffers.size(); ++i)
+      for (std::size_t i = 0; i < buffers.size(); ++i)
       {
-         buffers[i] = UPtr<Framebuffer>(new Framebuffer{});
+         buffers[i] = std::make_unique<Framebuffer>(Framebuffer{});
       }
    }
 
@@ -58,7 +53,7 @@ public:
 
 private:
    std::array<UPtr<Framebuffer>, 2> buffers;
-   size_t writeIndex;
+   std::size_t writeIndex = 0;
 };
 
 class LCDController
@@ -80,16 +75,16 @@ public:
 private:
    struct SpriteAttributes
    {
-      uint8_t yPos;
-      uint8_t xPos;
-      uint8_t tileNum;
-      uint8_t flags;
+      uint8_t yPos = 0;
+      uint8_t xPos = 0;
+      uint8_t tileNum = 0;
+      uint8_t flags = 0;
    };
 
    void updateDMA();
    void updateMode();
    void updateLYC();
-   void setMode(Mode::Enum newMode);
+   void setMode(Mode newMode);
 
    void scan(Framebuffer& framebuffer, uint8_t line, const std::array<uint8_t, 4>& paletteColors);
    template<bool isWindow>
@@ -104,36 +99,36 @@ private:
 
    GameBoy& gameBoy;
 
-   uint32_t modeCyclesRemaining;
+   uint32_t modeCyclesRemaining = 0;
 
-   bool dmaRequested;
-   bool dmaPending;
-   bool dmaInProgress;
-   uint8_t dmaIndex;
-   uint16_t dmaSource;
+   bool dmaRequested = false;
+   bool dmaPending = false;
+   bool dmaInProgress = false;
+   uint8_t dmaIndex = 0;
+   uint16_t dmaSource = 0;
 
-   uint8_t lcdc;
-   uint8_t stat;
-   uint8_t scy;
-   uint8_t scx;
-   uint8_t ly;
-   uint8_t lyc;
-   uint8_t dma;
-   uint8_t bgp;
-   uint8_t obp0;
-   uint8_t obp1;
-   uint8_t wy;
-   uint8_t wx;
+   uint8_t lcdc = 0;
+   uint8_t stat = Enum::cast(Mode::VBlank);
+   uint8_t scy = 0;
+   uint8_t scx = 0;
+   uint8_t ly = 144;
+   uint8_t lyc = 0;
+   uint8_t dma = 0;
+   uint8_t bgp = 0;
+   uint8_t obp0 = 0;
+   uint8_t obp1 = 0;
+   uint8_t wy = 0;
+   uint8_t wx = 0;
 
-   std::array<uint8_t, 0x2000> vram;
+   std::array<uint8_t, 0x2000> vram = {};
    union
    {
       std::array<SpriteAttributes, 0x0040> spriteAttributes;
-      std::array<uint8_t, 0x0100> oam;
+      std::array<uint8_t, 0x0100> oam = {};
    };
 
    DoubleBufferedFramebuffer framebuffers;
-   std::array<uint8_t, kScreenWidth * kScreenHeight> bgPaletteIndices;
+   std::array<uint8_t, kScreenWidth * kScreenHeight> bgPaletteIndices = {};
 };
 
 } // namespace GBC

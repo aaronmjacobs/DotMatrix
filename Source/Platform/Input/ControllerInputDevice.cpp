@@ -4,20 +4,18 @@
 
 namespace
 {
-
-int findFirstPresentGamepad()
-{
-   for (int i = GLFW_JOYSTICK_1; i < GLFW_JOYSTICK_LAST; ++i)
+   int findFirstPresentGamepad()
    {
-      if (glfwJoystickIsGamepad(i) == GLFW_TRUE)
+      for (int i = GLFW_JOYSTICK_1; i < GLFW_JOYSTICK_LAST; ++i)
       {
-         return i;
+         if (glfwJoystickIsGamepad(i) == GLFW_TRUE)
+         {
+            return i;
+         }
       }
+
+      return -1;
    }
-
-   return -1;
-}
-
 } // namespace
 
 ControllerInputDevice::ControllerInputDevice()

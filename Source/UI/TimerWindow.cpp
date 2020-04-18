@@ -6,14 +6,12 @@
 
 namespace
 {
-
-uint32_t getClockSpeed(uint8_t tac)
-{
-   uint16_t mask = GBC::TAC::kCounterMasks[tac & GBC::TAC::InputClockSelect];
-   return (GBC::CPU::kClockSpeed / mask) / 2;
+   uint32_t getClockSpeed(uint8_t tac)
+   {
+      uint16_t mask = GBC::TAC::kCounterMasks[tac & GBC::TAC::InputClockSelect];
+      return (GBC::CPU::kClockSpeed / mask) / 2;
+   }
 }
-
-} // namespace
 
 void UI::renderTimerWindow(GBC::GameBoy& gameBoy) const
 {

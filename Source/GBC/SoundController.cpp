@@ -108,7 +108,6 @@ void LFSRUnit::clock()
 
 SquareWaveChannel::SquareWaveChannel()
    : timer(*this)
-   , frequency(0)
    , lengthUnit(*this, 64)
    , sweepUnit(*this)
 {
@@ -219,7 +218,6 @@ void SquareWaveChannel::write(uint16_t address, uint8_t value)
 
 WaveChannel::WaveChannel()
    : timer(*this)
-   , frequency(0)
    , lengthUnit(*this, 256)
 {
 }
@@ -444,22 +442,6 @@ void FrameSequencer::clock()
    step = (step + 1) % 8;
 }
 
-Mixer::Mixer()
-   : leftVolume(0x01)
-   , rightVolume(0x01)
-   , vinLeftEnabled(false)
-   , vinRightEnabled(false)
-   , square1LeftEnabled(false)
-   , square1RightEnabled(false)
-   , square2LeftEnabled(false)
-   , square2RightEnabled(false)
-   , waveLeftEnabled(false)
-   , waveRightEnabled(false)
-   , noiseLeftEnabled(false)
-   , noiseRightEnabled(false)
-{
-}
-
 AudioSample Mixer::mix(int8_t square1Sample, int8_t square2Sample, int8_t waveSample, int8_t noiseSample) const
 {
    // All samples should be in the range [-16, 16)
@@ -546,10 +528,6 @@ void Mixer::writeNr51(uint8_t value)
 
 SoundController::SoundController()
    : frameSequencer(*this)
-   , powerEnabled(false)
-   , generateData(false)
-   , cyclesSinceLastSample(0)
-   , activeBufferIndex(0)
 {
    // Try to guess a reasonable amount of data to reserve
    // For now, 1/30th of a second's worth

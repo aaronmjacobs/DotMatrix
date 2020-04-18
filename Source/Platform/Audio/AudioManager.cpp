@@ -10,12 +10,11 @@
 
 namespace
 {
-
 #if GBC_DEBUG
-const char* alErrorString(ALenum error)
-{
-   switch (error)
+   const char* alErrorString(ALenum error)
    {
+      switch (error)
+      {
       case AL_NO_ERROR:
          return "No error";
       case AL_INVALID_NAME:
@@ -30,13 +29,13 @@ const char* alErrorString(ALenum error)
          return "Unable to allocate memory";
       default:
          return "Invalid error";
+      }
    }
-}
 
-const char* alcErrorString(ALCenum error)
-{
-   switch (error)
+   const char* alcErrorString(ALCenum error)
    {
+      switch (error)
+      {
       case ALC_NO_ERROR:
          return "No error";
       case ALC_INVALID_DEVICE:
@@ -51,52 +50,49 @@ const char* alcErrorString(ALCenum error)
          return "Out of memory";
       default:
          return "Invalid error";
+      }
    }
-}
 #endif // GBC_DEBUG
 
-void checkAlError(const char* location)
-{
-#if GBC_DEBUG
-   ALenum error = alGetError();
-   ASSERT(error == AL_NO_ERROR, "OpenAL error while %s: %s", location, alErrorString(error));
-#endif // GBC_DEBUG
-}
-
-void checkAlcError(ALCdevice* device, const char* location)
-{
-#if GBC_DEBUG
-   ALCenum error = alcGetError(device);
-   ASSERT(error == ALC_NO_ERROR, "OpenAL context error while %s: %s", location, alcErrorString(error));
-#endif // GBC_DEBUG
-}
-
-void deleteDevice(ALCdevice* device)
-{
-   if (device)
+   void checkAlError(const char* location)
    {
-      alcCloseDevice(device);
-      checkAlcError(device, "closing device");
+#if GBC_DEBUG
+      ALenum error = alGetError();
+      ASSERT(error == AL_NO_ERROR, "OpenAL error while %s: %s", location, alErrorString(error));
+#endif // GBC_DEBUG
    }
-}
 
-void deleteContext(ALCcontext* context)
-{
-   if (context)
+   void checkAlcError(ALCdevice* device, const char* location)
    {
-      ALCdevice* device = alcGetContextsDevice(context);
+#if GBC_DEBUG
+      ALCenum error = alcGetError(device);
+      ASSERT(error == ALC_NO_ERROR, "OpenAL context error while %s: %s", location, alcErrorString(error));
+#endif // GBC_DEBUG
+   }
 
-      alcDestroyContext(context);
-      checkAlcError(device, "destroying context");
+   void deleteDevice(ALCdevice* device)
+   {
+      if (device)
+      {
+         alcCloseDevice(device);
+         checkAlcError(device, "closing device");
+      }
+   }
+
+   void deleteContext(ALCcontext* context)
+   {
+      if (context)
+      {
+         ALCdevice* device = alcGetContextsDevice(context);
+
+         alcDestroyContext(context);
+         checkAlcError(device, "destroying context");
+      }
    }
 }
-
-} // namespace
 
 AudioManager::AudioManager()
    : device(alcOpenDevice(nullptr), deleteDevice)
-   , source(0)
-   , buffers{}
 {
    checkAlcError(device.get(), "opening device");
 

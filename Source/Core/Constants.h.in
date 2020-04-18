@@ -1,14 +1,9 @@
 #pragma once
 
-namespace
-{
+constexpr inline const char* kProjectName = "@PROJECT_NAME@";
+constexpr inline const char* kProjectDisplayName = "@PROJECT_DISPLAY_NAME@";
 
-constexpr const char* kProjectName = "@PROJECT_NAME@";
-constexpr const char* kProjectDisplayName = "@PROJECT_DISPLAY_NAME@";
-
-constexpr int kVersionMajor = @PROJECT_VERSION_MAJOR@;
-constexpr int kVersionMinor = @PROJECT_VERSION_MINOR@;
-constexpr int kVersionMicro = @PROJECT_VERSION_PATCH@;
-constexpr int kVersionBuild = @PROJECT_VERSION_TWEAK@;
-
-} // namespace
+constexpr inline int kVersionMajor = @PROJECT_VERSION_MAJOR@;
+constexpr inline int kVersionMinor = @PROJECT_VERSION_MINOR@;
+constexpr inline int kVersionMicro = @PROJECT_VERSION_PATCH@;
+constexpr inline int kVersionBuild = @PROJECT_VERSION_TWEAK@;

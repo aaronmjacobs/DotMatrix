@@ -9,67 +9,66 @@ namespace GBC
 
 namespace
 {
-
-bool is16BitOperand(Opr operand)
-{
-   return operand == Opr::Imm8Signed || operand == Opr::AF || operand == Opr::BC || operand == Opr::DE
-       || operand == Opr::HL || operand == Opr::SP || operand == Opr::PC || operand == Opr::Imm16
-       || operand == Opr::FlagC || operand == Opr::FlagNC || operand == Opr::FlagZ || operand == Opr::FlagNZ
-       || operand == Opr::Rst00H || operand == Opr::Rst08H || operand == Opr::Rst10H || operand == Opr::Rst18H
-       || operand == Opr::Rst20H || operand == Opr::Rst28H || operand == Opr::Rst30H || operand == Opr::Rst38H;
-}
-
-bool is16BitOperation(Operation operation)
-{
-   return operation.ins == Ins::RET // Opcode 0xC9 is a RET with no operands
-      || operation.ins == Ins::RETI // RETI (0xD9) also has no operands
-      || is16BitOperand(operation.param1) || is16BitOperand(operation.param2);
-}
-
-bool usesImm8(Operation operation)
-{
-   return operation.param1 == Opr::Imm8 || operation.param2 == Opr::Imm8
-      || operation.param1 == Opr::DerefImm8 || operation.param2 == Opr::DerefImm8
-      || operation.param1 == Opr::Imm8Signed || operation.param2 == Opr::Imm8Signed;
-}
-
-bool usesImm16(Operation operation)
-{
-   return operation.param1 == Opr::Imm16 || operation.param2 == Opr::Imm16
-      || operation.param1 == Opr::DerefImm16 || operation.param2 == Opr::DerefImm16;
-}
-
-// Interpret a uint8_t as an int8_t
-// static_cast<int8_t> behavior is platform dependent, memcpy is not
-int8_t toSigned(uint8_t value)
-{
-   int8_t signedVal;
-   std::memcpy(&signedVal, &value, sizeof(signedVal));
-   return signedVal;
-}
-
-constexpr bool checkBitOperand(Opr operand, uint8_t value)
-{
-   return Enum::cast(operand) - value == Enum::cast(Opr::Bit0);
-}
-
-// Determine the BIT value from the operand
-uint8_t bitOprMask(Opr operand)
-{
-   STATIC_ASSERT(checkBitOperand(Opr::Bit1, 1) && checkBitOperand(Opr::Bit2, 2) && checkBitOperand(Opr::Bit3, 3)
-              && checkBitOperand(Opr::Bit4, 4) && checkBitOperand(Opr::Bit5, 5) && checkBitOperand(Opr::Bit6, 6)
-              && checkBitOperand(Opr::Bit7, 7), "Number operands are in an incorrect order");
-   ASSERT(operand >= Opr::Bit0 && operand <= Opr::Bit7, "Bad bitOprMask() operand: %hhu", operand);
-
-   uint8_t value = Enum::cast(operand) - Enum::cast(Opr::Bit0);
-   return 1 << value;
-}
-
-// Calculate the restart offset from the operand
-uint8_t rstOffset(Opr operand)
-{
-   switch (operand)
+   bool is16BitOperand(Opr operand)
    {
+      return operand == Opr::AF || operand == Opr::BC || operand == Opr::DE || operand == Opr::HL
+          || operand == Opr::SP || operand == Opr::PC || operand == Opr::Imm16 || operand == Opr::Imm8Signed
+          || operand == Opr::FlagC || operand == Opr::FlagNC || operand == Opr::FlagZ || operand == Opr::FlagNZ
+          || operand == Opr::Rst00H || operand == Opr::Rst08H || operand == Opr::Rst10H || operand == Opr::Rst18H
+          || operand == Opr::Rst20H || operand == Opr::Rst28H || operand == Opr::Rst30H || operand == Opr::Rst38H;
+   }
+
+   bool is16BitOperation(Operation operation)
+   {
+      return operation.ins == Ins::RET // Opcode 0xC9 is a RET with no operands
+         || operation.ins == Ins::RETI // RETI (0xD9) also has no operands
+         || is16BitOperand(operation.param1) || is16BitOperand(operation.param2);
+   }
+
+   bool usesImm8(Operation operation)
+   {
+      return operation.param1 == Opr::Imm8 || operation.param2 == Opr::Imm8
+         || operation.param1 == Opr::DerefImm8 || operation.param2 == Opr::DerefImm8
+         || operation.param1 == Opr::Imm8Signed || operation.param2 == Opr::Imm8Signed;
+   }
+
+   bool usesImm16(Operation operation)
+   {
+      return operation.param1 == Opr::Imm16 || operation.param2 == Opr::Imm16
+         || operation.param1 == Opr::DerefImm16 || operation.param2 == Opr::DerefImm16;
+   }
+
+   // Interpret a uint8_t as an int8_t
+   // static_cast<int8_t> behavior is platform dependent, memcpy is not
+   int8_t toSigned(uint8_t value)
+   {
+      int8_t signedVal;
+      std::memcpy(&signedVal, &value, sizeof(signedVal));
+      return signedVal;
+   }
+
+   constexpr bool checkBitOperand(Opr operand, uint8_t value)
+   {
+      return Enum::cast(operand) - value == Enum::cast(Opr::Bit0);
+   }
+
+   // Determine the BIT value from the operand
+   uint8_t bitOprMask(Opr operand)
+   {
+      STATIC_ASSERT(checkBitOperand(Opr::Bit1, 1) && checkBitOperand(Opr::Bit2, 2) && checkBitOperand(Opr::Bit3, 3)
+                 && checkBitOperand(Opr::Bit4, 4) && checkBitOperand(Opr::Bit5, 5) && checkBitOperand(Opr::Bit6, 6)
+                 && checkBitOperand(Opr::Bit7, 7), "Number operands are in an incorrect order");
+      ASSERT(operand >= Opr::Bit0 && operand <= Opr::Bit7, "Bad bitOprMask() operand: %hhu", operand);
+
+      uint8_t value = Enum::cast(operand) - Enum::cast(Opr::Bit0);
+      return 1 << value;
+   }
+
+   // Calculate the restart offset from the operand
+   uint8_t rstOffset(Opr operand)
+   {
+      switch (operand)
+      {
       case Opr::Rst00H:
          return 0x00;
       case Opr::Rst08H:
@@ -89,14 +88,14 @@ uint8_t rstOffset(Opr operand)
       default:
          ASSERT(false);
          return 0x00;
+      }
    }
-}
 
-// Evaluate whether a jump / call / return should be executed
-bool evalJumpCondition(Opr operand, bool zero, bool carry)
-{
-   switch (operand)
+   // Evaluate whether a jump / call / return should be executed
+   bool evalJumpCondition(Opr operand, bool zero, bool carry)
    {
+      switch (operand)
+      {
       case Opr::FlagC:
          return carry;
       case Opr::FlagNC:
@@ -108,10 +107,9 @@ bool evalJumpCondition(Opr operand, bool zero, bool carry)
       default:
          ASSERT(false);
          return false;
+      }
    }
 }
-
-} // namespace
 
 class CPU::Operand
 {
@@ -146,64 +144,55 @@ uint8_t CPU::Operand::read8() const
 
    switch (opr)
    {
-      case Opr::None:
-      case Opr::Bit0:
-      case Opr::Bit1:
-      case Opr::Bit2:
-      case Opr::Bit3:
-      case Opr::Bit4:
-      case Opr::Bit5:
-      case Opr::Bit6:
-      case Opr::Bit7:
-         return value;
-      case Opr::A:
-         value = reg.a;
-         break;
-      case Opr::F:
-         value = reg.f;
-         break;
-      case Opr::B:
-         value = reg.b;
-         break;
-      case Opr::C:
-         value = reg.c;
-         break;
-      case Opr::D:
-         value = reg.d;
-         break;
-      case Opr::E:
-         value = reg.e;
-         break;
-      case Opr::H:
-         value = reg.h;
-         break;
-      case Opr::L:
-         value = reg.l;
-         break;
-      case Opr::Imm8:
-      case Opr::Imm8Signed:
-         value = imm8;
-         break;
-      case Opr::DerefC:
-         value = gb.read(0xFF00 + reg.c);
-         break;
-      case Opr::DerefBC:
-         value = gb.read(reg.bc);
-         break;
-      case Opr::DerefDE:
-         value = gb.read(reg.de);
-         break;
-      case Opr::DerefHL:
-         value = gb.read(reg.hl);
-         break;
-      case Opr::DerefImm8:
-         value = gb.read(0xFF00 + imm8);
-         break;
-      case Opr::DerefImm16:
-         value = gb.read(imm16);
-         break;
-      default:
-         ASSERT(false, "Invalid 8-bit operand: %hhu", opr);
+   case Opr::A:
+      value = reg.a;
+      break;
+   case Opr::F:
+      value = reg.f;
+      break;
+   case Opr::B:
+      value = reg.b;
+      break;
+   case Opr::C:
+      value = reg.c;
+      break;
+   case Opr::D:
+      value = reg.d;
+      break;
+   case Opr::E:
+      value = reg.e;
+      break;
+   case Opr::H:
+      value = reg.h;
+      break;
+   case Opr::L:
+      value = reg.l;
+      break;
+   case Opr::Imm8:
+   case Opr::Imm8Signed:
+      value = imm8;
+      break;
+   case Opr::DerefC:
+      value = gb.read(0xFF00 + reg.c);
+      break;
+   case Opr::DerefBC:
+      value = gb.read(reg.bc);
+      break;
+   case Opr::DerefDE:
+      value = gb.read(reg.de);
+      break;
+   case Opr::DerefHL:
+      value = gb.read(reg.hl);
+      break;
+   case Opr::DerefImm8:
+      value = gb.read(0xFF00 + imm8);
+      break;
+   case Opr::DerefImm16:
+      value = gb.read(imm16);
+      break;
+   default:
+      ASSERT(false, "Invalid 8-bit read operand: %hhu", opr);
+      break;
    }
 
    return value;
@@ -211,49 +200,36 @@ uint8_t CPU::Operand::read8() const
 
 uint16_t CPU::Operand::read16() const
 {
-   uint16_t value = 0xFFFF;
+   static const uint16_t kInvalidAddressBytes = (GameBoy::kInvalidAddressByte << 8) | GameBoy::kInvalidAddressByte;
+
+   uint16_t value = kInvalidAddressBytes;
 
    switch (opr)
    {
-      case Opr::None:
-      case Opr::Imm8Signed: // 8 bit signed value used with 16 bit values - needs to be handled as a special case
-      case Opr::FlagC:
-      case Opr::FlagNC:
-      case Opr::FlagZ:
-      case Opr::FlagNZ:
-      case Opr::Rst00H:
-      case Opr::Rst08H:
-      case Opr::Rst10H:
-      case Opr::Rst18H:
-      case Opr::Rst20H:
-      case Opr::Rst28H:
-      case Opr::Rst30H:
-      case Opr::Rst38H:
-      case Opr::DerefImm16: // Handled as a special case in execute16()
-         return value;
-      case Opr::AF:
-         value = reg.af;
-         break;
-      case Opr::BC:
-         value = reg.bc;
-         break;
-      case Opr::DE:
-         value = reg.de;
-         break;
-      case Opr::HL:
-         value = reg.hl;
-         break;
-      case Opr::SP:
-         value = reg.sp;
-         break;
-      case Opr::PC:
-         value = reg.pc;
-         break;
-      case Opr::Imm16:
-         value = imm16;
-         break;
-      default:
-         ASSERT(false, "Invalid 16-bit operand: %hhu", opr);
+   case Opr::AF:
+      value = reg.af;
+      break;
+   case Opr::BC:
+      value = reg.bc;
+      break;
+   case Opr::DE:
+      value = reg.de;
+      break;
+   case Opr::HL:
+      value = reg.hl;
+      break;
+   case Opr::SP:
+      value = reg.sp;
+      break;
+   case Opr::PC:
+      value = reg.pc;
+      break;
+   case Opr::Imm16:
+      value = imm16;
+      break;
+   default:
+      ASSERT(false, "Invalid 16-bit read operand: %hhu", opr);
+      break;
    }
 
    return value;
@@ -263,50 +239,51 @@ void CPU::Operand::write8(uint8_t value)
 {
    switch (opr)
    {
-      case Opr::A:
-         reg.a = value;
-         break;
-      case Opr::F:
-         reg.f = value & 0xF0; // Don't allow any bits in the lower nibble
-         break;
-      case Opr::B:
-         reg.b = value;
-         break;
-      case Opr::C:
-         reg.c = value;
-         break;
-      case Opr::D:
-         reg.d = value;
-         break;
-      case Opr::E:
-         reg.e = value;
-         break;
-      case Opr::H:
-         reg.h = value;
-         break;
-      case Opr::L:
-         reg.l = value;
-         break;
-      case Opr::DerefC:
-         gb.write(0xFF00 + reg.c, value);
-         break;
-      case Opr::DerefBC:
-         gb.write(reg.bc, value);
-         break;
-      case Opr::DerefDE:
-         gb.write(reg.de, value);
-         break;
-      case Opr::DerefHL:
-         gb.write(reg.hl, value);
-         break;
-      case Opr::DerefImm8:
-         gb.write(0xFF00 + imm8, value);
-         break;
-      case Opr::DerefImm16:
-         gb.write(imm16, value);
-         break;
-      default:
-         ASSERT(false, "Invalid / unwritable 8-bit operand: %hhu", opr);
+   case Opr::A:
+      reg.a = value;
+      break;
+   case Opr::F:
+      reg.f = value & 0xF0; // Don't allow any bits in the lower nibble
+      break;
+   case Opr::B:
+      reg.b = value;
+      break;
+   case Opr::C:
+      reg.c = value;
+      break;
+   case Opr::D:
+      reg.d = value;
+      break;
+   case Opr::E:
+      reg.e = value;
+      break;
+   case Opr::H:
+      reg.h = value;
+      break;
+   case Opr::L:
+      reg.l = value;
+      break;
+   case Opr::DerefC:
+      gb.write(0xFF00 + reg.c, value);
+      break;
+   case Opr::DerefBC:
+      gb.write(reg.bc, value);
+      break;
+   case Opr::DerefDE:
+      gb.write(reg.de, value);
+      break;
+   case Opr::DerefHL:
+      gb.write(reg.hl, value);
+      break;
+   case Opr::DerefImm8:
+      gb.write(0xFF00 + imm8, value);
+      break;
+   case Opr::DerefImm16:
+      gb.write(imm16, value);
+      break;
+   default:
+      ASSERT(false, "Invalid 8-bit write operand: %hhu", opr);
+      break;
    }
 }
 
@@ -314,30 +291,31 @@ void CPU::Operand::write16(uint16_t value)
 {
    switch (opr)
    {
-      case Opr::AF:
-         reg.af = value & 0xFFF0; // Don't allow any bits in the lower nibble
-         break;
-      case Opr::BC:
-         reg.bc = value;
-         break;
-      case Opr::DE:
-         reg.de = value;
-         break;
-      case Opr::HL:
-         reg.hl = value;
-         break;
-      case Opr::SP:
-         reg.sp = value;
-         break;
-      case Opr::PC:
-         reg.pc = value;
-         break;
-      case Opr::DerefImm16:
-         gb.write(imm16, value & 0x00FF);
-         gb.write(imm16 + 1, (value >> 8) & 0x00FF);
-         break;
-      default:
-         ASSERT(false, "Invalid / unwritable 16-bit operand: %hhu", opr);
+   case Opr::AF:
+      reg.af = value & 0xFFF0; // Don't allow any bits in the lower nibble
+      break;
+   case Opr::BC:
+      reg.bc = value;
+      break;
+   case Opr::DE:
+      reg.de = value;
+      break;
+   case Opr::HL:
+      reg.hl = value;
+      break;
+   case Opr::SP:
+      reg.sp = value;
+      break;
+   case Opr::PC:
+      reg.pc = value;
+      break;
+   case Opr::DerefImm16:
+      gb.write(imm16, value & 0x00FF);
+      gb.write(imm16 + 1, (value >> 8) & 0x00FF);
+      break;
+   default:
+      ASSERT(false, "Invalid 16-bit write operand: %hhu", opr);
+      break;
    }
 }
 
@@ -383,7 +361,14 @@ void CPU::step()
       interruptEnableRequested = false;
    }
 
-   execute(operation);
+   if (is16BitOperation(operation))
+   {
+      execute16(operation);
+   }
+   else
+   {
+      execute8(operation);
+   }
 }
 
 uint8_t CPU::readPC()
@@ -415,30 +400,28 @@ uint16_t CPU::pop()
 
 bool CPU::handleInterrupts()
 {
-   if (!ime && !halted)
+   if (ime || halted)
    {
-      return false;
-   }
-
-   if (gameBoy.isInterruptActive(Interrupt::VBlank))
-   {
-      return handleInterrupt(Interrupt::VBlank);
-   }
-   else if (gameBoy.isInterruptActive(Interrupt::LCDState))
-   {
-      return handleInterrupt(Interrupt::LCDState);
-   }
-   else if (gameBoy.isInterruptActive(Interrupt::Timer))
-   {
-      return handleInterrupt(Interrupt::Timer);
-   }
-   else if (gameBoy.isInterruptActive(Interrupt::Serial))
-   {
-      return handleInterrupt(Interrupt::Serial);
-   }
-   else if (gameBoy.isInterruptActive(Interrupt::Joypad))
-   {
-      return handleInterrupt(Interrupt::Joypad);
+      if (gameBoy.isInterruptActive(Interrupt::VBlank))
+      {
+         return handleInterrupt(Interrupt::VBlank);
+      }
+      else if (gameBoy.isInterruptActive(Interrupt::LCDState))
+      {
+         return handleInterrupt(Interrupt::LCDState);
+      }
+      else if (gameBoy.isInterruptActive(Interrupt::Timer))
+      {
+         return handleInterrupt(Interrupt::Timer);
+      }
+      else if (gameBoy.isInterruptActive(Interrupt::Serial))
+      {
+         return handleInterrupt(Interrupt::Serial);
+      }
+      else if (gameBoy.isInterruptActive(Interrupt::Joypad))
+      {
+         return handleInterrupt(Interrupt::Joypad);
+      }
    }
 
    return false;
@@ -471,21 +454,21 @@ bool CPU::handleInterrupt(Interrupt interrupt)
    // PC is set to the interrupt handler
    switch (interrupt)
    {
-      case Interrupt::VBlank:
-         reg.pc = 0x0040;
-         break;
-      case Interrupt::LCDState:
-         reg.pc = 0x0048;
-         break;
-      case Interrupt::Timer:
-         reg.pc = 0x0050;
-         break;
-      case Interrupt::Serial:
-         reg.pc = 0x0058;
-         break;
-      case Interrupt::Joypad:
-         reg.pc = 0x0060;
-         break;
+   case Interrupt::VBlank:
+      reg.pc = 0x0040;
+      break;
+   case Interrupt::LCDState:
+      reg.pc = 0x0048;
+      break;
+   case Interrupt::Timer:
+      reg.pc = 0x0050;
+      break;
+   case Interrupt::Serial:
+      reg.pc = 0x0058;
+      break;
+   case Interrupt::Joypad:
+      reg.pc = 0x0060;
+      break;
    }
 
    gameBoy.machineCycle(); // TODO Correct? https://github.com/Gekkio/mooneye-gb/blob/master/docs/accuracy.markdown suggests it should be grouped with the other 2 above
@@ -524,17 +507,10 @@ GBC::Operation CPU::fetch()
    return operation;
 }
 
-void CPU::execute(Operation operation)
+void CPU::execute8(Operation operation)
 {
    static const uint16_t kHalfCarryMask = 0x0010;
    static const uint16_t kCarryMask = 0x0100;
-
-   // Check if the operation deals with 16-bit values
-   if (is16BitOperation(operation))
-   {
-      execute16(operation);
-      return;
-   }
 
    // Prepare immediate values if necessary
    uint8_t imm8 = 0;
@@ -553,479 +529,479 @@ void CPU::execute(Operation operation)
 
    switch (operation.ins)
    {
-      // Loads
-      case Ins::LD:
+   // Loads
+   case Ins::LD:
+   {
+      // If one of the params is (C), the other param must be A
+      ASSERT((operation.param2 != Opr::DerefC || operation.param1 == Opr::A)
+         && (operation.param1 != Opr::DerefC || operation.param2 == Opr::A));
+
+      param1.write8(param2.read8());
+      break;
+   }
+   case Ins::LDD:
+   {
+      execute8(Operation(Ins::LD, operation.param1, operation.param2, 0));
+
+      --reg.hl;
+      break;
+   }
+   case Ins::LDI:
+   {
+      execute8(Operation(Ins::LD, operation.param1, operation.param2, 0));
+
+      ++reg.hl;
+      break;
+   }
+   case Ins::LDH:
+   {
+      // Only valid params are (n) and A
+      ASSERT((operation.param1 == Opr::DerefImm8 && operation.param2 == Opr::A)
+         || (operation.param1 == Opr::A && operation.param2 == Opr::DerefImm8));
+
+      param1.write8(param2.read8());
+      break;
+   }
+
+   // ALU
+   case Ins::ADD:
+   {
+      ASSERT(operation.param1 == Opr::A);
+
+      uint8_t param1Val = param1.read8();
+      uint8_t param2Val = param2.read8();
+      uint16_t result = param1Val + param2Val;
+      uint16_t carryBits = param1Val ^ param2Val ^ result;
+
+      uint8_t result8 = static_cast<uint8_t>(result);
+      param1.write8(result8);
+
+      setFlag(Flag::Zero, result8 == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
+      setFlag(Flag::Carry, (carryBits & kCarryMask) != 0);
+      break;
+   }
+   case Ins::ADC:
+   {
+      ASSERT(operation.param1 == Opr::A);
+
+      uint16_t carryVal = getFlag(Flag::Carry) ? 1 : 0;
+      uint8_t param1Val = param1.read8();
+      uint8_t param2Val = param2.read8();
+      uint16_t result = param1Val + param2Val + carryVal;
+      uint16_t carryBits = param1Val ^ param2Val ^ carryVal ^ result;
+
+      uint8_t result8 = static_cast<uint8_t>(result);
+      param1.write8(result8);
+
+      setFlag(Flag::Zero, result8 == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
+      setFlag(Flag::Carry, (carryBits & kCarryMask) != 0);
+      break;
+   }
+   case Ins::SUB:
+   {
+      uint8_t param1Val = param1.read8();
+      uint16_t result = reg.a - param1Val;
+      uint16_t carryBits = reg.a ^ param1Val ^ result;
+
+      reg.a = static_cast<uint8_t>(result);
+
+      setFlag(Flag::Zero, reg.a == 0);
+      setFlag(Flag::Sub, true);
+      setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
+      setFlag(Flag::Carry, (carryBits & kCarryMask) != 0);
+      break;
+   }
+   case Ins::SBC:
+   {
+      ASSERT(operation.param1 == Opr::A);
+
+      uint16_t carryVal = getFlag(Flag::Carry) ? 1 : 0;
+      uint8_t param1Val = param1.read8();
+      uint8_t param2Val = param2.read8();
+      uint16_t result = param1Val - param2Val - carryVal;
+      uint16_t carryBits = param1Val ^ param2Val ^ carryVal ^ result;
+
+      uint8_t result8 = static_cast<uint8_t>(result);
+      param1.write8(result8);
+
+      setFlag(Flag::Zero, result8 == 0);
+      setFlag(Flag::Sub, true);
+      setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
+      setFlag(Flag::Carry, (carryBits & kCarryMask) != 0);
+      break;
+   }
+   case Ins::AND:
+   {
+      reg.a &= param1.read8();
+
+      setFlag(Flag::Zero, reg.a == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, true);
+      setFlag(Flag::Carry, false);
+      break;
+   }
+   case Ins::OR:
+   {
+      reg.a |= param1.read8();
+
+      setFlag(Flag::Zero, reg.a == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, false);
+      break;
+   }
+   case Ins::XOR:
+   {
+      reg.a ^= param1.read8();
+
+      setFlag(Flag::Zero, reg.a == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, false);
+      break;
+   }
+   case Ins::CP:
+   {
+      uint8_t param1Val = param1.read8();
+      uint16_t result = reg.a - param1Val;
+      uint16_t carryBits = reg.a ^ param1Val ^ result;
+
+      setFlag(Flag::Zero, result == 0);
+      setFlag(Flag::Sub, true);
+      setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
+      setFlag(Flag::Carry, (carryBits & kCarryMask) != 0);
+      break;
+   }
+   case Ins::INC:
+   {
+      uint8_t param1Val = param1.read8();
+      uint16_t result = param1Val + 1;
+      uint16_t carryBits = param1Val ^ 1 ^ result;
+
+      uint8_t result8 = static_cast<uint8_t>(result);
+      param1.write8(result8);
+
+      setFlag(Flag::Zero, result8 == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
+      break;
+   }
+   case Ins::DEC:
+   {
+      uint8_t param1Val = param1.read8();
+      uint16_t result = param1Val - 1;
+      uint16_t carryBits = param1Val ^ 1 ^ result;
+
+      uint8_t result8 = static_cast<uint8_t>(result);
+      param1.write8(result8);
+
+      setFlag(Flag::Zero, result8 == 0);
+      setFlag(Flag::Sub, true);
+      setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
+      break;
+   }
+
+   // Miscellaneous
+   case Ins::SWAP:
+   {
+      uint8_t param1Val = param1.read8();
+      uint8_t result = ((param1Val & 0x0F) << 4) | ((param1Val & 0xF0) >> 4);
+      param1.write8(result);
+
+      setFlag(Flag::Zero, result == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, false);
+      break;
+   }
+   case Ins::DAA:
+   {
+      ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
+
+      uint16_t temp = reg.a;
+
+      if (!getFlag(Flag::Sub))
       {
-         // If one of the params is (C), the other param must be A
-         ASSERT((operation.param2 != Opr::DerefC || operation.param1 == Opr::A)
-            && (operation.param1 != Opr::DerefC || operation.param2 == Opr::A));
-
-         param1.write8(param2.read8());
-         break;
-      }
-      case Ins::LDD:
-      {
-         execute(Operation(Ins::LD, operation.param1, operation.param2, 0));
-
-         --reg.hl;
-         break;
-      }
-      case Ins::LDI:
-      {
-         execute(Operation(Ins::LD, operation.param1, operation.param2, 0));
-
-         ++reg.hl;
-         break;
-      }
-      case Ins::LDH:
-      {
-         // Only valid params are (n) and A
-         ASSERT((operation.param1 == Opr::DerefImm8 && operation.param2 == Opr::A)
-            || (operation.param1 == Opr::A && operation.param2 == Opr::DerefImm8));
-
-         param1.write8(param2.read8());
-         break;
-      }
-
-      // ALU
-      case Ins::ADD:
-      {
-         ASSERT(operation.param1 == Opr::A);
-
-         uint8_t param1Val = param1.read8();
-         uint8_t param2Val = param2.read8();
-         uint16_t result = param1Val + param2Val;
-         uint16_t carryBits = param1Val ^ param2Val ^ result;
-
-         uint8_t result8 = static_cast<uint8_t>(result);
-         param1.write8(result8);
-
-         setFlag(Flag::Zero, result8 == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
-         setFlag(Flag::Carry, (carryBits & kCarryMask) != 0);
-         break;
-      }
-      case Ins::ADC:
-      {
-         ASSERT(operation.param1 == Opr::A);
-
-         uint16_t carryVal = getFlag(Flag::Carry) ? 1 : 0;
-         uint8_t param1Val = param1.read8();
-         uint8_t param2Val = param2.read8();
-         uint16_t result = param1Val + param2Val + carryVal;
-         uint16_t carryBits = param1Val ^ param2Val ^ carryVal ^ result;
-
-         uint8_t result8 = static_cast<uint8_t>(result);
-         param1.write8(result8);
-
-         setFlag(Flag::Zero, result8 == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
-         setFlag(Flag::Carry, (carryBits & kCarryMask) != 0);
-         break;
-      }
-      case Ins::SUB:
-      {
-         uint8_t param1Val = param1.read8();
-         uint16_t result = reg.a - param1Val;
-         uint16_t carryBits = reg.a ^ param1Val ^ result;
-
-         reg.a = static_cast<uint8_t>(result);
-
-         setFlag(Flag::Zero, reg.a == 0);
-         setFlag(Flag::Sub, true);
-         setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
-         setFlag(Flag::Carry, (carryBits & kCarryMask) != 0);
-         break;
-      }
-      case Ins::SBC:
-      {
-         ASSERT(operation.param1 == Opr::A);
-
-         uint16_t carryVal = getFlag(Flag::Carry) ? 1 : 0;
-         uint8_t param1Val = param1.read8();
-         uint8_t param2Val = param2.read8();
-         uint16_t result = param1Val - param2Val - carryVal;
-         uint16_t carryBits = param1Val ^ param2Val ^ carryVal ^ result;
-
-         uint8_t result8 = static_cast<uint8_t>(result);
-         param1.write8(result8);
-
-         setFlag(Flag::Zero, result8 == 0);
-         setFlag(Flag::Sub, true);
-         setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
-         setFlag(Flag::Carry, (carryBits & kCarryMask) != 0);
-         break;
-      }
-      case Ins::AND:
-      {
-         reg.a &= param1.read8();
-
-         setFlag(Flag::Zero, reg.a == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, true);
-         setFlag(Flag::Carry, false);
-         break;
-      }
-      case Ins::OR:
-      {
-         reg.a |= param1.read8();
-
-         setFlag(Flag::Zero, reg.a == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, false);
-         break;
-      }
-      case Ins::XOR:
-      {
-         reg.a ^= param1.read8();
-
-         setFlag(Flag::Zero, reg.a == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, false);
-         break;
-      }
-      case Ins::CP:
-      {
-         uint8_t param1Val = param1.read8();
-         uint16_t result = reg.a - param1Val;
-         uint16_t carryBits = reg.a ^ param1Val ^ result;
-
-         setFlag(Flag::Zero, result == 0);
-         setFlag(Flag::Sub, true);
-         setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
-         setFlag(Flag::Carry, (carryBits & kCarryMask) != 0);
-         break;
-      }
-      case Ins::INC:
-      {
-         uint8_t param1Val = param1.read8();
-         uint16_t result = param1Val + 1;
-         uint16_t carryBits = param1Val ^ 1 ^ result;
-
-         uint8_t result8 = static_cast<uint8_t>(result);
-         param1.write8(result8);
-
-         setFlag(Flag::Zero, result8 == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
-         break;
-      }
-      case Ins::DEC:
-      {
-         uint8_t param1Val = param1.read8();
-         uint16_t result = param1Val - 1;
-         uint16_t carryBits = param1Val ^ 1 ^ result;
-
-         uint8_t result8 = static_cast<uint8_t>(result);
-         param1.write8(result8);
-
-         setFlag(Flag::Zero, result8 == 0);
-         setFlag(Flag::Sub, true);
-         setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
-         break;
-      }
-
-      // Miscellaneous
-      case Ins::SWAP:
-      {
-         uint8_t param1Val = param1.read8();
-         uint8_t result = ((param1Val & 0x0F) << 4) | ((param1Val & 0xF0) >> 4);
-         param1.write8(result);
-
-         setFlag(Flag::Zero, result == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, false);
-         break;
-      }
-      case Ins::DAA:
-      {
-         ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
-
-         uint16_t temp = reg.a;
-
-         if (!getFlag(Flag::Sub))
+         if (getFlag(Flag::HalfCarry) || (temp & 0x0F) > 9)
          {
-            if (getFlag(Flag::HalfCarry) || (temp & 0x0F) > 9)
-            {
-               temp += 0x06;
-            }
-
-            if (getFlag(Flag::Carry) || (temp > 0x9F))
-            {
-               temp += 0x60;
-            }
-         }
-         else
-         {
-            if (getFlag(Flag::HalfCarry))
-            {
-               temp = (temp - 6) & 0xFF;
-            }
-
-            if (getFlag(Flag::Carry))
-            {
-               temp -= 0x60;
-            }
+            temp += 0x06;
          }
 
-         bool carry = getFlag(Flag::Carry) || (temp & 0x0100) == 0x0100;
-         reg.a = temp & 0x00FF;
-
-         setFlag(Flag::Zero, reg.a == 0);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, carry);
-         break;
-      }
-      case Ins::CPL:
-      {
-         ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
-
-         reg.a = ~reg.a;
-
-         setFlag(Flag::Sub, true);
-         setFlag(Flag::HalfCarry, true);
-         break;
-      }
-      case Ins::CCF:
-      {
-         ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
-
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, !getFlag(Flag::Carry));
-         break;
-      }
-      case Ins::SCF:
-      {
-         ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
-
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, true);
-         break;
-      }
-      case Ins::NOP:
-      {
-         ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
-
-         break;
-      }
-      case Ins::HALT:
-      {
-         ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
-
-         halted = true;
-         if (!ime && gameBoy.isAnyInterruptActive())
+         if (getFlag(Flag::Carry) || (temp > 0x9F))
          {
-            // HALT bug
-            freezePC = true;
+            temp += 0x60;
          }
-         break;
       }
-      case Ins::STOP:
+      else
       {
-         // STOP should be followed by 0x00 (treated here as an immediate)
-         // ASSERT(param1Val == 0x00); // TODO
+         if (getFlag(Flag::HalfCarry))
+         {
+            temp = (temp - 6) & 0xFF;
+         }
 
-         stopped = true;
-         gameBoy.onCPUStopped();
-         break;
+         if (getFlag(Flag::Carry))
+         {
+            temp -= 0x60;
+         }
       }
-      case Ins::DI:
+
+      bool carry = getFlag(Flag::Carry) || (temp & 0x0100) == 0x0100;
+      reg.a = temp & 0x00FF;
+
+      setFlag(Flag::Zero, reg.a == 0);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, carry);
+      break;
+   }
+   case Ins::CPL:
+   {
+      ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
+
+      reg.a = ~reg.a;
+
+      setFlag(Flag::Sub, true);
+      setFlag(Flag::HalfCarry, true);
+      break;
+   }
+   case Ins::CCF:
+   {
+      ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
+
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, !getFlag(Flag::Carry));
+      break;
+   }
+   case Ins::SCF:
+   {
+      ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
+
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, true);
+      break;
+   }
+   case Ins::NOP:
+   {
+      ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
+
+      break;
+   }
+   case Ins::HALT:
+   {
+      ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
+
+      halted = true;
+      if (!ime && gameBoy.isAnyInterruptActive())
       {
-         ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
-
-         ime = false;
-         break;
+         // HALT bug
+         freezePC = true;
       }
-      case Ins::EI:
-      {
-         ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
+      break;
+   }
+   case Ins::STOP:
+   {
+      // STOP should be followed by 0x00 (treated here as an immediate)
+      // ASSERT(param1Val == 0x00); // TODO
 
-         interruptEnableRequested = true;
-         break;
-      }
+      stopped = true;
+      gameBoy.onCPUStopped();
+      break;
+   }
+   case Ins::DI:
+   {
+      ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
 
-      // Rotates and shifts
-      case Ins::RLCA:
-      {
-         reg.a = (reg.a << 1) | (reg.a >> 7);
+      ime = false;
+      break;
+   }
+   case Ins::EI:
+   {
+      ASSERT(operation.param1 == Opr::None && operation.param2 == Opr::None);
 
-         setFlag(Flag::Zero, false);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, (reg.a & 0x01) != 0);
-         break;
-      }
-      case Ins::RLA:
-      {
-         uint8_t carryVal = getFlag(Flag::Carry) ? 1 : 0;
-         uint8_t newCarryVal = reg.a & 0x80;
+      interruptEnableRequested = true;
+      break;
+   }
 
-         reg.a = (reg.a << 1) | carryVal;
+   // Rotates and shifts
+   case Ins::RLCA:
+   {
+      reg.a = (reg.a << 1) | (reg.a >> 7);
 
-         setFlag(Flag::Zero, false);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, newCarryVal != 0);
-         break;
-      }
-      case Ins::RRCA:
-      {
-         reg.a = (reg.a >> 1) | (reg.a << 7);
+      setFlag(Flag::Zero, false);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, (reg.a & 0x01) != 0);
+      break;
+   }
+   case Ins::RLA:
+   {
+      uint8_t carryVal = getFlag(Flag::Carry) ? 1 : 0;
+      uint8_t newCarryVal = reg.a & 0x80;
 
-         setFlag(Flag::Zero, false);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, (reg.a & 0x80) != 0);
-         break;
-      }
-      case Ins::RRA:
-      {
-         uint8_t carryVal = getFlag(Flag::Carry) ? 1 : 0;
-         uint8_t newCarryVal = reg.a & 0x01;
+      reg.a = (reg.a << 1) | carryVal;
 
-         reg.a = (reg.a >> 1) | (carryVal << 7);
+      setFlag(Flag::Zero, false);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, newCarryVal != 0);
+      break;
+   }
+   case Ins::RRCA:
+   {
+      reg.a = (reg.a >> 1) | (reg.a << 7);
 
-         setFlag(Flag::Zero, false);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, newCarryVal != 0);
-         break;
-      }
-      case Ins::RLC:
-      {
-         uint8_t param1Val = param1.read8();
-         uint8_t result = (param1Val << 1) | (param1Val >> 7);
-         param1.write8(result);
+      setFlag(Flag::Zero, false);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, (reg.a & 0x80) != 0);
+      break;
+   }
+   case Ins::RRA:
+   {
+      uint8_t carryVal = getFlag(Flag::Carry) ? 1 : 0;
+      uint8_t newCarryVal = reg.a & 0x01;
 
-         setFlag(Flag::Zero, result == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, (result & 0x01) != 0);
-         break;
-      }
-      case Ins::RL:
-      {
-         uint8_t carryVal = getFlag(Flag::Carry) ? 1 : 0;
-         uint8_t param1Val = param1.read8();
-         uint8_t newCarryVal = param1Val & 0x80;
+      reg.a = (reg.a >> 1) | (carryVal << 7);
 
-         uint8_t result = (param1Val << 1) | carryVal;
-         param1.write8(result);
+      setFlag(Flag::Zero, false);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, newCarryVal != 0);
+      break;
+   }
+   case Ins::RLC:
+   {
+      uint8_t param1Val = param1.read8();
+      uint8_t result = (param1Val << 1) | (param1Val >> 7);
+      param1.write8(result);
 
-         setFlag(Flag::Zero, result == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, newCarryVal != 0);
-         break;
-      }
-      case Ins::RRC:
-      {
-         uint8_t param1Val = param1.read8();
-         uint8_t result = (param1Val >> 1) | (param1Val << 7);
-         param1.write8(result);
+      setFlag(Flag::Zero, result == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, (result & 0x01) != 0);
+      break;
+   }
+   case Ins::RL:
+   {
+      uint8_t carryVal = getFlag(Flag::Carry) ? 1 : 0;
+      uint8_t param1Val = param1.read8();
+      uint8_t newCarryVal = param1Val & 0x80;
 
-         setFlag(Flag::Zero, result == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, (result & 0x80) != 0);
-         break;
-      }
-      case Ins::RR:
-      {
-         uint8_t carryVal = getFlag(Flag::Carry) ? 1 : 0;
-         uint8_t param1Val = param1.read8();
-         uint8_t newCarryVal = param1Val & 0x01;
+      uint8_t result = (param1Val << 1) | carryVal;
+      param1.write8(result);
 
-         uint8_t result = (param1Val >> 1) | (carryVal << 7);
-         param1.write8(result);
+      setFlag(Flag::Zero, result == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, newCarryVal != 0);
+      break;
+   }
+   case Ins::RRC:
+   {
+      uint8_t param1Val = param1.read8();
+      uint8_t result = (param1Val >> 1) | (param1Val << 7);
+      param1.write8(result);
 
-         setFlag(Flag::Zero, result == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, newCarryVal != 0);
-         break;
-      }
-      case Ins::SLA:
-      {
-         uint8_t param1Val = param1.read8();
-         uint8_t newCarryVal = param1Val & 0x80;
+      setFlag(Flag::Zero, result == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, (result & 0x80) != 0);
+      break;
+   }
+   case Ins::RR:
+   {
+      uint8_t carryVal = getFlag(Flag::Carry) ? 1 : 0;
+      uint8_t param1Val = param1.read8();
+      uint8_t newCarryVal = param1Val & 0x01;
 
-         uint8_t result = param1Val << 1;
-         param1.write8(result);
+      uint8_t result = (param1Val >> 1) | (carryVal << 7);
+      param1.write8(result);
 
-         setFlag(Flag::Zero, result == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, newCarryVal != 0);
-         break;
-      }
-      case Ins::SRA:
-      {
-         uint8_t param1Val = param1.read8();
-         uint8_t newCarryVal = param1Val & 0x01;
+      setFlag(Flag::Zero, result == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, newCarryVal != 0);
+      break;
+   }
+   case Ins::SLA:
+   {
+      uint8_t param1Val = param1.read8();
+      uint8_t newCarryVal = param1Val & 0x80;
 
-         uint8_t result = (param1Val >> 1) | (param1Val & 0x80);
-         param1.write8(result);
+      uint8_t result = param1Val << 1;
+      param1.write8(result);
 
-         setFlag(Flag::Zero, result == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, newCarryVal != 0);
-         break;
-      }
-      case Ins::SRL:
-      {
-         uint8_t param1Val = param1.read8();
-         uint8_t newCarryVal = param1Val & 0x01;
+      setFlag(Flag::Zero, result == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, newCarryVal != 0);
+      break;
+   }
+   case Ins::SRA:
+   {
+      uint8_t param1Val = param1.read8();
+      uint8_t newCarryVal = param1Val & 0x01;
 
-         uint8_t result = param1Val >> 1;
-         param1.write8(result);
+      uint8_t result = (param1Val >> 1) | (param1Val & 0x80);
+      param1.write8(result);
 
-         setFlag(Flag::Zero, result == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, false);
-         setFlag(Flag::Carry, newCarryVal != 0);
-         break;
-      }
+      setFlag(Flag::Zero, result == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, newCarryVal != 0);
+      break;
+   }
+   case Ins::SRL:
+   {
+      uint8_t param1Val = param1.read8();
+      uint8_t newCarryVal = param1Val & 0x01;
 
-      // Bit operations
-      case Ins::BIT:
-      {
-         uint8_t mask = bitOprMask(operation.param1);
+      uint8_t result = param1Val >> 1;
+      param1.write8(result);
 
-         setFlag(Flag::Zero, (param2.read8() & mask) == 0);
-         setFlag(Flag::Sub, false);
-         setFlag(Flag::HalfCarry, true);
-         break;
-      }
-      case Ins::SET:
-      {
-         uint8_t mask = bitOprMask(operation.param1);
+      setFlag(Flag::Zero, result == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, false);
+      setFlag(Flag::Carry, newCarryVal != 0);
+      break;
+   }
 
-         param2.write8(param2.read8() | mask);
-         break;
-      }
-      case Ins::RES:
-      {
-         uint8_t mask = bitOprMask(operation.param1);
+   // Bit operations
+   case Ins::BIT:
+   {
+      uint8_t mask = bitOprMask(operation.param1);
 
-         param2.write8(param2.read8() & ~mask);
-         break;
-      }
+      setFlag(Flag::Zero, (param2.read8() & mask) == 0);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, true);
+      break;
+   }
+   case Ins::SET:
+   {
+      uint8_t mask = bitOprMask(operation.param1);
 
-      // Invalid instruction
-      default:
-      {
-         ASSERT(false, "Invalid 8-bit instruction: %hhu", operation.ins);
-         break;
-      }
+      param2.write8(param2.read8() | mask);
+      break;
+   }
+   case Ins::RES:
+   {
+      uint8_t mask = bitOprMask(operation.param1);
+
+      param2.write8(param2.read8() & ~mask);
+      break;
+   }
+
+   // Invalid instruction
+   default:
+   {
+      ASSERT(false, "Invalid 8-bit instruction: %hhu", operation.ins);
+      break;
+   }
    }
 }
 
@@ -1051,31 +1027,85 @@ void CPU::execute16(Operation operation)
 
    switch (operation.ins)
    {
-      // Loads
-      case Ins::LD:
+   // Loads
+   case Ins::LD:
+   {
+      uint16_t param2Val = param2.read16();
+
+      if (operation.param1 == Opr::DerefImm16)
       {
-         uint16_t param2Val = param2.read16();
+         ASSERT(operation.param2 == Opr::SP);
 
-         if (operation.param1 == Opr::DerefImm16)
-         {
-            ASSERT(operation.param2 == Opr::SP);
-
-            param1.write16(param2Val);
-         }
-         else
-         {
-            param1.write16(param2Val);
-
-            if (operation.param2 == Opr::HL)
-            {
-               gameBoy.machineCycle();
-            }
-         }
-         break;
+         param1.write16(param2Val);
       }
-      case Ins::LDHL:
+      else
       {
-         ASSERT(operation.param1 == Opr::SP && operation.param2 == Opr::Imm8Signed);
+         param1.write16(param2Val);
+
+         if (operation.param2 == Opr::HL)
+         {
+            gameBoy.machineCycle();
+         }
+      }
+      break;
+   }
+   case Ins::LDHL:
+   {
+      ASSERT(operation.param1 == Opr::SP && operation.param2 == Opr::Imm8Signed);
+      // Special case - uses one byte signed immediate value
+      int8_t n = toSigned(param2.read8());
+
+      uint16_t param1Val = param1.read16();
+      uint32_t result = param1Val + n;
+      uint32_t carryBits = param1Val ^ n ^ result;
+
+      reg.hl = static_cast<uint16_t>(result);
+
+      // Special case - treat carry and half carry as if this was an 8 bit add
+      setFlag(Flag::Zero, false);
+      setFlag(Flag::Sub, false);
+      setFlag(Flag::HalfCarry, (carryBits & 0x0010) != 0);
+      setFlag(Flag::Carry, (carryBits & 0x0100) != 0);
+
+      gameBoy.machineCycle();
+      break;
+   }
+   case Ins::PUSH:
+   {
+      gameBoy.machineCycle();
+      push(param1.read16());
+      break;
+   }
+   case Ins::POP:
+   {
+      param1.write16(pop());
+      break;
+   }
+
+   // ALU
+   case Ins::ADD:
+   {
+      ASSERT(operation.param1 == Opr::HL || operation.param1 == Opr::SP);
+
+      if (operation.param1 == Opr::HL)
+      {
+         uint16_t param1Val = param1.read16();
+         uint16_t param2Val = param2.read16();
+         uint32_t result = param1Val + param2Val;
+         uint32_t carryBits = param1Val ^ param2Val ^ result;
+
+         param1.write16(static_cast<uint16_t>(result));
+
+         setFlag(Flag::Sub, false);
+         setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
+         setFlag(Flag::Carry, (carryBits & kCarryMask) != 0);
+
+         gameBoy.machineCycle();
+      }
+      else
+      {
+         ASSERT(operation.param2 == Opr::Imm8Signed);
+
          // Special case - uses one byte signed immediate value
          int8_t n = toSigned(param2.read8());
 
@@ -1083,201 +1113,147 @@ void CPU::execute16(Operation operation)
          uint32_t result = param1Val + n;
          uint32_t carryBits = param1Val ^ n ^ result;
 
-         reg.hl = static_cast<uint16_t>(result);
+         param1.write16(static_cast<uint16_t>(result));
 
-         // Special case - treat carry and half carry as if this was an 8 bit add
          setFlag(Flag::Zero, false);
          setFlag(Flag::Sub, false);
          setFlag(Flag::HalfCarry, (carryBits & 0x0010) != 0);
          setFlag(Flag::Carry, (carryBits & 0x0100) != 0);
 
          gameBoy.machineCycle();
-         break;
-      }
-      case Ins::PUSH:
-      {
          gameBoy.machineCycle();
-         push(param1.read16());
-         break;
       }
-      case Ins::POP:
-      {
-         param1.write16(pop());
-         break;
-      }
+      break;
+   }
+   case Ins::INC:
+   {
+      param1.write16(param1.read16() + 1);
+      gameBoy.machineCycle();
+      break;
+   }
+   case Ins::DEC:
+   {
+      param1.write16(param1.read16() - 1);
+      gameBoy.machineCycle();
+      break;
+   }
 
-      // ALU
-      case Ins::ADD:
+   // Jumps
+   case Ins::JP:
+   {
+      if (operation.param2 == Opr::None)
       {
-         ASSERT(operation.param1 == Opr::HL || operation.param1 == Opr::SP);
+         ASSERT(operation.param1 == Opr::Imm16 || operation.param1 == Opr::HL);
 
-         if (operation.param1 == Opr::HL)
+         reg.pc = param1.read16();
+         if (operation.param1 == Opr::Imm16)
          {
-            uint16_t param1Val = param1.read16();
-            uint16_t param2Val = param2.read16();
-            uint32_t result = param1Val + param2Val;
-            uint32_t carryBits = param1Val ^ param2Val ^ result;
-
-            param1.write16(static_cast<uint16_t>(result));
-
-            setFlag(Flag::Sub, false);
-            setFlag(Flag::HalfCarry, (carryBits & kHalfCarryMask) != 0);
-            setFlag(Flag::Carry, (carryBits & kCarryMask) != 0);
-
             gameBoy.machineCycle();
          }
-         else
+      }
+      else
+      {
+         if (evalJumpCondition(operation.param1, getFlag(Flag::Zero), getFlag(Flag::Carry)))
          {
-            ASSERT(operation.param2 == Opr::Imm8Signed);
-
-            // Special case - uses one byte signed immediate value
-            int8_t n = toSigned(param2.read8());
-
-            uint16_t param1Val = param1.read16();
-            uint32_t result = param1Val + n;
-            uint32_t carryBits = param1Val ^ n ^ result;
-
-            param1.write16(static_cast<uint16_t>(result));
-
-            setFlag(Flag::Zero, false);
-            setFlag(Flag::Sub, false);
-            setFlag(Flag::HalfCarry, (carryBits & 0x0010) != 0);
-            setFlag(Flag::Carry, (carryBits & 0x0100) != 0);
-
-            gameBoy.machineCycle();
+            reg.pc = param2.read16();
             gameBoy.machineCycle();
          }
-         break;
       }
-      case Ins::INC:
+      break;
+   }
+   case Ins::JR:
+   {
+      if (operation.param2 == Opr::None)
       {
-         param1.write16(param1.read16() + 1);
+         ASSERT(operation.param1 == Opr::Imm8Signed);
+
+         // Special case - uses one byte signed immediate value
+         int8_t n = toSigned(param1.read8());
+
+         reg.pc += n;
          gameBoy.machineCycle();
-         break;
       }
-      case Ins::DEC:
+      else
       {
-         param1.write16(param1.read16() - 1);
-         gameBoy.machineCycle();
-         break;
-      }
+         ASSERT(operation.param2 == Opr::Imm8Signed);
 
-      // Jumps
-      case Ins::JP:
-      {
-         if (operation.param2 == Opr::None)
+         // Special case - uses one byte signed immediate value
+         int8_t n = toSigned(param2.read8());
+
+         if (evalJumpCondition(operation.param1, getFlag(Flag::Zero), getFlag(Flag::Carry)))
          {
-            ASSERT(operation.param1 == Opr::Imm16 || operation.param1 == Opr::HL);
-
-            reg.pc = param1.read16();
-            if (operation.param1 == Opr::Imm16)
-            {
-               gameBoy.machineCycle();
-            }
-         }
-         else
-         {
-            if (evalJumpCondition(operation.param1, getFlag(Flag::Zero), getFlag(Flag::Carry)))
-            {
-               reg.pc = param2.read16();
-               gameBoy.machineCycle();
-            }
-         }
-         break;
-      }
-      case Ins::JR:
-      {
-         if (operation.param2 == Opr::None)
-         {
-            ASSERT(operation.param1 == Opr::Imm8Signed);
-
-            // Special case - uses one byte signed immediate value
-            int8_t n = toSigned(param1.read8());
-
             reg.pc += n;
             gameBoy.machineCycle();
          }
-         else
-         {
-            ASSERT(operation.param2 == Opr::Imm8Signed);
-
-            // Special case - uses one byte signed immediate value
-            int8_t n = toSigned(param2.read8());
-
-            if (evalJumpCondition(operation.param1, getFlag(Flag::Zero), getFlag(Flag::Carry)))
-            {
-               reg.pc += n;
-               gameBoy.machineCycle();
-            }
-         }
-         break;
       }
+      break;
+   }
 
-      // Calls
-      case Ins::CALL:
-      {
-         if (operation.param2 == Opr::None)
-         {
-            gameBoy.machineCycle();
-            push(reg.pc);
-            reg.pc = param1.read16();
-         }
-         else
-         {
-            uint16_t param2Val = param2.read16();
-            if (evalJumpCondition(operation.param1, getFlag(Flag::Zero), getFlag(Flag::Carry)))
-            {
-               gameBoy.machineCycle();
-               push(reg.pc);
-               reg.pc = param2Val;
-            }
-         }
-         break;
-      }
-
-      // Restarts
-      case Ins::RST:
+   // Calls
+   case Ins::CALL:
+   {
+      if (operation.param2 == Opr::None)
       {
          gameBoy.machineCycle();
          push(reg.pc);
-         reg.pc = 0x0000 + rstOffset(operation.param1);
-         break;
+         reg.pc = param1.read16();
       }
-
-      // Returns
-      case Ins::RET:
+      else
       {
-         if (operation.param1 == Opr::None)
+         uint16_t param2Val = param2.read16();
+         if (evalJumpCondition(operation.param1, getFlag(Flag::Zero), getFlag(Flag::Carry)))
+         {
+            gameBoy.machineCycle();
+            push(reg.pc);
+            reg.pc = param2Val;
+         }
+      }
+      break;
+   }
+
+   // Restarts
+   case Ins::RST:
+   {
+      gameBoy.machineCycle();
+      push(reg.pc);
+      reg.pc = 0x0000 + rstOffset(operation.param1);
+      break;
+   }
+
+   // Returns
+   case Ins::RET:
+   {
+      if (operation.param1 == Opr::None)
+      {
+         reg.pc = pop();
+         gameBoy.machineCycle();
+      }
+      else
+      {
+         gameBoy.machineCycle();
+         if (evalJumpCondition(operation.param1, getFlag(Flag::Zero), getFlag(Flag::Carry)))
          {
             reg.pc = pop();
             gameBoy.machineCycle();
          }
-         else
-         {
-            gameBoy.machineCycle();
-            if (evalJumpCondition(operation.param1, getFlag(Flag::Zero), getFlag(Flag::Carry)))
-            {
-               reg.pc = pop();
-               gameBoy.machineCycle();
-            }
-         }
-         break;
       }
-      case Ins::RETI:
-      {
-         execute(Operation(Ins::RET, Opr::None, Opr::None, 0));
+      break;
+   }
+   case Ins::RETI:
+   {
+      execute16(Operation(Ins::RET, Opr::None, Opr::None, 0));
 
-         // RETI doesn't delay enabling the IME like EI does
-         ime = true;
-         break;
-      }
+      // RETI doesn't delay enabling the IME like EI does
+      ime = true;
+      break;
+   }
 
-      // Invalid instruction
-      default:
-      {
-         ASSERT(false, "Invalid 16-bit instruction: %hhu", operation.ins);
-         break;
-      }
+   // Invalid instruction
+   default:
+   {
+      ASSERT(false, "Invalid 16-bit instruction: %hhu", operation.ins);
+      break;
+   }
    }
 }
 

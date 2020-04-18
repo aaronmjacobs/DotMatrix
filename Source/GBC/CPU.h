@@ -283,7 +283,7 @@ private:
    bool handleInterrupt(Interrupt interrupt);
 
    Operation fetch();
-   void execute(Operation operation);
+   void execute8(Operation operation);
    void execute16(Operation operation);
 
    Registers reg;

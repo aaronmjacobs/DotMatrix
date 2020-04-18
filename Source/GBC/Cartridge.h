@@ -19,7 +19,7 @@ namespace GBC
 class Cartridge
 {
 public:
-   static UPtr<Cartridge> fromData(std::vector<uint8_t>&& data, std::string& error);
+   static UPtr<Cartridge> fromData(std::vector<uint8_t> data, std::string& error);
 
    const char* title() const
    {
@@ -28,12 +28,12 @@ public:
 
    uint8_t data(size_t address) const
    {
-      if (address >= cartData.size())
+      if (address < cartData.size())
       {
-         return GameBoy::kInvalidAddressByte;
+         return cartData[address];;
       }
 
-      return cartData[address];
+      return GameBoy::kInvalidAddressByte;
    }
 
    uint8_t read(uint16_t address) const
@@ -205,7 +205,7 @@ public:
 private:
    DECLARE_UI_FRIEND
 
-   Cartridge(std::vector<uint8_t>&& data, const Header& headerData);
+   Cartridge(std::vector<uint8_t> data, const Header& headerData);
 
    void setController(UPtr<MemoryBankController> mbc)
    {

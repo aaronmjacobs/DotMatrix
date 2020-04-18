@@ -7,58 +7,56 @@
 
 namespace
 {
-
-struct MemoryHelper
-{
-   GBC::GameBoy* gameBoy = nullptr;
-   uint16_t address = 0;
-};
-
-ImU8 readMemory(const ImU8* data, std::size_t offset)
-{
-   const MemoryHelper* memoryHelper = reinterpret_cast<const MemoryHelper*>(data);
-
-   return memoryHelper->gameBoy->readDirect(memoryHelper->address + static_cast<uint16_t>(offset));
-}
-
-void writeMemory(ImU8* data, std::size_t offset, ImU8 value)
-{
-   MemoryHelper* memoryHelper = reinterpret_cast<MemoryHelper*>(data);
-
-   memoryHelper->gameBoy->writeDirect(memoryHelper->address + static_cast<uint16_t>(offset), value);
-}
-
-MemoryEditor createMemoryEditor()
-{
-   MemoryEditor memoryEditor;
-
-   memoryEditor.ReadFn = readMemory;
-   memoryEditor.WriteFn = writeMemory;
-
-   return memoryEditor;
-}
-
-void renderMemoryRegion(GBC::GameBoy& gameBoy, const char* name, const char* description, uint16_t size, uint16_t& address)
-{
-   if (ImGui::BeginTabItem(name))
+   struct MemoryHelper
    {
-      ImGui::Text("%s", description);
-      ImGui::Separator();
+      GBC::GameBoy* gameBoy = nullptr;
+      uint16_t address = 0;
+   };
 
-      MemoryHelper memoryHelper;
-      memoryHelper.gameBoy = &gameBoy;
-      memoryHelper.address = address;
+   ImU8 readMemory(const ImU8* data, std::size_t offset)
+   {
+      const MemoryHelper* memoryHelper = reinterpret_cast<const MemoryHelper*>(data);
 
-      static MemoryEditor memoryEditor = createMemoryEditor();
-      memoryEditor.DrawContents(&memoryHelper, size, address);
-
-      ImGui::EndTabItem();
+      return memoryHelper->gameBoy->readDirect(memoryHelper->address + static_cast<uint16_t>(offset));
    }
 
-   address += size;
-}
+   void writeMemory(ImU8* data, std::size_t offset, ImU8 value)
+   {
+      MemoryHelper* memoryHelper = reinterpret_cast<MemoryHelper*>(data);
 
-} // namespace
+      memoryHelper->gameBoy->writeDirect(memoryHelper->address + static_cast<uint16_t>(offset), value);
+   }
+
+   MemoryEditor createMemoryEditor()
+   {
+      MemoryEditor memoryEditor;
+
+      memoryEditor.ReadFn = readMemory;
+      memoryEditor.WriteFn = writeMemory;
+
+      return memoryEditor;
+   }
+
+   void renderMemoryRegion(GBC::GameBoy& gameBoy, const char* name, const char* description, uint16_t size, uint16_t& address)
+   {
+      if (ImGui::BeginTabItem(name))
+      {
+         ImGui::Text("%s", description);
+         ImGui::Separator();
+
+         MemoryHelper memoryHelper;
+         memoryHelper.gameBoy = &gameBoy;
+         memoryHelper.address = address;
+
+         static MemoryEditor memoryEditor = createMemoryEditor();
+         memoryEditor.DrawContents(&memoryHelper, size, address);
+
+         ImGui::EndTabItem();
+      }
+
+      address += size;
+   }
+}
 
 void UI::renderMemoryWindow(GBC::GameBoy& gameBoy) const
 {

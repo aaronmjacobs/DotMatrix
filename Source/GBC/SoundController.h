@@ -23,11 +23,6 @@ struct AudioSample
 class SoundChannel
 {
 public:
-   SoundChannel()
-      : enabled(true)
-   {
-   }
-
    bool isEnabled() const
    {
       return enabled;
@@ -47,7 +42,7 @@ protected:
 private:
    DECLARE_UI_FRIEND
 
-   bool enabled;
+   bool enabled = true;
 };
 
 template<typename Owner>
@@ -56,8 +51,6 @@ class SoundTimer
 public:
    SoundTimer(Owner& owningObject)
       : owner(owningObject)
-      , period(0)
-      , counter(0)
    {
    }
 
@@ -87,20 +80,13 @@ private:
    DECLARE_UI_FRIEND
 
    Owner& owner;
-   uint32_t period;
-   uint32_t counter;
+   uint32_t period = 0;
+   uint32_t counter = 0;
 };
 
 class DutyUnit
 {
 public:
-   DutyUnit()
-      : counter(0)
-      , index(0)
-      , high(false)
-   {
-   }
-
    void clock()
    {
       high = kDutyMasks[index][counter];
@@ -139,9 +125,9 @@ private:
       { false, true, true, true, true, true, true, false }
    }};
 
-   uint8_t counter;
-   uint8_t index;
-   bool high;
+   uint8_t counter = 0;
+   uint8_t index = 0;
+   bool high = false;
 };
 
 class LengthUnit
@@ -150,9 +136,6 @@ public:
    LengthUnit(SoundChannel& owningSoundChannel, uint16_t maxCounterValue)
       : owner(owningSoundChannel)
       , maxCounter(maxCounterValue)
-      , counter(0)
-      , counterLoad(0)
-      , enabled(false)
    {
       ASSERT(maxCounter == 64 || maxCounter == 256);
    }
@@ -206,25 +189,14 @@ private:
 
    SoundChannel& owner;
    const uint16_t maxCounter;
-   uint16_t counter;
-   uint8_t counterLoad;
-   bool enabled;
+   uint16_t counter = 0;
+   uint8_t counterLoad = 0;
+   bool enabled = false;
 };
 
 class EnvelopeUnit
 {
 public:
-   EnvelopeUnit()
-      : period(0)
-      , counter(0)
-      , volume(0)
-      , volumeLoad(0)
-      , addMode(false)
-      , enabled(true)
-      , dacPowered(false)
-   {
-   }
-
    void clock();
 
    void trigger()
@@ -270,13 +242,13 @@ public:
 private:
    DECLARE_UI_FRIEND
 
-   uint8_t period;
-   uint8_t counter;
-   uint8_t volume;
-   uint8_t volumeLoad;
-   bool addMode;
-   bool enabled;
-   bool dacPowered;
+   uint8_t period = 0;
+   uint8_t counter = 0;
+   uint8_t volume = 0;
+   uint8_t volumeLoad = 0;
+   bool addMode = false;
+   bool enabled = true;
+   bool dacPowered = false;
 };
 
 class SweepUnit
@@ -284,12 +256,6 @@ class SweepUnit
 public:
    SweepUnit(SquareWaveChannel& owningSquareWaveChannel)
       : owner(owningSquareWaveChannel)
-      , shadowFrequency(0)
-      , period(0)
-      , counter(0)
-      , shift(0)
-      , negate(false)
-      , enabled(false)
    {
    }
 
@@ -349,26 +315,17 @@ private:
 
    SquareWaveChannel& owner;
 
-   uint16_t shadowFrequency;
-   uint8_t period;
-   uint8_t counter;
-   uint8_t shift;
-   bool negate;
-   bool enabled;
+   uint16_t shadowFrequency = 0;
+   uint8_t period = 0;
+   uint8_t counter = 0;
+   uint8_t shift = 0;
+   bool negate = false;
+   bool enabled = false;
 };
 
 class WaveUnit
 {
 public:
-   // TODO Wave table initial values different on CGB
-   WaveUnit()
-      : position(0)
-      , volumeCode(0)
-      , dacPowered(false)
-      , waveTable{ 0x84, 0x40, 0x43, 0xAA, 0x2D, 0x78, 0x92, 0x3C, 0x60, 0x59, 0x59, 0xB0, 0x34, 0xB8, 0x2E, 0xDA }
-   {
-   }
-
    void clock()
    {
       position = (position + 1) % 32;
@@ -425,23 +382,15 @@ public:
 private:
    DECLARE_UI_FRIEND
 
-   uint8_t position;
-   uint8_t volumeCode;
-   bool dacPowered;
-   std::array<uint8_t, 16> waveTable;
+   uint8_t position = 0;
+   uint8_t volumeCode = 0;
+   bool dacPowered = false;
+   std::array<uint8_t, 16> waveTable = { 0x84, 0x40, 0x43, 0xAA, 0x2D, 0x78, 0x92, 0x3C, 0x60, 0x59, 0x59, 0xB0, 0x34, 0xB8, 0x2E, 0xDA }; // TODO Wave table initial values different on CGB
 };
 
 class LFSRUnit
 {
 public:
-   LFSRUnit()
-      : clockShift(0)
-      , widthMode(false)
-      , divisorCode(0)
-      , lfsr(0xFFFF)
-   {
-   }
-
    void clock();
 
    void trigger()
@@ -489,10 +438,10 @@ public:
 private:
    DECLARE_UI_FRIEND
 
-   uint8_t clockShift;
-   bool widthMode;
-   uint8_t divisorCode;
-   uint16_t lfsr;
+   uint8_t clockShift = 0;
+   bool widthMode = false;
+   uint8_t divisorCode = 0;
+   uint16_t lfsr = 0xFFFF;
 };
 
 class SquareWaveChannel : public SoundChannel
@@ -559,7 +508,7 @@ private:
    DECLARE_UI_FRIEND
 
    SoundTimer<SquareWaveChannel> timer;
-   uint16_t frequency;
+   uint16_t frequency = 0;
 
    DutyUnit dutyUnit;
    LengthUnit lengthUnit;
@@ -620,7 +569,7 @@ private:
    }
 
    SoundTimer<WaveChannel> timer;
-   uint16_t frequency;
+   uint16_t frequency = 0;
 
    WaveUnit waveUnit;
    LengthUnit lengthUnit;
@@ -686,7 +635,6 @@ public:
    FrameSequencer(SoundController& owningSoundController)
       : timer(*this)
       , owner(owningSoundController)
-      , step(0)
    {
       timer.setPeriod(CPU::kClockSpeed / 512);
    }
@@ -708,14 +656,12 @@ private:
 
    SoundTimer<FrameSequencer> timer;
    SoundController& owner;
-   uint8_t step;
+   uint8_t step = 0;
 };
 
 class Mixer
 {
 public:
-   Mixer();
-
    AudioSample mix(int8_t square1Sample, int8_t square2Sample, int8_t waveSample, int8_t noiseSample) const;
 
    uint8_t readNr50() const;
@@ -727,20 +673,20 @@ public:
 private:
    DECLARE_UI_FRIEND
 
-   uint8_t leftVolume;
-   uint8_t rightVolume;
+   uint8_t leftVolume = 0x01;
+   uint8_t rightVolume = 0x01;
 
-   bool vinLeftEnabled;
-   bool vinRightEnabled;
+   bool vinLeftEnabled = false;
+   bool vinRightEnabled = false;
 
-   bool square1LeftEnabled;
-   bool square1RightEnabled;
-   bool square2LeftEnabled;
-   bool square2RightEnabled;
-   bool waveLeftEnabled;
-   bool waveRightEnabled;
-   bool noiseLeftEnabled;
-   bool noiseRightEnabled;
+   bool square1LeftEnabled = false;
+   bool square1RightEnabled = false;
+   bool square2LeftEnabled = false;
+   bool square2RightEnabled = false;
+   bool waveLeftEnabled = false;
+   bool waveRightEnabled = false;
+   bool noiseLeftEnabled = false;
+   bool noiseRightEnabled = false;
 };
 
 class SoundController
@@ -840,16 +786,16 @@ private:
 
    FrameSequencer frameSequencer;
    Mixer mixer;
-   bool powerEnabled;
+   bool powerEnabled = false;
 
    SquareWaveChannel squareWaveChannel1;
    SquareWaveChannel squareWaveChannel2;
    WaveChannel waveChannel;
    NoiseChannel noiseChannel;
 
-   bool generateData;
-   uint8_t cyclesSinceLastSample;
-   std::size_t activeBufferIndex;
+   bool generateData = false;
+   uint8_t cyclesSinceLastSample = 0;
+   std::size_t activeBufferIndex = 0;
    std::array<std::vector<AudioSample>, 2> buffers;
 
 #if GBC_WITH_UI

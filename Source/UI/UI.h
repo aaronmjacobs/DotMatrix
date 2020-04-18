@@ -12,21 +12,21 @@ class Renderer;
 
 namespace GBC
 {
-class Cartridge;
-class CPU;
-class DutyUnit;
-class EnvelopeUnit;
-class GameBoy;
-class LengthUnit;
-class LFSRUnit;
-class SoundChannel;
-class SoundController;
-class SweepUnit;
-class WaveUnit;
-template<typename T>
-class SoundTimer;
-struct Joypad;
-} // namespace GBC
+   class Cartridge;
+   class CPU;
+   class DutyUnit;
+   class EnvelopeUnit;
+   class GameBoy;
+   class LengthUnit;
+   class LFSRUnit;
+   class SoundChannel;
+   class SoundController;
+   class SweepUnit;
+   class WaveUnit;
+   template<typename T>
+   class SoundTimer;
+   struct Joypad;
+}
 
 struct GLFWwindow;
 

@@ -10,20 +10,15 @@
 class Archive
 {
 public:
-   Archive()
-      : offset(0)
-   {
-   }
+   Archive() = default;
 
    Archive(std::size_t numBytes)
       : data(numBytes)
-      , offset(0)
    {
    }
 
    Archive(const std::vector<uint8_t>& inData)
       : data(inData)
-      , offset(0)
    {
    }
 
@@ -107,5 +102,5 @@ public:
 
 private:
    std::vector<uint8_t> data;
-   std::size_t offset;
+   std::size_t offset = 0;
 };

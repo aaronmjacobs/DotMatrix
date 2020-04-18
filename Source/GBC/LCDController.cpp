@@ -11,98 +11,70 @@ namespace GBC
 
 namespace
 {
-
-namespace LCDC
-{
-
-enum Enum : uint8_t
-{
-   DisplayEnable = 1 << 7,
-   WindowTileMapDisplaySelect = 1 << 6,
-   WindowDisplayEnable = 1 << 5,
-   BGAndWindowTileDataSelect = 1 << 4,
-   BGTileMapDisplaySelect = 1 << 3,
-   ObjSpriteSize = 1 << 2,
-   ObjSpriteDisplayEnable = 1 << 1,
-   BGDisplay = 1 << 0
-};
-
-} // namespace LCDC
-
-namespace STAT
-{
-
-enum Enum : uint8_t
-{
-   LycLyCoincidence = 1 << 6,
-   Mode2OAMInterrupt = 1 << 5,
-   Mode1VBlankInterrupt = 1 << 4,
-   Mode0HBlankInterrupt = 1 << 3,
-   CoincidenceFlag = 1 << 2,
-   ModeFlag = (1 << 1) | (1 << 0)
-};
-
-} // namespace STAT
-
-namespace Attrib
-{
-
-enum Enum : uint8_t
-{
-   ObjToBgPriority = 1 << 7,
-   YFlip = 1 << 6,
-   XFlip = 1 << 5,
-   PaletteNumber = 1 << 4, // Non-CGB only
-   TileVRAMBank = 1 << 3, // CGB only
-   CGBPaletteNumber = (1 << 2) | (1 << 1) | (1 << 0) // CGB only
-};
-
-} // namespace Attrib
-
-std::array<uint8_t, 4> extractPaletteColors(uint8_t palette)
-{
-   static const uint8_t kMask = 0x03;
-
-   std::array<uint8_t, 4> colors;
-   for (std::size_t i = 0; i < colors.size(); ++i)
+   namespace LCDC
    {
-      std::size_t shift = i * 2;
-      colors[i] = (palette & (kMask << shift)) >> shift;
+      enum Enum : uint8_t
+      {
+         DisplayEnable = 1 << 7,
+         WindowTileMapDisplaySelect = 1 << 6,
+         WindowDisplayEnable = 1 << 5,
+         BGAndWindowTileDataSelect = 1 << 4,
+         BGTileMapDisplaySelect = 1 << 3,
+         ObjSpriteSize = 1 << 2,
+         ObjSpriteDisplayEnable = 1 << 1,
+         BGDisplay = 1 << 0
+      };
    }
 
-   return colors;
+   namespace STAT
+   {
+      enum Enum : uint8_t
+      {
+         LycLyCoincidence = 1 << 6,
+         Mode2OAMInterrupt = 1 << 5,
+         Mode1VBlankInterrupt = 1 << 4,
+         Mode0HBlankInterrupt = 1 << 3,
+         CoincidenceFlag = 1 << 2,
+         ModeFlag = (1 << 1) | (1 << 0)
+      };
+   }
+
+   namespace Attrib
+   {
+      enum Enum : uint8_t
+      {
+         ObjToBgPriority = 1 << 7,
+         YFlip = 1 << 6,
+         XFlip = 1 << 5,
+         PaletteNumber = 1 << 4, // Non-CGB only
+         TileVRAMBank = 1 << 3, // CGB only
+         CGBPaletteNumber = (1 << 2) | (1 << 1) | (1 << 0) // CGB only
+      };
+   }
+
+   std::array<uint8_t, 4> extractPaletteColors(uint8_t palette)
+   {
+      static const uint8_t kMask = 0x03;
+
+      std::array<uint8_t, 4> colors;
+      for (std::size_t i = 0; i < colors.size(); ++i)
+      {
+         std::size_t shift = i * 2;
+         colors[i] = (palette & (kMask << shift)) >> shift;
+      }
+
+      return colors;
+   }
+
+   const uint32_t kSearchOAMCycles = 80;
+   const uint32_t kDataTransferCycles = 172;
+   const uint32_t kHBlankCycles = 204;
+   const uint32_t kCyclesPerLine = kSearchOAMCycles + kDataTransferCycles + kHBlankCycles; // 456
 }
-
-const uint32_t kSearchOAMCycles = 80;
-const uint32_t kDataTransferCycles = 172;
-const uint32_t kHBlankCycles = 204;
-const uint32_t kCyclesPerLine = kSearchOAMCycles + kDataTransferCycles + kHBlankCycles; // 456
-
-} // namespace
 
 LCDController::LCDController(GameBoy& gb)
    : gameBoy(gb)
    , modeCyclesRemaining(kCyclesPerLine)
-   , dmaRequested(false)
-   , dmaPending(false)
-   , dmaInProgress(false)
-   , dmaIndex(0)
-   , dmaSource(0)
-   , lcdc(0)
-   , stat(Mode::VBlank)
-   , scy(0)
-   , scx(0)
-   , ly(144)
-   , lyc(0)
-   , dma(0)
-   , bgp(0)
-   , obp0(0)
-   , obp1(0)
-   , wy(0)
-   , wx(0)
-   , vram{}
-   , oam{}
-   , bgPaletteIndices{}
 {
 }
 
@@ -316,8 +288,8 @@ void LCDController::updateMode()
    modeCyclesRemaining -= CPU::kClockCyclesPerMachineCycle;
    if (modeCyclesRemaining == 0)
    {
-      Mode::Enum lastMode = static_cast<Mode::Enum>(stat & STAT::ModeFlag);
-      Mode::Enum currentMode = lastMode;
+      Mode lastMode = static_cast<Mode>(stat & STAT::ModeFlag);
+      Mode currentMode = lastMode;
 
       switch (lastMode)
       {
@@ -366,7 +338,7 @@ void LCDController::updateMode()
          setMode(currentMode);
       }
 
-      modeCyclesRemaining = kModeCycles[currentMode];
+      modeCyclesRemaining = kModeCycles[Enum::cast(currentMode)];
    }
 }
 
@@ -381,10 +353,10 @@ void LCDController::updateLYC()
    }
 }
 
-void LCDController::setMode(Mode::Enum newMode)
+void LCDController::setMode(Mode newMode)
 {
    ASSERT(modeCyclesRemaining == 0);
-   stat = (stat & ~STAT::ModeFlag) | newMode;
+   stat = (stat & ~STAT::ModeFlag) | Enum::cast(newMode);
 
    switch (newMode)
    {
@@ -580,8 +552,7 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line)
    }
 }
 
-uint8_t LCDController::fetchPaletteIndex(uint8_t tileNum, uint8_t row, uint8_t col, bool signedTileOffset,
-                                         bool flipX) const
+uint8_t LCDController::fetchPaletteIndex(uint8_t tileNum, uint8_t row, uint8_t col, bool signedTileOffset, bool flipX) const
 {
    static const uint16_t kBytesPerTile = 16;
    static const uint8_t kBytesPerLine = 2;

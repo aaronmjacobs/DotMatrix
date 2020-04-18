@@ -19,7 +19,6 @@ class MemoryBankController
 public:
    MemoryBankController(const Cartridge& cartridge)
       : cart(cartridge)
-      , wroteToRam(false)
    {
    }
 
@@ -50,7 +49,7 @@ public:
 
 protected:
    const Cartridge& cart;
-   bool wroteToRam;
+   bool wroteToRam = false;
 };
 
 class MBCNull : public MemoryBankController
@@ -82,12 +81,12 @@ private:
       RAM = 0x01
    };
 
-   bool ramEnabled;
-   uint8_t romBankNumber;
-   uint8_t ramBankNumber;
-   BankingMode bankingMode;
+   bool ramEnabled = false;
+   uint8_t romBankNumber = 0x01;
+   uint8_t ramBankNumber = 0x00;
+   BankingMode bankingMode = BankingMode::ROM;
 
-   std::array<RamBank, 4> ramBanks;
+   std::array<RamBank, 4> ramBanks = {};
 };
 
 class MBC2 : public MemoryBankController
@@ -104,10 +103,10 @@ public:
 private:
    DECLARE_UI_FRIEND
 
-   bool ramEnabled;
-   uint8_t romBankNumber;
+   bool ramEnabled = false;
+   uint8_t romBankNumber = 0x01;
 
-   std::array<uint8_t, 0x0200> ram;
+   std::array<uint8_t, 0x0200> ram = {};
 };
 
 class MBC3 : public MemoryBankController
@@ -139,13 +138,13 @@ public:
    // Real time clock
    struct RTC
    {
-      uint8_t seconds;
-      uint8_t minutes;
-      uint8_t hours;
-      uint8_t daysLow;
+      uint8_t seconds = 0;
+      uint8_t minutes = 0;
+      uint8_t hours = 0;
+      uint8_t daysLow = 0;
       union
       {
-         uint8_t daysHigh;
+         uint8_t daysHigh = 0;
          struct
          {
             uint8_t daysMsb : 1;
@@ -159,16 +158,16 @@ public:
 private:
    DECLARE_UI_FRIEND
 
-   bool ramRTCEnabled;
-   bool rtcLatched;
-   uint8_t latchData;
-   uint8_t romBankNumber;
-   BankRegisterMode bankRegisterMode;
+   bool ramRTCEnabled = false;
+   bool rtcLatched = false;
+   uint8_t latchData = 0xFF;
+   uint8_t romBankNumber = 0x01;
+   BankRegisterMode bankRegisterMode = BankRegisterMode::BankZero;
    RTC rtc;
    RTC rtcLatchedCopy;
-   double tickTime;
+   double tickTime = 0.0;
 
-   std::array<RamBank, 4> ramBanks;
+   std::array<RamBank, 4> ramBanks = {};
 };
 
 class MBC5 : public MemoryBankController
@@ -185,11 +184,11 @@ public:
 private:
    DECLARE_UI_FRIEND
 
-   bool ramEnabled;
-   uint16_t romBankNumber;
-   uint8_t ramBankNumber;
+   bool ramEnabled = false;
+   uint16_t romBankNumber = 0x0001;
+   uint8_t ramBankNumber = 0x00;
 
-   std::array<RamBank, 16> ramBanks;
+   std::array<RamBank, 16> ramBanks = {};
 };
 
 } // namespace GBC

@@ -91,35 +91,35 @@ private:
    void saveGameAsync();
    void saveThreadMain();
 
-   GLFWwindow* window;
-   UPtr<GBC::GameBoy> gameBoy;
-   UPtr<Renderer> renderer;
+   GLFWwindow* window = nullptr;
+   UPtr<GBC::GameBoy> gameBoy = nullptr;
+   UPtr<Renderer> renderer = nullptr;
 #if GBC_WITH_AUDIO
    AudioManager audioManager;
 #endif // GBC_WITH_AUDIO
 
-   UPtr<PixelArray> pixels;
+   UPtr<PixelArray> pixels = nullptr;
 
 #if GBC_WITH_BOOTSTRAP
    std::vector<uint8_t> bootstrap;
 #endif // GBC_WITH_BOOTSTRAP
 
 #if GBC_WITH_UI
-   UPtr<UI> ui;
-   double timeScale;
-   bool renderUi;
-   bool skipNextTick;
+   UPtr<UI> ui = nullptr;
+   double timeScale = 1.0;
+   bool renderUi = true;
+   bool skipNextTick = false;
 #endif // GBC_WITH_UI
 
    KeyboardInputDevice keyboardInputDevice;
    ControllerInputDevice controllerInputDevice;
 
-   bool cartWroteToRamLastFrame;
+   bool cartWroteToRamLastFrame = false;
 
    std::thread saveThread;
    std::mutex saveThreadMutex;
    std::condition_variable saveThreadConditionVariable;
-   std::atomic_bool exiting;
+   std::atomic_bool exiting = false;
    moodycamel::ReaderWriterQueue<SaveData> saveQueue;
 
    Bounds savedWindowBounds;
