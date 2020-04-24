@@ -69,24 +69,28 @@ add_subdirectory("${LIB_DIR}/Boxer")
 target_link_libraries(${PROJECT_NAME} PUBLIC Boxer)
 
 # glad
-add_subdirectory("${LIB_DIR}/glad")
-target_link_libraries(${PROJECT_NAME} PUBLIC optimized glad)
-target_link_libraries(${PROJECT_NAME} PUBLIC debug glad-debug)
-list(APPEND COPY_LIBS "${CMAKE_DL_LIBS}")
+if(GBC_WITH_WINDOW)
+   add_subdirectory("${LIB_DIR}/glad")
+   target_link_libraries(${PROJECT_NAME} PUBLIC optimized glad)
+   target_link_libraries(${PROJECT_NAME} PUBLIC debug glad-debug)
+   list(APPEND COPY_LIBS "${CMAKE_DL_LIBS}")
+endif()
 
 ## Shared ##
 
 set(BUILD_SHARED_LIBS ON CACHE INTERNAL "Build shared libraries")
 
 # GLFW
-set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs")
-set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs")
-set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
-set(GLFW_INSTALL OFF CACHE INTERNAL "Generate installation target")
-add_subdirectory("${LIB_DIR}/glfw")
-target_compile_definitions(${PROJECT_NAME} PUBLIC GLFW_INCLUDE_NONE)
-target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
-list(APPEND COPY_LIBS glfw)
+if(GBC_WITH_WINDOW)
+   set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "Build the GLFW example programs")
+   set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "Build the GLFW test programs")
+   set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
+   set(GLFW_INSTALL OFF CACHE INTERNAL "Generate installation target")
+   add_subdirectory("${LIB_DIR}/glfw")
+   target_compile_definitions(${PROJECT_NAME} PUBLIC GLFW_INCLUDE_NONE)
+   target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
+   list(APPEND COPY_LIBS glfw)
+endif()
 
 # OpenAL
 if(GBC_WITH_AUDIO)

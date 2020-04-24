@@ -28,32 +28,36 @@ target_sources(${PROJECT_NAME} PRIVATE
    "${SRC_DIR}/GBC/SoundController.h"
    "${SRC_DIR}/GBC/SoundController.cpp"
 
-   "${SRC_DIR}/Platform/Input/InputDevice.h"
-   "${SRC_DIR}/Platform/Input/ControllerInputDevice.h"
-   "${SRC_DIR}/Platform/Input/ControllerInputDevice.cpp"
-   "${SRC_DIR}/Platform/Input/KeyboardInputDevice.h"
-   "${SRC_DIR}/Platform/Input/KeyboardInputDevice.cpp"
-
    "${SRC_DIR}/Platform/Utils/IOUtils.h"
    "${SRC_DIR}/Platform/Utils/IOUtils.cpp"
    "${SRC_DIR}/Platform/Utils/OSUtils.h"
    "${SRC_DIR}/Platform/Utils/OSUtils.cpp"
 
-   "${SRC_DIR}/Platform/Video/Mesh.h"
-   "${SRC_DIR}/Platform/Video/Mesh.cpp"
-   "${SRC_DIR}/Platform/Video/Model.h"
-   "${SRC_DIR}/Platform/Video/Model.cpp"
-   "${SRC_DIR}/Platform/Video/Renderer.h"
-   "${SRC_DIR}/Platform/Video/Renderer.cpp"
-   "${SRC_DIR}/Platform/Video/Shader.h"
-   "${SRC_DIR}/Platform/Video/Shader.cpp"
-   "${SRC_DIR}/Platform/Video/ShaderProgram.h"
-   "${SRC_DIR}/Platform/Video/ShaderProgram.cpp"
-   "${SRC_DIR}/Platform/Video/Texture.h"
-   "${SRC_DIR}/Platform/Video/Texture.cpp"
-
    "${SRC_DIR}/UI/UIFriend.h"
 )
+
+if(GBC_WITH_WINDOW)
+   target_sources(${PROJECT_NAME} PRIVATE
+      "${SRC_DIR}/Platform/Input/InputDevice.h"
+      "${SRC_DIR}/Platform/Input/ControllerInputDevice.h"
+      "${SRC_DIR}/Platform/Input/ControllerInputDevice.cpp"
+      "${SRC_DIR}/Platform/Input/KeyboardInputDevice.h"
+      "${SRC_DIR}/Platform/Input/KeyboardInputDevice.cpp"
+
+      "${SRC_DIR}/Platform/Video/Mesh.h"
+      "${SRC_DIR}/Platform/Video/Mesh.cpp"
+      "${SRC_DIR}/Platform/Video/Model.h"
+      "${SRC_DIR}/Platform/Video/Model.cpp"
+      "${SRC_DIR}/Platform/Video/Renderer.h"
+      "${SRC_DIR}/Platform/Video/Renderer.cpp"
+      "${SRC_DIR}/Platform/Video/Shader.h"
+      "${SRC_DIR}/Platform/Video/Shader.cpp"
+      "${SRC_DIR}/Platform/Video/ShaderProgram.h"
+      "${SRC_DIR}/Platform/Video/ShaderProgram.cpp"
+      "${SRC_DIR}/Platform/Video/Texture.h"
+      "${SRC_DIR}/Platform/Video/Texture.cpp"
+   )
+endif()
 
 if(GBC_WITH_AUDIO)
    target_sources(${PROJECT_NAME} PRIVATE
