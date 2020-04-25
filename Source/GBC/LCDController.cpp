@@ -1,4 +1,5 @@
 #include "Core/Log.h"
+#include "Core/Math.h"
 
 #include "GBC/CPU.h"
 #include "GBC/LCDController.h"
@@ -76,12 +77,6 @@ LCDController::LCDController(GameBoy& gb)
    : gameBoy(gb)
    , modeCyclesRemaining(kCyclesPerLine)
 {
-}
-
-void LCDController::machineCycle()
-{
-   updateDMA();
-   updateMode();
 }
 
 void LCDController::onCPUStopped()
@@ -445,49 +440,46 @@ void LCDController::scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t lin
       return;
    }
 
-   uint8_t adjustedY;
-   if (isWindow)
+   int16_t yOffset = isWindow ? -wy : scy;
+   int16_t xOffset = isWindow ? (kWindowXOffset - wx) : scx;
+
+   uint8_t adjustedY = y + yOffset;
+   uint8_t row = adjustedY % kTileHeight;
+   uint16_t tileMapYOffset = (adjustedY / kTileHeight) * kNumTilesPerLine;
+
+   uint8_t tileMapDisplaySelect = isWindow ? LCDC::WindowTileMapDisplaySelect : LCDC::BGTileMapDisplaySelect;
+   uint16_t tileMapBase = (lcdc & tileMapDisplaySelect) ? 0x1C00 : 0x1800;
+   bool signedTileOffset = (lcdc & LCDC::BGAndWindowTileDataSelect) == 0x00;
+
+   uint16_t pixelYOffset = kScreenWidth * y;
+
+   uint8_t x = 0;
+   if (isWindow && xOffset < 0)
    {
-      adjustedY = y - wy;
+      x -= xOffset;
    }
-   else
+
+   while (x < kScreenWidth)
    {
-      adjustedY = y + scy;
-   }
-
-   for (uint8_t x = 0; x < kScreenWidth; ++x)
-   {
-      if (isWindow && x < wx - kWindowXOffset)
-      {
-         // Haven't reached the window yet
-         continue;
-      }
-
-      uint8_t adjustedX;
-      if (isWindow)
-      {
-         adjustedX = x - (wx - kWindowXOffset);
-      }
-      else
-      {
-         adjustedX = x + scx;
-      }
-
-      // Fetch the tile number
-      uint8_t tileMapDisplaySelect = isWindow ? LCDC::WindowTileMapDisplaySelect : LCDC::BGTileMapDisplaySelect;
-      uint16_t tileMapBase = (lcdc & tileMapDisplaySelect) ? 0x1C00 : 0x1800;
-      uint16_t tileMapOffset = (adjustedX / kTileWidth) + kNumTilesPerLine * (adjustedY / kTileHeight);
-      uint8_t tileNum = vram[tileMapBase + tileMapOffset];
-
-      uint8_t row = adjustedY % kTileHeight;
+      uint8_t adjustedX = x + xOffset;
+      uint8_t tileMapXOffset = adjustedX / kTileWidth;
       uint8_t col = adjustedX % kTileWidth;
-      bool signedTileOffset = (lcdc & LCDC::BGAndWindowTileDataSelect) == 0x00;
-      uint8_t paletteIndex = fetchPaletteIndex(tileNum, row, col, signedTileOffset, false);
 
-      framebuffer[x + (kScreenWidth * y)] = paletteColors[paletteIndex];
-      if (!isWindow)
+      uint16_t tileMapOffset = tileMapXOffset + tileMapYOffset;
+      uint8_t tileNum = vram[tileMapBase + tileMapOffset];
+      TileLine tileLine = fetchTileLine(tileNum, row, signedTileOffset);
+
+      for (; col < kTileWidth && x < kScreenWidth; ++col, ++x)
       {
-         bgPaletteIndices[x + (kScreenWidth * y)] = paletteColors[paletteIndex];
+         uint8_t mask = (0b10000000 >> col); // bit 7 is the leftmost pixel, bit 0 is the rightmost pixel
+         uint8_t paletteIndex = static_cast<bool>(tileLine.firstByte & mask) + 2 * static_cast<bool>(tileLine.secondByte & mask);
+
+         uint16_t pixel = x + pixelYOffset;
+         framebuffer[pixel] = paletteColors[paletteIndex];
+         if (!isWindow)
+         {
+            bgPaletteIndices[pixel] = paletteColors[paletteIndex];
+         }
       }
    }
 }
@@ -501,6 +493,7 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line)
 
    uint8_t y = line;
    uint8_t spriteHeight = (lcdc & LCDC::ObjSpriteSize) ? kTallSpriteHeight : kShortSpriteHeight;
+   uint16_t pixelYOffset = kScreenWidth * y;
 
    for (int8_t sprite = kNumSprites - 1; sprite >= 0; --sprite)
    {
@@ -523,6 +516,9 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line)
       }
       row %= spriteHeight;
 
+      bool flipX = (attributes.flags & Attrib::XFlip) != 0x00;
+      TileLine tileLine = fetchTileLine(attributes.tileNum, row, false);
+
       for (uint8_t col = 0; col < kSpriteWidth; ++col)
       {
          int16_t x = attributes.xPos - kSpriteWidth + col;
@@ -531,8 +527,10 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line)
             continue;
          }
 
-         bool flipX = (attributes.flags & Attrib::XFlip) != 0x00;
-         uint8_t paletteIndex = fetchPaletteIndex(attributes.tileNum, row, col, false, flipX);
+         uint16_t pixel = x + pixelYOffset;
+
+         uint8_t mask = flipX ? (0b00000001 << col) : (0b10000000 >> col); // bit 7 is the leftmost pixel, bit 0 is the rightmost pixel
+         uint8_t paletteIndex = static_cast<bool>(tileLine.firstByte & mask) + 2 * static_cast<bool>(tileLine.secondByte & mask);
 
          // Sprite palette index 0 is transparent
          bool aboveBackground = paletteIndex != 0;
@@ -540,58 +538,45 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line)
          // If the OBJ-to-BG priority bit is set, the sprite is behind background palette colors 1-3
          if (attributes.flags & Attrib::ObjToBgPriority)
          {
-            ASSERT(bgPaletteIndices[x + (kScreenWidth * y)] <= 3);
-            aboveBackground = aboveBackground && bgPaletteIndices[x + (kScreenWidth * y)] == 0;
+            ASSERT(bgPaletteIndices[pixel] <= 3);
+            aboveBackground = aboveBackground && bgPaletteIndices[pixel] == 0;
          }
 
          if (aboveBackground)
          {
-            framebuffer[x + (kScreenWidth * y)] = paletteColors[paletteIndex];
+            framebuffer[pixel] = paletteColors[paletteIndex];
          }
       }
    }
 }
 
-uint8_t LCDController::fetchPaletteIndex(uint8_t tileNum, uint8_t row, uint8_t col, bool signedTileOffset, bool flipX) const
+LCDController::TileLine LCDController::fetchTileLine(uint8_t tileNum, uint8_t line, bool signedTileOffset) const
 {
-   static const uint16_t kBytesPerTile = 16;
+   static const uint8_t kBytesPerTile = 16;
    static const uint8_t kBytesPerLine = 2;
    static const uint16_t kSignedTileDataAddr = 0x0800;
    static const uint16_t kUnsignedTileDataAddr = 0x0000;
 
-   uint16_t tileDataBase = signedTileOffset ? kSignedTileDataAddr : kUnsignedTileDataAddr;
+   uint16_t tileDataBase;
    uint16_t tileDataTileOffset;
    if (signedTileOffset)
    {
-      // treat the tile number as a signed offset
-      tileDataTileOffset = (*reinterpret_cast<int8_t*>(&tileNum) + 128) * kBytesPerTile;
+      tileDataBase = kSignedTileDataAddr;
+      tileDataTileOffset = (Math::reinterpretAsSigned(tileNum) + 128) * kBytesPerTile;
    }
    else
    {
+      tileDataBase = kUnsignedTileDataAddr;
       tileDataTileOffset = tileNum * kBytesPerTile;
    }
-   uint8_t tileDataLineOffset = row * kBytesPerLine;
-   uint8_t tileLineFirstByte = vram[tileDataBase + tileDataTileOffset + tileDataLineOffset];
-   uint8_t tileLineSecondByte = vram[tileDataBase + tileDataTileOffset + tileDataLineOffset + 1];
+   uint8_t tileDataLineOffset = line * kBytesPerLine;
+   uint16_t totalOffset = tileDataBase + tileDataTileOffset + tileDataLineOffset;
 
-   uint8_t bit = col % 8;
-   if (!flipX)
-   {
-      bit = 7 - bit; // bit 7 is the leftmost pixel, bit 0 is the rightmost pixel
-   }
-   uint8_t mask = 1 << bit;
+   TileLine tileLine;
+   tileLine.firstByte = vram[totalOffset];
+   tileLine.secondByte = vram[totalOffset + 1];
 
-   uint8_t paletteIndex = 0;
-   if (tileLineFirstByte & mask)
-   {
-      paletteIndex += 1;
-   }
-   if (tileLineSecondByte & mask)
-   {
-      paletteIndex += 2;
-   }
-
-   return paletteIndex;
+   return tileLine;
 }
 
 } // namespace GBC

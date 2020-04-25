@@ -1,4 +1,5 @@
 #include "Core/Log.h"
+#include "Core/Math.h"
 
 #include "GBC/CPU.h"
 #include "GBC/GameBoy.h"
@@ -36,15 +37,6 @@ namespace
    {
       return operation.param1 == Opr::Imm16 || operation.param2 == Opr::Imm16
          || operation.param1 == Opr::DerefImm16 || operation.param2 == Opr::DerefImm16;
-   }
-
-   // Interpret a uint8_t as an int8_t
-   // static_cast<int8_t> behavior is platform dependent, memcpy is not
-   int8_t toSigned(uint8_t value)
-   {
-      int8_t signedVal;
-      std::memcpy(&signedVal, &value, sizeof(signedVal));
-      return signedVal;
    }
 
    constexpr bool checkBitOperand(Opr operand, uint8_t value)
@@ -1053,7 +1045,7 @@ void CPU::execute16(Operation operation)
    {
       ASSERT(operation.param1 == Opr::SP && operation.param2 == Opr::Imm8Signed);
       // Special case - uses one byte signed immediate value
-      int8_t n = toSigned(param2.read8());
+      int8_t n = Math::reinterpretAsSigned(param2.read8());
 
       uint16_t param1Val = param1.read16();
       uint32_t result = param1Val + n;
@@ -1107,7 +1099,7 @@ void CPU::execute16(Operation operation)
          ASSERT(operation.param2 == Opr::Imm8Signed);
 
          // Special case - uses one byte signed immediate value
-         int8_t n = toSigned(param2.read8());
+         int8_t n = Math::reinterpretAsSigned(param2.read8());
 
          uint16_t param1Val = param1.read16();
          uint32_t result = param1Val + n;
@@ -1168,7 +1160,7 @@ void CPU::execute16(Operation operation)
          ASSERT(operation.param1 == Opr::Imm8Signed);
 
          // Special case - uses one byte signed immediate value
-         int8_t n = toSigned(param1.read8());
+         int8_t n = Math::reinterpretAsSigned(param1.read8());
 
          reg.pc += n;
          gameBoy.machineCycle();
@@ -1178,7 +1170,7 @@ void CPU::execute16(Operation operation)
          ASSERT(operation.param2 == Opr::Imm8Signed);
 
          // Special case - uses one byte signed immediate value
-         int8_t n = toSigned(param2.read8());
+         int8_t n = Math::reinterpretAsSigned(param2.read8());
 
          if (evalJumpCondition(operation.param1, getFlag(Flag::Zero), getFlag(Flag::Carry)))
          {

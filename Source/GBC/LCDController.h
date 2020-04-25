@@ -61,7 +61,12 @@ class LCDController
 public:
    LCDController(GameBoy& gb);
 
-   void machineCycle();
+   void machineCycle()
+   {
+      updateDMA();
+      updateMode();
+   }
+
    void onCPUStopped();
 
    uint8_t read(uint16_t address) const;
@@ -81,6 +86,12 @@ private:
       uint8_t flags = 0;
    };
 
+   struct TileLine
+   {
+      uint8_t firstByte = 0x00;
+      uint8_t secondByte = 0x00;
+   };
+
    void updateDMA();
    void updateMode();
    void updateLYC();
@@ -90,7 +101,8 @@ private:
    template<bool isWindow>
    void scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t line, const std::array<uint8_t, 4>& paletteColors);
    void scanSprites(Framebuffer& framebuffer, uint8_t line);
-   uint8_t fetchPaletteIndex(uint8_t tileNum, uint8_t row, uint8_t col, bool signedTileOffset, bool flipX) const;
+
+   TileLine fetchTileLine(uint8_t tileNum, uint8_t line, bool signedTileOffset) const;
 
    bool isSpriteAttributeTableAccessible() const
    {
