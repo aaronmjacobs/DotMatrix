@@ -92,20 +92,20 @@ private:
    void saveThreadMain();
 
    GLFWwindow* window = nullptr;
-   UPtr<GBC::GameBoy> gameBoy = nullptr;
-   UPtr<Renderer> renderer = nullptr;
+   UPtr<GBC::GameBoy> gameBoy;
+   UPtr<Renderer> renderer;
 #if GBC_WITH_AUDIO
    AudioManager audioManager;
 #endif // GBC_WITH_AUDIO
 
-   UPtr<PixelArray> pixels = nullptr;
+   UPtr<PixelArray> pixels;
 
 #if GBC_WITH_BOOTSTRAP
    std::vector<uint8_t> bootstrap;
 #endif // GBC_WITH_BOOTSTRAP
 
 #if GBC_WITH_UI
-   UPtr<UI> ui = nullptr;
+   UPtr<UI> ui;
    double timeScale = 1.0;
    bool renderUi = true;
    bool skipNextTick = false;
