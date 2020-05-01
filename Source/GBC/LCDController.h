@@ -15,14 +15,6 @@ class GameBoy;
 constexpr size_t kScreenWidth = 160;
 constexpr size_t kScreenHeight = 144;
 
-enum class Mode : uint8_t
-{
-   HBlank = 0,
-   VBlank = 1,
-   SearchOAM = 2,
-   DataTransfer = 3
-};
-
 using Framebuffer = std::array<uint8_t, kScreenWidth * kScreenHeight>;
 
 class DoubleBufferedFramebuffer
@@ -78,6 +70,42 @@ public:
    }
 
 private:
+   enum class Mode : uint8_t
+   {
+      HBlank = 0,
+      VBlank = 1,
+      SearchOAM = 2,
+      DataTransfer = 3
+   };
+
+   struct ControlRegister
+   {
+      bool lcdDisplayEnabled = false;
+      bool windowUseUpperTileMap = false;
+      bool windowDisplayEnabled = false;
+      bool bgAndWindowUseUnsignedTileData = false;
+      bool bgUseUpperTileMap = false;
+      bool useLargeSpriteSize = false;
+      bool spriteDisplayEnabled = false;
+      bool bgWindowDisplayEnabled = false;
+
+      uint8_t read() const;
+      void write(uint8_t value);
+   };
+
+   struct StatusRegister
+   {
+      bool coincidenceInterrupt = false;
+      bool oamInterrupt = false;
+      bool vBlankInterrupt = false;
+      bool hBlankInterrupt = false;
+      bool coincidenceFlag = false;
+      Mode mode = Mode::VBlank;
+
+      uint8_t read() const;
+      void write(uint8_t value);
+   };
+
    struct SpriteAttributes
    {
       uint8_t yPos = 0;
@@ -119,8 +147,9 @@ private:
    uint8_t dmaIndex = 0;
    uint16_t dmaSource = 0;
 
-   uint8_t lcdc = 0;
-   uint8_t stat = Enum::cast(Mode::VBlank);
+   ControlRegister controlRegister;
+   StatusRegister statusRegister;
+
    uint8_t scy = 0;
    uint8_t scx = 0;
    uint8_t ly = 144;

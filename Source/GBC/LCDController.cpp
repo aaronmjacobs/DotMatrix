@@ -73,6 +73,51 @@ namespace
    const uint32_t kCyclesPerLine = kSearchOAMCycles + kDataTransferCycles + kHBlankCycles; // 456
 }
 
+uint8_t LCDController::ControlRegister::read() const
+{
+   return lcdDisplayEnabled * LCDC::DisplayEnable
+      | windowUseUpperTileMap * LCDC::WindowTileMapDisplaySelect
+      | windowDisplayEnabled * LCDC::WindowDisplayEnable
+      | bgAndWindowUseUnsignedTileData * LCDC::BGAndWindowTileDataSelect
+      | bgUseUpperTileMap * LCDC::BGTileMapDisplaySelect
+      | useLargeSpriteSize * LCDC::ObjSpriteSize
+      | spriteDisplayEnabled * LCDC::ObjSpriteDisplayEnable
+      | bgWindowDisplayEnabled * LCDC::BGDisplay;
+}
+
+void LCDController::ControlRegister::write(uint8_t value)
+{
+   lcdDisplayEnabled = value & LCDC::DisplayEnable;
+   windowUseUpperTileMap = value & LCDC::WindowTileMapDisplaySelect;
+   windowDisplayEnabled = value & LCDC::WindowDisplayEnable;
+   bgAndWindowUseUnsignedTileData = value & LCDC::BGAndWindowTileDataSelect;
+   bgUseUpperTileMap = value & LCDC::BGTileMapDisplaySelect;
+   useLargeSpriteSize = value & LCDC::ObjSpriteSize;
+   spriteDisplayEnabled = value & LCDC::ObjSpriteDisplayEnable;
+   bgWindowDisplayEnabled = value & LCDC::BGDisplay;
+}
+
+uint8_t LCDController::StatusRegister::read() const
+{
+   return 0x80
+      | coincidenceInterrupt * STAT::LycLyCoincidence
+      | oamInterrupt * STAT::Mode2OAMInterrupt
+      | vBlankInterrupt * STAT::Mode1VBlankInterrupt
+      | hBlankInterrupt * STAT::Mode2OAMInterrupt
+      | coincidenceFlag * STAT::CoincidenceFlag
+      | Enum::cast(mode);
+}
+
+void LCDController::StatusRegister::write(uint8_t value)
+{
+   coincidenceInterrupt = value & STAT::LycLyCoincidence;
+   oamInterrupt = value & STAT::Mode2OAMInterrupt;
+   vBlankInterrupt = value & STAT::Mode1VBlankInterrupt;
+   hBlankInterrupt = value & STAT::Mode2OAMInterrupt;
+   coincidenceFlag = value & STAT::CoincidenceFlag;
+   // Mode flag should be unaffected by memory writes
+}
+
 LCDController::LCDController(GameBoy& gb)
    : gameBoy(gb)
    , modeCyclesRemaining(kCyclesPerLine)
@@ -106,10 +151,10 @@ uint8_t LCDController::read(uint16_t address) const
       switch (address)
       {
       case 0xFF40: // LCD control
-         value = lcdc;
+         value = controlRegister.read();
          break;
       case 0xFF41: // LCD status
-         value = stat | 0x80;
+         value = statusRegister.read();
          break;
       case 0xFF42: // Scroll y
          value = scy;
@@ -178,14 +223,10 @@ void LCDController::write(uint16_t address, uint8_t value)
       switch (address)
       {
       case 0xFF40: // LCD control
-         lcdc = value;
+         controlRegister.write(value);
          break;
       case 0xFF41: // LCD status
-      {
-         // Mode flag should be unaffected by memory writes
-         static const uint8_t kModeFlagMask = 0b00000011;
-         stat = (value & ~kModeFlagMask) | (stat & kModeFlagMask);
-      }
+         statusRegister.write(value);
          break;
       case 0xFF42: // Scroll y
          scy = value;
@@ -283,7 +324,7 @@ void LCDController::updateMode()
    modeCyclesRemaining -= CPU::kClockCyclesPerMachineCycle;
    if (modeCyclesRemaining == 0)
    {
-      Mode lastMode = static_cast<Mode>(stat & STAT::ModeFlag);
+      Mode lastMode = statusRegister.mode;
       Mode currentMode = lastMode;
 
       switch (lastMode)
@@ -339,10 +380,9 @@ void LCDController::updateMode()
 
 void LCDController::updateLYC()
 {
-   bool coincident = ly == lyc;
-   stat = (stat & ~STAT::CoincidenceFlag) | (coincident ? STAT::CoincidenceFlag : 0);
+   statusRegister.coincidenceFlag = ly == lyc;
 
-   if (coincident && (stat & STAT::LycLyCoincidence))
+   if (statusRegister.coincidenceFlag && statusRegister.coincidenceInterrupt)
    {
       gameBoy.requestInterrupt(Interrupt::LCDState);
    }
@@ -351,12 +391,12 @@ void LCDController::updateLYC()
 void LCDController::setMode(Mode newMode)
 {
    ASSERT(modeCyclesRemaining == 0);
-   stat = (stat & ~STAT::ModeFlag) | Enum::cast(newMode);
+   statusRegister.mode = newMode;
 
    switch (newMode)
    {
    case Mode::HBlank:
-      if (stat & STAT::Mode0HBlankInterrupt)
+      if (statusRegister.hBlankInterrupt)
       {
          gameBoy.requestInterrupt(Interrupt::LCDState);
       }
@@ -364,13 +404,13 @@ void LCDController::setMode(Mode newMode)
    case Mode::VBlank:
       gameBoy.requestInterrupt(Interrupt::VBlank);
 
-      if (stat & STAT::Mode1VBlankInterrupt)
+      if (statusRegister.vBlankInterrupt)
       {
          gameBoy.requestInterrupt(Interrupt::LCDState);
       }
 
       // If bit 5 (mode 2 OAM interrupt) is set, an interrupt is also triggered at line 144 when vblank starts
-      if (stat & STAT::Mode2OAMInterrupt)
+      if (statusRegister.oamInterrupt)
       {
          gameBoy.requestInterrupt(Interrupt::LCDState);
       }
@@ -379,7 +419,7 @@ void LCDController::setMode(Mode newMode)
       bgPaletteIndices.fill(0);
       break;
    case Mode::SearchOAM:
-      if (stat & STAT::Mode2OAMInterrupt)
+      if (statusRegister.oamInterrupt)
       {
          gameBoy.requestInterrupt(Interrupt::LCDState);
       }
@@ -397,19 +437,19 @@ void LCDController::setMode(Mode newMode)
 
 void LCDController::scan(Framebuffer& framebuffer, uint8_t line, const std::array<uint8_t, 4>& paletteColors)
 {
-   if (lcdc & LCDC::DisplayEnable)
+   if (controlRegister.lcdDisplayEnabled)
    {
-      if (lcdc & LCDC::BGDisplay)
+      if (controlRegister.bgWindowDisplayEnabled)
       {
          scanBackgroundOrWindow<false>(framebuffer, line, paletteColors);
       }
 
-      if (lcdc & LCDC::WindowDisplayEnable)
+      if (controlRegister.bgWindowDisplayEnabled && controlRegister.windowDisplayEnabled)
       {
          scanBackgroundOrWindow<true>(framebuffer, line, paletteColors);
       }
 
-      if (lcdc & LCDC::ObjSpriteDisplayEnable)
+      if (controlRegister.spriteDisplayEnabled)
       {
          scanSprites(framebuffer, line);
       }
@@ -447,9 +487,9 @@ void LCDController::scanBackgroundOrWindow(Framebuffer& framebuffer, uint8_t lin
    uint8_t row = adjustedY % kTileHeight;
    uint16_t tileMapYOffset = (adjustedY / kTileHeight) * kNumTilesPerLine;
 
-   uint8_t tileMapDisplaySelect = isWindow ? LCDC::WindowTileMapDisplaySelect : LCDC::BGTileMapDisplaySelect;
-   uint16_t tileMapBase = (lcdc & tileMapDisplaySelect) ? 0x1C00 : 0x1800;
-   bool signedTileOffset = (lcdc & LCDC::BGAndWindowTileDataSelect) == 0x00;
+   bool tileMapDisplaySelect = isWindow ? controlRegister.windowUseUpperTileMap : controlRegister.bgUseUpperTileMap;
+   uint16_t tileMapBase = tileMapDisplaySelect ? 0x1C00 : 0x1800;
+   bool signedTileOffset = !controlRegister.bgAndWindowUseUnsignedTileData;
 
    uint16_t pixelYOffset = kScreenWidth * y;
 
@@ -492,7 +532,7 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line)
    static const uint16_t kNumSprites = 40;
 
    uint8_t y = line;
-   uint8_t spriteHeight = (lcdc & LCDC::ObjSpriteSize) ? kTallSpriteHeight : kShortSpriteHeight;
+   uint8_t spriteHeight = controlRegister.useLargeSpriteSize ? kTallSpriteHeight : kShortSpriteHeight;
    uint16_t pixelYOffset = kScreenWidth * y;
 
    for (int8_t sprite = kNumSprites - 1; sprite >= 0; --sprite)
