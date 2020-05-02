@@ -199,7 +199,7 @@ void UI::renderSoundChannel(GBC::SoundChannel& soundChannel, std::vector<float>&
       ImGui::Checkbox("Enabled", &soundChannel.enabled);
 
       ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 50.0f);
-      ImGui::PlotLines("Output", audioSampleGetter, &samples, kNumPlottedSamples, offset, nullptr, -16.0f, 15.0f, ImVec2(0.0f, 100.0f));
+      ImGui::PlotLines("Output", audioSampleGetter, &samples, kNumPlottedSamples, offset, nullptr, -15.0f, 15.0f, ImVec2(0.0f, 100.0f));
 
       ImGui::TreePop();
    }

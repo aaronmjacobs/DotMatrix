@@ -444,31 +444,31 @@ void FrameSequencer::clock()
 
 AudioSample Mixer::mix(int8_t square1Sample, int8_t square2Sample, int8_t waveSample, int8_t noiseSample) const
 {
-   // All samples should be in the range [-16, 16)
-   ASSERT(square1Sample >= -16 && square1Sample < 16
-      && square2Sample >= -16 && square2Sample < 16
-      && waveSample >= -16 && waveSample < 16
-      && noiseSample >= -16 && noiseSample < 16);
+   // Square / noise samples should be in the range [-15, 15], wave samples should be in the range [-8, 7]
+   ASSERT(square1Sample >= -15 && square1Sample <= 15
+      && square2Sample >= -15 && square2Sample <= 15
+      && waveSample >= -8 && waveSample <= 7
+      && noiseSample >= -15 && noiseSample <= 15);
 
-   int16_t square1LeftSample = square1Sample * leftVolume * square1LeftEnabled;
-   int16_t square1RightSample = square1Sample * rightVolume * square1RightEnabled;
+   int8_t square1LeftSample = square1Sample * square1LeftEnabled;
+   int8_t square1RightSample = square1Sample * square1RightEnabled;
 
-   int16_t square2LeftSample = square2Sample * leftVolume * square2LeftEnabled;
-   int16_t square2RightSample = square2Sample * rightVolume * square2RightEnabled;
+   int8_t square2LeftSample = square2Sample * square2LeftEnabled;
+   int8_t square2RightSample = square2Sample * square2RightEnabled;
 
-   int16_t waveLeftSample = waveSample * leftVolume * waveLeftEnabled;
-   int16_t waveRightSample = waveSample * rightVolume * waveRightEnabled;
+   int8_t waveLeftSample = waveSample * waveLeftEnabled;
+   int8_t waveRightSample = waveSample * waveRightEnabled;
 
-   int16_t noiseLeftSample = noiseSample * leftVolume * noiseLeftEnabled;
-   int16_t noiseRightSample = noiseSample * rightVolume * noiseRightEnabled;
+   int8_t noiseLeftSample = noiseSample * noiseLeftEnabled;
+   int8_t noiseRightSample = noiseSample * noiseRightEnabled;
 
-   // Each of the 4 samples uses a max of 5 bits (-16 = 0b00011111)
-   // Volume multiplication has a max value of 8 (causing a max shift of 3 bits) producing a total usage of 8 bits
-   // Adding all 4 samples uses a max of 10 bits (value can double each time, meaning two shifts)
+   // Each of the 4 samples uses a max of 5 bits (-15 = 0b11110001, 15 = 0b00001111)
+   // Adding all 4 samples uses a max of 7 bits (value can double each time, meaning two shifts)
+   // Volume multiplication has a max value of 8 (causing a max shift of 3 bits) producing a total usage of 10 bits
    // That gives us a total of 6 bits left over, which we can shift into to maximize volume
    AudioSample sample;
-   sample.left = (square1LeftSample + square2LeftSample + waveLeftSample + noiseLeftSample) << 6;
-   sample.right = (square1RightSample + square2RightSample + waveRightSample + noiseRightSample) << 6;
+   sample.left = ((square1LeftSample + square2LeftSample + waveLeftSample + noiseLeftSample) * leftVolume) << 6;
+   sample.right = ((square1RightSample + square2RightSample + waveRightSample + noiseRightSample) * rightVolume) << 6;
 
    return sample;
 }
