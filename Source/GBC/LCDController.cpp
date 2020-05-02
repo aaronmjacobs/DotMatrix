@@ -103,7 +103,7 @@ uint8_t LCDController::StatusRegister::read() const
       | coincidenceInterrupt * STAT::LycLyCoincidence
       | oamInterrupt * STAT::Mode2OAMInterrupt
       | vBlankInterrupt * STAT::Mode1VBlankInterrupt
-      | hBlankInterrupt * STAT::Mode2OAMInterrupt
+      | hBlankInterrupt * STAT::Mode0HBlankInterrupt
       | coincidenceFlag * STAT::CoincidenceFlag
       | Enum::cast(mode);
 }
@@ -113,7 +113,7 @@ void LCDController::StatusRegister::write(uint8_t value)
    coincidenceInterrupt = value & STAT::LycLyCoincidence;
    oamInterrupt = value & STAT::Mode2OAMInterrupt;
    vBlankInterrupt = value & STAT::Mode1VBlankInterrupt;
-   hBlankInterrupt = value & STAT::Mode2OAMInterrupt;
+   hBlankInterrupt = value & STAT::Mode0HBlankInterrupt;
    coincidenceFlag = value & STAT::CoincidenceFlag;
    // Mode flag should be unaffected by memory writes
 }
