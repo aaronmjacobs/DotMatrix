@@ -12,6 +12,7 @@
 #include "UI/UIFriend.h"
 
 #include <array>
+#include <functional>
 #if GBC_WITH_DEBUGGER
 #include <vector>
 #endif // GBC_WITH_DEBUGGER
@@ -85,7 +86,7 @@ class GameBoy
 public:
    static const inline uint8_t kInvalidAddressByte = 0xFF;
 
-   using SerialCallback = uint8_t (*)(uint8_t);
+   using SerialCallback = std::function<uint8_t(uint8_t)>;
 
    GameBoy();
    ~GameBoy();
@@ -204,6 +205,16 @@ public:
    void writeDirect(uint16_t address, uint8_t value);
 
 private:
+   struct SerialControlRegister
+   {
+      bool startTransfer = false;
+      // bool fastSpeed = false; // CGB only
+      bool useInternalClock = false;
+
+      uint8_t read() const;
+      void write(uint8_t value);
+   };
+
    CPU cpu;
    LCDController lcdController;
    SoundController soundController;
@@ -223,7 +234,8 @@ private:
    bool timaReloadedWithTma = false;
    bool lastTimerBit = false;
 
-   uint64_t serialCycles = 0;
+   SerialControlRegister serialControlRegister;
+   uint16_t serialCycles = 0;
    SerialCallback serialCallback = nullptr;
 
 #if GBC_WITH_BOOTSTRAP
@@ -242,7 +254,6 @@ private:
 
    uint8_t p1 = 0x00; // Joy pad / system info (0xFF00)
    uint8_t sb = 0x00; // Serial transfer data (0xFF01)
-   uint8_t sc = 0x00; // Serial IO control (0xFF02)
    uint8_t tima = 0x00; // Timer counter (0xFF05)
    uint8_t tma = 0x00; // Timer modulo (0xFF06)
    uint8_t tac = 0x00; // Timer control (0xFF07)

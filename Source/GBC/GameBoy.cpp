@@ -35,6 +35,21 @@ namespace
    }
 }
 
+uint8_t GameBoy::SerialControlRegister::read() const
+{
+   return startTransfer * SC::TransferStartFlag
+      | 0x7E
+      // | fastSpeed * SC::ClockSpeed // CGB only
+      | useInternalClock * SC::ShiftClock;
+}
+
+void GameBoy::SerialControlRegister::write(uint8_t value)
+{
+   startTransfer = value & SC::TransferStartFlag;
+   // fastSpeed = value & SC::ClockSpeed; // CGB only
+   useInternalClock = value & SC::ShiftClock;
+}
+
 GameBoy::GameBoy()
    : cpu(*this)
    , lcdController(*this)
@@ -289,12 +304,12 @@ void GameBoy::machineCycleTima()
 
 void GameBoy::machineCycleSerial()
 {
-   static const uint64_t kSerialFrequency = 8192; // 8192Hz
-   static const uint64_t kCyclesPerSerialBit = CPU::kClockSpeed / kSerialFrequency; // 512
-   static const uint64_t kCyclesPerSerialByte = kCyclesPerSerialBit * 8; // 4096
+   static const uint16_t kSerialFrequency = 8192; // 8192Hz
+   static const uint16_t kCyclesPerSerialBit = CPU::kClockSpeed / kSerialFrequency; // 512
+   static const uint16_t kCyclesPerSerialByte = kCyclesPerSerialBit * 8; // 4096
    STATIC_ASSERT(CPU::kClockSpeed % kSerialFrequency == 0); // Should divide evenly
 
-   if ((sc & SC::TransferStartFlag) && (sc & SC::ShiftClock))
+   if (serialControlRegister.startTransfer && serialControlRegister.useInternalClock)
    {
       serialCycles += CPU::kClockCyclesPerMachineCycle;
 
@@ -311,7 +326,7 @@ void GameBoy::machineCycleSerial()
          }
 
          sb = receivedVal;
-         sc &= ~SC::TransferStartFlag;
+         serialControlRegister.startTransfer = false;
          requestInterrupt(Interrupt::Serial);
       }
    }
@@ -336,7 +351,7 @@ uint8_t GameBoy::readIO(uint16_t address) const
          value = sb;
          break;
       case 0xFF02:
-         value = sc | 0x7E;
+         value = serialControlRegister.read();
          break;
       case 0xFF04:
          // DIV is just the upper 8 bits of the internal counter
@@ -420,7 +435,7 @@ void GameBoy::writeIO(uint16_t address, uint8_t value)
          sb = value;
          break;
       case 0xFF02:
-         sc = value & 0x81;
+         serialControlRegister.write(value);
          break;
       case 0xFF04: // DIV
          // Counter is reset when anything is written to DIV
