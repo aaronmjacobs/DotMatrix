@@ -69,23 +69,55 @@ namespace
       float testTime;
    };
 
-   Result runTestCart(UPtr<GBC::Cartridge> cart, float time, bool checkAllRegisters)
+   template<std::size_t size>
+   bool valuesMatch(const std::vector<uint8_t>& values, const std::array<uint8_t, size>& testValues)
    {
+      if (values.size() < size)
+      {
+         return false;
+      }
+
+      std::size_t offset = values.size() - size;
+      for (std::size_t i = 0; i < size; ++i)
+      {
+         if (values[offset + i] != testValues[i])
+         {
+            return false;
+         }
+      }
+
+      return true;
+   }
+
+   Result runTestCart(UPtr<GBC::Cartridge> cart, float time, bool isMooneye)
+   {
+      static const std::array<uint8_t, 6> kMooneyeSuccessValues = { 3, 5, 8, 13, 21, 34 };
+      static const std::array<uint8_t, 6> kMooneyeFailureValues = { 0x42, 0x42, 0x42, 0x42, 0x42, 0x42 };
+
       UPtr<GBC::GameBoy> gameBoy = std::make_unique<GBC::GameBoy>();
       gameBoy->setCartridge(std::move(cart));
+
+      std::vector<uint8_t> serialValues;
+      if (isMooneye)
+      {
+         gameBoy->setSerialCallback([gb = gameBoy.get(), &serialValues](uint8_t value) -> uint8_t
+         {
+            serialValues.push_back(value);
+
+            if (valuesMatch(serialValues, kMooneyeSuccessValues) || valuesMatch(serialValues, kMooneyeFailureValues))
+            {
+               gb->onCPUStopped();
+            }
+
+            return 0xFF;
+         });
+      }
 
       gameBoy->tick(time);
 
       // Magic numbers signal a successful test
       const GBC::CPU& cpu = gameBoy->cpu;
-      bool success = cpu.reg.a == 0;
-      if (checkAllRegisters)
-      {
-         success = success
-            && cpu.reg.b == 3 && cpu.reg.c == 5
-            && cpu.reg.d == 8 && cpu.reg.e == 13
-            && cpu.reg.h == 21 && cpu.reg.l == 34;
-      }
+      bool success = isMooneye ? valuesMatch({ cpu.reg.b, cpu.reg.c, cpu.reg.d, cpu.reg.e, cpu.reg.h, cpu.reg.l }, kMooneyeSuccessValues) : cpu.reg.a == 0;
 
       return success ? Result::Pass : Result::Fail;
    }
@@ -102,8 +134,8 @@ namespace
          {
             static const std::string kMooneye = "mooneye";
 
-            bool checkAllRegisters = result.cartPath.find(kMooneye) != std::string::npos;
-            result.result = runTestCart(std::move(cartridge), data.testTime, checkAllRegisters);
+            bool isMooneye = result.cartPath.find(kMooneye) != std::string::npos;
+            result.result = runTestCart(std::move(cartridge), data.testTime, isMooneye);
          }
 
          std::string message = result.cartPath + ": " + getResultName(result.result);
