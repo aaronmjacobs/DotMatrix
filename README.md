@@ -1,4 +1,4 @@
-# Run-G.B.C.
+# Dot Matrix Core
 
-## Game Boy Color Emulator
+## Game Boy Emulator Core
 

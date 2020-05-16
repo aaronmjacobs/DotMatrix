@@ -1,24 +1,6 @@
-[submodule "dependencies/glfw"]
-	path = Libraries/glfw
-	url = https://github.com/glfw/glfw.git
-[submodule "dependencies/openal-soft"]
-	path = Libraries/openal-soft
-	url = https://github.com/kcat/openal-soft.git
-[submodule "dependencies/Boxer"]
-	path = Libraries/Boxer
-	url = https://github.com/aaronmjacobs/Boxer.git
-[submodule "Libraries/readerwriterqueue"]
-	path = Libraries/readerwriterqueue
-	url = https://github.com/cameron314/readerwriterqueue
-[submodule "Libraries/templog"]
-	path = Libraries/templog
-	url = https://github.com/aaronmjacobs/templog.git
 [submodule "Libraries/PPK_ASSERT"]
 	path = Libraries/PPK_ASSERT
 	url = https://github.com/gpakosz/PPK_ASSERT.git
-[submodule "Libraries/imgui"]
-	path = Libraries/imgui
-	url = https://github.com/ocornut/imgui.git
-[submodule "Libraries/imgui_club"]
-	path = Libraries/imgui_club
-	url = https://github.com/aaronmjacobs/imgui_club.git
+[submodule "Libraries/templog"]
+	path = Libraries/templog
+	url = https://github.com/aaronmjacobs/templog.git

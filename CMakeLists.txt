@@ -1,65 +1,25 @@
 ### Project ###
 
-cmake_minimum_required(VERSION 3.8)
-project(Run-GBC VERSION 0.0.0.1 LANGUAGES CXX C)
-set(PROJECT_DISPLAY_NAME "Run-G.B.C.")
+cmake_minimum_required(VERSION 3.17)
+project(DotMatrixCore VERSION 0.0.0.1 LANGUAGES CXX C)
 
 # Options
-set(GBC_LOG_MSVC_STYLE_DEFAULT OFF)
-if(MSVC)
-   set(GBC_LOG_MSVC_STYLE_DEFAULT ON)
-endif()
-option(GBC_LOG_MSVC_STYLE "Format logs for MSVC" ${GBC_LOG_MSVC_STYLE_DEFAULT})
-option(GBC_RUN_TESTS "Run emulator tests" OFF)
-option(GBC_ENABLE_AUDIO "Enable audio" ON)
-option(GBC_ENABLE_BOOTSTRAP "Enable bootstrap" OFF)
-option(GBC_ENABLE_UI "Enable UI" ON)
-option(GBC_ENABLE_DEBUGGER "Enable debugger" ON)
-if(${GBC_ENABLE_AUDIO} AND NOT ${GBC_RUN_TESTS})
-   set(GBC_WITH_AUDIO ON)
-else()
-   set(GBC_WITH_AUDIO OFF)
-endif()
-if(${GBC_ENABLE_BOOTSTRAP})
-   set(GBC_WITH_BOOTSTRAP ON)
-else()
-   set(GBC_WITH_BOOTSTRAP OFF)
-endif()
-if(${GBC_ENABLE_UI} AND NOT ${GBC_RUN_TESTS})
-   set(GBC_WITH_UI ON)
-else()
-   set(GBC_WITH_UI OFF)
-endif()
-if(${GBC_WITH_UI} AND ${GBC_ENABLE_DEBUGGER})
-   set(GBC_WITH_DEBUGGER ON)
-else()
-   set(GBC_WITH_DEBUGGER OFF)
-endif()
-if(${GBC_RUN_TESTS})
-   set(GBC_WITH_WINDOW OFF)
-else()
-   set(GBC_WITH_WINDOW ON)
-endif()
+option(DOT_MATRIX_WITH_BOOTSTRAP "Enable bootstrap" OFF)
+option(DOT_MATRIX_WITH_DEBUGGER "Enable debugger" OFF)
+option(DOT_MATRIX_WITH_PER_CHANNEL_AUDIO_BUFFERS "Enable per-channel audio buffers" OFF)
 
 ### Target ###
 
-add_executable(${PROJECT_NAME} "")
+add_library(${PROJECT_NAME} "")
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
-target_compile_definitions(${PROJECT_NAME} PUBLIC GBC_DEBUG=$<CONFIG:Debug>)
-target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_LOG_MSVC_STYLE=$<BOOL:${GBC_LOG_MSVC_STYLE}>)
-target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_RUN_TESTS=$<BOOL:${GBC_RUN_TESTS}>)
-target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_WITH_AUDIO=$<BOOL:${GBC_WITH_AUDIO}>)
-target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_WITH_BOOTSTRAP=$<BOOL:${GBC_WITH_BOOTSTRAP}>)
-target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_WITH_UI=$<BOOL:${GBC_WITH_UI}>)
-target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_WITH_DEBUGGER=$<BOOL:${GBC_WITH_DEBUGGER}>)
+target_compile_definitions(${PROJECT_NAME} PUBLIC DM_DEBUG=$<CONFIG:Debug>)
+target_compile_definitions(${PROJECT_NAME} PUBLIC DM_WITH_BOOTSTRAP=$<BOOL:${DOT_MATRIX_WITH_BOOTSTRAP}>)
+target_compile_definitions(${PROJECT_NAME} PUBLIC DM_WITH_DEBUGGER=$<BOOL:${DOT_MATRIX_WITH_DEBUGGER}>)
+target_compile_definitions(${PROJECT_NAME} PUBLIC DM_WITH_PER_CHANNEL_AUDIO_BUFFERS=$<BOOL:${DOT_MATRIX_WITH_PER_CHANNEL_AUDIO_BUFFERS}>)
 
 include(TestBigEndian)
-TEST_BIG_ENDIAN(GBC_IS_BIG_ENDIAN)
-target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_IS_BIG_ENDIAN=$<BOOL:${GBC_IS_BIG_ENDIAN}>)
-
-include(CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX("filesystem" GBC_HAS_FILESYSTEM_SUPPORT)
-target_compile_definitions(${PROJECT_NAME} PRIVATE GBC_HAS_FILESYSTEM_SUPPORT=$<BOOL:${GBC_HAS_FILESYSTEM_SUPPORT}>)
+TEST_BIG_ENDIAN(DOT_MATRIX_IS_BIG_ENDIAN)
+target_compile_definitions(${PROJECT_NAME} PUBLIC DM_IS_BIG_ENDIAN=$<BOOL:${DOT_MATRIX_IS_BIG_ENDIAN}>)
 
 if(WIN32)
    target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX)
@@ -72,14 +32,5 @@ set_property(DIRECTORY ${CMAKE_PROJECT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT $
 # Source files
 include(Source.cmake)
 
-# Resources
-set(RES_DIR "${PROJECT_SOURCE_DIR}/Resources")
-set(BIN_RES_DIR "${PROJECT_BINARY_DIR}/Resources")
-include(Resources.cmake)
-
 # Libraries
 include(Libraries.cmake)
-
-### Install ###
-
-include(Install.cmake)
