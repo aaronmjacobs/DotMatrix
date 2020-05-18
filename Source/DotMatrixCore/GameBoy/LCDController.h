@@ -38,14 +38,21 @@ public:
       return *buffers[!writeIndex];
    }
 
+   uint32_t getFrameCounter() const
+   {
+      return frameCounter;
+   }
+
    void flip()
    {
       writeIndex = (writeIndex + 1) % buffers.size();
+      ++frameCounter;
    }
 
 private:
    std::array<std::unique_ptr<Framebuffer>, 2> buffers;
    std::size_t writeIndex = 0;
+   uint32_t frameCounter = 0;
 };
 
 class LCDController
@@ -67,6 +74,11 @@ public:
    const Framebuffer& getFramebuffer() const
    {
       return framebuffers.readBuffer();
+   }
+
+   uint32_t getFrameCounter() const
+   {
+      return framebuffers.getFrameCounter();
    }
 
 private:

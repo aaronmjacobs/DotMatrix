@@ -1,5 +1,13 @@
 set(LIB_DIR "${PROJECT_SOURCE_DIR}/Libraries")
 
+# libretro
+if(${DOT_MATRIX_WITH_LIBRETRO})
+	set(LIBRETRO_DIR "${LIB_DIR}/libretro")
+	target_sources(${PROJECT_NAME} PRIVATE "${LIBRETRO_DIR}/libretro.h")
+	target_include_directories(${PROJECT_NAME} PUBLIC "${LIBRETRO_DIR}")
+	source_group("Libraries\\libretro" "${LIBRETRO_DIR}")
+endif()
+
 # PPK_ASSERT
 set(PPK_DIR "${LIB_DIR}/PPK_ASSERT")
 target_sources(${PROJECT_NAME} PRIVATE "${PPK_DIR}/src/ppk_assert.h;${PPK_DIR}/src/ppk_assert.cpp")

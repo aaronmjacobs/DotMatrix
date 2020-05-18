@@ -64,6 +64,11 @@ GameBoy::~GameBoy()
 
 void GameBoy::tick(double dt)
 {
+   if (dt < 0.0)
+   {
+      dt = 0.0;
+   }
+
    if (cpu.isStopped() && joypad.anyPressed())
    {
       // The STOP state is exited when any button is pressed
