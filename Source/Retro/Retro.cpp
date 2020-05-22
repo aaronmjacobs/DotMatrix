@@ -150,7 +150,7 @@ void retro_get_system_info(struct retro_system_info* info)
    if (info)
    {
       info->library_name = DM_PROJECT_DISPLAY_NAME;
-      info->library_version = DM_PROJECT_VERSION_STRING;
+      info->library_version = DM_CORE_VERSION_STRING;
       info->valid_extensions = "";
       info->need_fullpath = false;
       info->block_extract = false;
