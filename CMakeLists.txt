@@ -2,6 +2,7 @@
 
 cmake_minimum_required(VERSION 3.17)
 project(DotMatrixCore VERSION 0.0.0.1 LANGUAGES CXX C)
+set(PROJECT_SIMPLE_NAME "DotMatrix")
 set(PROJECT_DISPLAY_NAME "Dot Matrix")
 
 # Options
@@ -35,6 +36,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC DM_DEBUG=$<CONFIG:Debug>)
 target_compile_definitions(${PROJECT_NAME} PUBLIC DM_WITH_BOOTSTRAP=$<BOOL:${DOT_MATRIX_WITH_BOOTSTRAP}>)
 target_compile_definitions(${PROJECT_NAME} PUBLIC DM_WITH_DEBUGGER=$<BOOL:${DOT_MATRIX_WITH_DEBUGGER}>)
 target_compile_definitions(${PROJECT_NAME} PUBLIC DM_WITH_PER_CHANNEL_AUDIO_BUFFERS=$<BOOL:${DOT_MATRIX_WITH_PER_CHANNEL_AUDIO_BUFFERS}>)
+target_compile_definitions(${PROJECT_NAME} PUBLIC DM_PROJECT_SIMPLE_NAME="${PROJECT_SIMPLE_NAME}")
 target_compile_definitions(${PROJECT_NAME} PUBLIC DM_PROJECT_DISPLAY_NAME="${PROJECT_DISPLAY_NAME}")
 target_compile_definitions(${PROJECT_NAME} PUBLIC DM_CORE_VERSION_STRING="${PROJECT_VERSION}")
 
