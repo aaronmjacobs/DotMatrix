@@ -53,20 +53,6 @@ namespace
       };
    }
 
-   std::array<uint8_t, 4> extractPaletteColors(uint8_t palette)
-   {
-      static const uint8_t kMask = 0x03;
-
-      std::array<uint8_t, 4> colors;
-      for (std::size_t i = 0; i < colors.size(); ++i)
-      {
-         std::size_t shift = i * 2;
-         colors[i] = (palette & (kMask << shift)) >> shift;
-      }
-
-      return colors;
-   }
-
    const uint32_t kSearchOAMCycles = 80;
    const uint32_t kDataTransferCycles = 172;
    const uint32_t kHBlankCycles = 204;
@@ -275,6 +261,20 @@ void LCDController::write(uint16_t address, uint8_t value)
    {
       DM_ASSERT(false);
    }
+}
+
+std::array<uint8_t, 4> LCDController::extractPaletteColors(uint8_t palette) const
+{
+   static const uint8_t kMask = 0x03;
+
+   std::array<uint8_t, 4> colors;
+   for (std::size_t i = 0; i < colors.size(); ++i)
+   {
+      std::size_t shift = i * 2;
+      colors[i] = (palette & (kMask << shift)) >> shift;
+   }
+
+   return colors;
 }
 
 void LCDController::updateDMA()

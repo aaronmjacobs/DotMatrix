@@ -81,6 +81,8 @@ public:
       return framebuffers.getFrameCounter();
    }
 
+   std::array<uint8_t, 4> extractPaletteColors(uint8_t palette) const;
+
 private:
    enum class Mode : uint8_t
    {
