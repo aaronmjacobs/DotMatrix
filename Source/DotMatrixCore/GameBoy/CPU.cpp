@@ -332,17 +332,10 @@ void CPU::step()
 {
    DM_ASSERT(!stopped);
 
-   if (halted)
+   if (halted && !gameBoy.isAnyInterruptActive())
    {
-      if (gameBoy.isAnyInterruptActive())
-      {
-         halted = false;
-      }
-      else
-      {
-         gameBoy.machineCycle();
-         return;
-      }
+      gameBoy.machineCycle();
+      return;
    }
 
    Operation operation = fetch();
@@ -414,6 +407,8 @@ bool CPU::handleInterrupts()
       {
          return handleInterrupt(Interrupt::Joypad);
       }
+
+      DM_ASSERT(!halted); // handleInterrupts() should only be called while halted if at least one interrupt is active
    }
 
    return false;
@@ -423,18 +418,19 @@ bool CPU::handleInterrupt(Interrupt interrupt)
 {
    DM_ASSERT((ime || halted) && gameBoy.isInterruptActive(interrupt));
 
-   if (halted && !ime)
+   bool wasHalted = halted;
+   halted = false;
+
+   if (wasHalted && !ime)
    {
       // The HALT state is left when an enabled interrupt occurs, no matter if the IME is enabled or not.
       // However, if IME is disabled the interrupt is not serviced.
-      halted = false;
       return false;
    }
 
    ime = false;
    interruptEnableRequested = false;
    gameBoy.clearInterruptRequest(interrupt);
-   halted = false;
 
    // two wait states
    gameBoy.machineCycle();
