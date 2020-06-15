@@ -9,12 +9,14 @@ namespace DotMatrix
 
 void EnvelopeUnit::clock()
 {
+   DM_ASSERT(counter > 0);
+   --counter;
+
    if (counter == 0)
    {
-      // The volume envelope and sweep timers treat a period of 0 as 8
-      counter = period == 0 ? 8 : period;
+      resetCounter();
 
-      if (period != 0 && enabled)
+      if (enabled && period != 0)
       {
          uint8_t newVolume = addMode ? volume + 1 : volume - 1;
          if (newVolume < 16)
@@ -27,17 +29,16 @@ void EnvelopeUnit::clock()
          }
       }
    }
-   else
-   {
-      --counter;
-   }
 }
 
 void SweepUnit::clock()
 {
+   DM_ASSERT(counter > 0);
+   --counter;
+
    if (counter == 0)
    {
-      counter = period == 0 ? 8 : period; // TODO Correct?
+      resetCounter();
 
       if (enabled && period != 0)
       {
@@ -51,10 +52,6 @@ void SweepUnit::clock()
             calculateNewFrequency();
          }
       }
-   }
-   else
-   {
-      --counter;
    }
 }
 

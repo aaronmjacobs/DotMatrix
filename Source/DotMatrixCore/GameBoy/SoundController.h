@@ -191,7 +191,7 @@ public:
 
    void trigger()
    {
-      counter = period == 0 ? 8 : period;
+      resetCounter();
       volume = volumeLoad;
       enabled = true;
    }
@@ -230,8 +230,14 @@ public:
    }
 
 private:
+   void resetCounter()
+   {
+      // The volume envelope and sweep timers treat a period of 0 as 8
+      counter = period == 0 ? 8 : period;
+   }
+
    uint8_t period = 0;
-   uint8_t counter = 0;
+   uint8_t counter = 8;
    uint8_t volume = 0;
    uint8_t volumeLoad = 0;
    bool addMode = false;
@@ -252,7 +258,7 @@ public:
    void trigger()
    {
       // Sweep timer is reloaded
-      counter = period == 0 ? 8 : period;
+      resetCounter();
 
       updateEnabledState();
 
@@ -299,11 +305,17 @@ public:
    uint16_t calculateNewFrequency();
 
 private:
+   void resetCounter()
+   {
+      // The volume envelope and sweep timers treat a period of 0 as 8
+      counter = period == 0 ? 8 : period;
+   }
+
    SquareWaveChannel& owner;
 
    uint16_t shadowFrequency = 0;
    uint8_t period = 0;
-   uint8_t counter = 0;
+   uint8_t counter = 8;
    uint8_t shift = 0;
    bool negate = false;
    bool enabled = false;
