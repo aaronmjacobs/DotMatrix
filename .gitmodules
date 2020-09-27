@@ -4,3 +4,24 @@
 [submodule "Libraries/templog"]
 	path = Libraries/templog
 	url = https://github.com/aaronmjacobs/templog.git
+[submodule "Libraries/Boxer"]
+	path = Libraries/Boxer
+	url = https://github.com/aaronmjacobs/Boxer.git
+[submodule "Libraries/glfw"]
+	path = Libraries/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "Libraries/imgui"]
+	path = Libraries/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "Libraries/imgui_club"]
+	path = Libraries/imgui_club
+	url = https://github.com/ocornut/imgui_club.git
+[submodule "Libraries/openal-soft"]
+	path = Libraries/openal-soft
+	url = https://github.com/kcat/openal-soft.git
+[submodule "Libraries/PlatformUtils"]
+	path = Libraries/PlatformUtils
+	url = https://github.com/aaronmjacobs/PlatformUtils.git
+[submodule "Libraries/readerwriterqueue"]
+	path = Libraries/readerwriterqueue
+	url = https://github.com/cameron314/readerwriterqueue.git
