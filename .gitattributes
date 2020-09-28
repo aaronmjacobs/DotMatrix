@@ -1,1 +1,3 @@
 Libraries/* linguist-vendored
+Test/Results/* linguist-generated
+Test/Roms/* linguist-vendored
