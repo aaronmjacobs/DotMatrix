@@ -66,7 +66,7 @@ namespace
 void UI::renderMemoryWindow(GameBoy& gameBoy) const
 {
    ImGui::SetNextWindowPos(ImVec2(5.0f, 5.0f), ImGuiCond_FirstUseEver);
-   ImGui::SetNextWindowSize(ImVec2(560.0f, 312.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowSize(ImVec2(570.0f, 312.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Memory");
 
    if (ImGui::BeginTabBar("MemoryTabBar"))

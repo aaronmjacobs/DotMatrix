@@ -470,8 +470,8 @@ namespace
 
 void UI::renderDebuggerWindow(GameBoy& gameBoy) const
 {
-   ImGui::SetNextWindowPos(ImVec2(910.0f, 5.0f), ImGuiCond_FirstUseEver);
-   ImGui::SetNextWindowSize(ImVec2(364.0f, 312.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowPos(ImVec2(1006.0f, 190.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowSize(ImVec2(429.0f, 390.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Debugger");
 
    bool scroll = false;

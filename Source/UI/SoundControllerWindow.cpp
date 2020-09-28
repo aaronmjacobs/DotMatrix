@@ -59,7 +59,7 @@ namespace
 void UI::renderSoundControllerWindow(SoundController& soundController) const
 {
    ImGui::SetNextWindowPos(ImVec2(5.0f, 322.0f), ImGuiCond_FirstUseEver);
-   ImGui::SetNextWindowSize(ImVec2(529.0f, 393.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowSize(ImVec2(570.0f, 451.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Sound Controller");
 
    if (ImGui::CollapsingHeader("Output", ImGuiTreeNodeFlags_DefaultOpen))

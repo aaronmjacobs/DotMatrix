@@ -56,7 +56,7 @@ namespace
 
 void UI::renderLCDControllerWindow(LCDController& lcdController) const
 {
-   ImGui::SetNextWindowPos(ImVec2(1280.0f, 5.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowPos(ImVec2(935.0f, 5.0f), ImGuiCond_FirstUseEver);
    ImGui::SetNextWindowSize(ImVec2(500.0f, 180.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("LCD Controller");
 

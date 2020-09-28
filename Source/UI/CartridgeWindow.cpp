@@ -368,7 +368,7 @@ namespace
 
 void UI::renderCartridgeWindow(Cartridge* cart) const
 {
-   ImGui::SetNextWindowPos(ImVec2(715.0f, 527.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowPos(ImVec2(875.0f, 585.0f), ImGuiCond_FirstUseEver);
    ImGui::SetNextWindowSize(ImVec2(560.0f, 188.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Cartridge");
 

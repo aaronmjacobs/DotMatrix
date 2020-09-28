@@ -24,8 +24,8 @@ namespace
 
 void UI::renderCPUWindow(CPU& cpu) const
 {
-   ImGui::SetNextWindowPos(ImVec2(925.0f, 322.0f), ImGuiCond_FirstUseEver);
-   ImGui::SetNextWindowSize(ImVec2(350.0f, 200.0f));
+   ImGui::SetNextWindowPos(ImVec2(580.0f, 344.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowSize(ImVec2(336.0f, 200.0f));
    ImGui::Begin("CPU", nullptr, ImGuiWindowFlags_NoResize);
 
    ImGui::Columns(3, "cpu");

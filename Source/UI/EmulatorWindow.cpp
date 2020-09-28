@@ -12,8 +12,8 @@ namespace DotMatrix
 
 void UI::renderEmulatorWindow(Emulator& emulator) const
 {
-   ImGui::SetNextWindowPos(ImVec2(539.0f, 333.0f), ImGuiCond_FirstUseEver);
-   ImGui::SetNextWindowSize(ImVec2(381.0f, 74.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowPos(ImVec2(580.0f, 559.0f), ImGuiCond_FirstUseEver);
+   ImGui::SetNextWindowSize(ImVec2(290.0f, 90.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Emulator");
 
    float timeScale = static_cast<float>(emulator.timeScale);
@@ -21,11 +21,10 @@ void UI::renderEmulatorWindow(Emulator& emulator) const
    emulator.timeScale = timeScale;
 
    uint64_t clockSpeed = Math::round<uint64_t>(CPU::kClockSpeed * timeScale);
-   ImGui::Text("Clock speed: %llu", clockSpeed);
+   ImGui::Text("Clock speed:  %llu", clockSpeed);
 
-   ImGui::SameLine();
    uint64_t totalCycles = emulator.gameBoy ? emulator.gameBoy->totalCycles : 0;
-   ImGui::Text("| Total cycles: %llu", totalCycles);
+   ImGui::Text("Total cycles: %llu", totalCycles);
 
    ImGui::End();
 }

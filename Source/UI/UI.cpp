@@ -16,13 +16,13 @@ namespace DotMatrix
 // static
 int UI::getDesiredWindowWidth()
 {
-   return 1280;
+   return 1440;
 }
 
 // static
 int UI::getDesiredWindowHeight()
 {
-   return 720;
+   return 778;
 }
 
 UI::UI(GLFWwindow* window)
