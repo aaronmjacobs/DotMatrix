@@ -1,4 +1,4 @@
-# Dot Matrix Core
+# Dot Matrix
 
-## Game Boy Emulator Core
+## Game Boy Emulator
 
