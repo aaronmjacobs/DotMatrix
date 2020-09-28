@@ -7,7 +7,7 @@ set(PROJECT_DISPLAY_NAME "Dot Matrix")
 # Options
 option(DOT_MATRIX_WITH_AUDIO "Enable audio" ON)
 option(DOT_MATRIX_WITH_BOOTSTRAP "Enable bootstrap" OFF)
-option(DOT_MATRIX_WITH_DEBUGGER "Enable debugger" OFF)
+option(DOT_MATRIX_WITH_DEBUGGER "Enable debugger" ON)
 option(DOT_MATRIX_WITH_UI "Enable UI" ON)
 
 ### Targets ###
