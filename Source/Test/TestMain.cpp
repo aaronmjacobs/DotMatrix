@@ -1,8 +1,8 @@
 // Hack to allow us access to private members of the CPU
 #define _ALLOW_KEYWORD_MACROS
 #define private public
-#include <DotMatrixCore/GameBoy/Cartridge.h>
-#include <DotMatrixCore/GameBoy/GameBoy.h>
+#include "GameBoy/Cartridge.h"
+#include "GameBoy/GameBoy.h"
 #undef private
 #undef _ALLOW_KEYWORD_MACROS
 

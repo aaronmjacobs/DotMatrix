@@ -2,15 +2,16 @@
 #  pragma comment(linker, "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 #endif // defined(_WIN32) && !DM_DEBUG
 
-#include "Emulator.h"
+#include "Core/Log.h"
+
+#include "Emulator/Emulator.h"
 
 #include <boxer/boxer.h>
-#include <DotMatrixCore/Core/Log.h>
 #include <GLFW/glfw3.h>
 
 int main(int argc, char* argv[])
 {
-   DM_LOG_INFO(DM_PROJECT_DISPLAY_NAME << " app version " << DM_APP_VERSION_STRING << ", core version " << DM_CORE_VERSION_STRING);
+   DM_LOG_INFO(DM_PROJECT_DISPLAY_NAME << " version " << DM_VERSION_STRING);
 
    if (!glfwInit())
    {

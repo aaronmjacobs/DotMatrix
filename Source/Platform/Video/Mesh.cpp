@@ -1,6 +1,6 @@
-#include "Platform/Video/Mesh.h"
+#include "Core/Assert.h"
 
-#include <DotMatrixCore/Core/Assert.h>
+#include "Platform/Video/Mesh.h"
 
 Mesh::Mesh(const float* vertices, unsigned int numVertices,
            const unsigned int* indices, unsigned int numIndices, unsigned int dimensionality)

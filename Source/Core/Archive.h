@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DotMatrixCore/Core/Assert.h"
+#include "Core/Assert.h"
 
 #include <cstdint>
 #include <cstring>

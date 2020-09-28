@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DotMatrixCore/Core/Enum.h"
+#include "Core/Enum.h"
 
 #include <array>
 #include <cstddef>

@@ -1,10 +1,10 @@
-#include "DotMatrixCore/Core/Assert.h"
-#include "DotMatrixCore/Core/Enum.h"
-#include "DotMatrixCore/Core/Log.h"
+#include "Core/Assert.h"
+#include "Core/Enum.h"
+#include "Core/Log.h"
 
-#include "DotMatrixCore/GameBoy/Cartridge.h"
-#include "DotMatrixCore/GameBoy/GameBoy.h"
-#include "DotMatrixCore/GameBoy/MemoryBankController.h"
+#include "GameBoy/Cartridge.h"
+#include "GameBoy/GameBoy.h"
+#include "GameBoy/MemoryBankController.h"
 
 #include <ctime>
 

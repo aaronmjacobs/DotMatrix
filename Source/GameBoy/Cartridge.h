@@ -1,10 +1,10 @@
 #pragma once
 
-#include "DotMatrixCore/Core/Archive.h"
-#include "DotMatrixCore/Core/Assert.h"
+#include "Core/Archive.h"
+#include "Core/Assert.h"
 
-#include "DotMatrixCore/GameBoy/GameBoy.h"
-#include "DotMatrixCore/GameBoy/MemoryBankController.h"
+#include "GameBoy/GameBoy.h"
+#include "GameBoy/MemoryBankController.h"
 
 #include <array>
 #include <cstdint>

@@ -1,7 +1,7 @@
 #include "UI/UI.h"
 
 #include "UI/BeforeCoreIncludes.inl"
-#  include <DotMatrixCore/GameBoy/CPU.h>
+#  include "GameBoy/CPU.h"
 #include "UI/AfterCoreIncludes.inl"
 
 #include <imgui.h>

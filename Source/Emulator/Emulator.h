@@ -1,13 +1,15 @@
 #pragma once
 
+#include "Core/Archive.h"
+
+#include "GameBoy/LCDController.h"
+
 #if DM_WITH_AUDIO
 #include "Platform/Audio/AudioManager.h"
 #endif // DM_WITH_AUDIO
 #include "Platform/Input/ControllerInputDevice.h"
 #include "Platform/Input/KeyboardInputDevice.h"
 
-#include <DotMatrixCore/Core/Archive.h>
-#include <DotMatrixCore/GameBoy/LCDController.h>
 #include <readerwriterqueue.h>
 
 #include <atomic>

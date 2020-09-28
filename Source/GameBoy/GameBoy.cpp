@@ -1,7 +1,7 @@
-#include "DotMatrixCore/Core/Assert.h"
+#include "Core/Assert.h"
 
-#include "DotMatrixCore/GameBoy/Cartridge.h"
-#include "DotMatrixCore/GameBoy/GameBoy.h"
+#include "GameBoy/Cartridge.h"
+#include "GameBoy/GameBoy.h"
 
 namespace DotMatrix
 {

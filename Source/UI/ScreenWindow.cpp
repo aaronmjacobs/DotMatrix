@@ -3,7 +3,7 @@
 #include "UI/UI.h"
 
 #include "UI/BeforeCoreIncludes.inl"
-#  include <DotMatrixCore/GameBoy/LCDController.h>
+#  include "GameBoy/LCDController.h"
 #include "UI/AfterCoreIncludes.inl"
 
 #include <imgui.h>

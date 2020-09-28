@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DotMatrixCore/Core/Archive.h"
+#include "Core/Archive.h"
 
 #include <array>
 #include <cstdint>

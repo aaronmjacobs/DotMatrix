@@ -1,8 +1,8 @@
 #include "UI/UI.h"
 
 #include "UI/BeforeCoreIncludes.inl"
-#  include <DotMatrixCore/Core/Math.h>
-#  include <DotMatrixCore/GameBoy/SoundController.h>
+#  include "Core/Math.h"
+#  include "GameBoy/SoundController.h"
 #include "UI/AfterCoreIncludes.inl"
 
 #include <imgui.h>

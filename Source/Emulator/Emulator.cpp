@@ -1,4 +1,12 @@
-#include "Emulator.h"
+#include "Core/Archive.h"
+#include "Core/Assert.h"
+#include "Core/Log.h"
+
+#include "Emulator/Emulator.h"
+
+#include "GameBoy/Cartridge.h"
+#include "GameBoy/GameBoy.h"
+#include "GameBoy/LCDController.h"
 
 #include "Platform/Video/Renderer.h"
 
@@ -7,12 +15,6 @@
 #endif // DM_WITH_UI
 
 #include <boxer/boxer.h>
-#include <DotMatrixCore/Core/Archive.h>
-#include <DotMatrixCore/Core/Assert.h>
-#include <DotMatrixCore/Core/Log.h>
-#include <DotMatrixCore/GameBoy/Cartridge.h>
-#include <DotMatrixCore/GameBoy/GameBoy.h>
-#include <DotMatrixCore/GameBoy/LCDController.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <PlatformUtils/IOUtils.h>
@@ -217,7 +219,7 @@ namespace
             fileName += ".sav";
 
             // Relative to the app data directory
-            savePath = IOUtils::getAbsoluteAppDataPath(DM_PROJECT_SIMPLE_NAME, fileName);
+            savePath = IOUtils::getAbsoluteAppDataPath(DM_PROJECT_NAME, fileName);
          }
       }
 

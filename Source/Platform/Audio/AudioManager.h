@@ -4,7 +4,7 @@
 #   error "Including AudioManager header, but DM_WITH_AUDIO is not set!"
 #endif // !DM_WITH_AUDIO
 
-#include <DotMatrixCore/GameBoy/SoundController.h>
+#include "GameBoy/SoundController.h"
 
 #include <array>
 #include <cstdint>

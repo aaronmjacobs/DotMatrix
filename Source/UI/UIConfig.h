@@ -6,7 +6,7 @@
 #	error "Including UI config header, but DM_WITH_UI is not set!"
 #endif // !DM_WITH_UI
 
-#include <DotMatrixCore/Core/Assert.h>
+#include "Core/Assert.h"
 
 //---- Define assertion handler. Defaults to calling DM_ASSERT().
 #define IM_ASSERT(_EXPR) DM_ASSERT(_EXPR)

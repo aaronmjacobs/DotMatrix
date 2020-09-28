@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DotMatrixCore/GameBoy/CPU.h"
+#include "GameBoy/CPU.h"
 
 #include <array>
 #include <cstdint>
@@ -699,12 +699,12 @@ public:
       activeBufferIndex = !activeBufferIndex;
 
       buffers[activeBufferIndex].clear();
-#if DM_WITH_PER_CHANNEL_AUDIO_BUFFERS
+#if DM_WITH_UI
       square1Buffers[activeBufferIndex].clear();
       square2Buffers[activeBufferIndex].clear();
       waveBuffers[activeBufferIndex].clear();
       noiseBuffers[activeBufferIndex].clear();
-#endif // DM_WITH_PER_CHANNEL_AUDIO_BUFFERS
+#endif // DM_WITH_UI
 
       return buffers[!activeBufferIndex];
    }
@@ -722,7 +722,7 @@ private:
       return buffers[activeBufferIndex];
    }
 
-#if DM_WITH_PER_CHANNEL_AUDIO_BUFFERS
+#if DM_WITH_UI
    const std::vector<int8_t>& getSquare1Data() const
    {
       return square1Buffers[activeBufferIndex];
@@ -739,7 +739,7 @@ private:
    {
       return noiseBuffers[activeBufferIndex];
    }
-#endif // DM_WITH_PER_CHANNEL_AUDIO_BUFFERS
+#endif // DM_WITH_UI
 
    uint8_t readNr52() const;
    void writeNr52(uint8_t value);
@@ -780,12 +780,12 @@ private:
    std::size_t activeBufferIndex = 0;
    std::array<std::vector<AudioSample>, 2> buffers;
 
-#if DM_WITH_PER_CHANNEL_AUDIO_BUFFERS
+#if DM_WITH_UI
    std::array<std::vector<int8_t>, 2> square1Buffers;
    std::array<std::vector<int8_t>, 2> square2Buffers;
    std::array<std::vector<int8_t>, 2> waveBuffers;
    std::array<std::vector<int8_t>, 2> noiseBuffers;
-#endif // DM_WITH_PER_CHANNEL_AUDIO_BUFFERS
+#endif // DM_WITH_UI
 };
 
 } // namespace DotMatrix

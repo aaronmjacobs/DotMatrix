@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Emulator.h"
+#include "Emulator/Emulator.h"
 
 #include "Platform/Video/Model.h"
 #include "Platform/Video/Texture.h"

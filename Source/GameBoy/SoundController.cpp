@@ -1,6 +1,6 @@
-#include "DotMatrixCore/GameBoy/CPU.h"
-#include "DotMatrixCore/GameBoy/GameBoy.h"
-#include "DotMatrixCore/GameBoy/SoundController.h"
+#include "GameBoy/CPU.h"
+#include "GameBoy/GameBoy.h"
+#include "GameBoy/SoundController.h"
 
 #include <cmath>
 
@@ -535,7 +535,7 @@ SoundController::SoundController()
       buffer.reserve(kReserveSamples);
    }
 
-#if DM_WITH_PER_CHANNEL_AUDIO_BUFFERS
+#if DM_WITH_UI
    for (std::vector<int8_t>& buffer : square1Buffers)
    {
       buffer.reserve(kReserveSamples);
@@ -552,7 +552,7 @@ SoundController::SoundController()
    {
       buffer.reserve(kReserveSamples);
    }
-#endif // DM_WITH_PER_CHANNEL_AUDIO_BUFFERS
+#endif // DM_WITH_UI
 }
 
 void SoundController::machineCycle()
@@ -724,12 +724,12 @@ void SoundController::pushSample()
    AudioSample sample = mixer.mix(square1Sample, square2Sample, waveSample, noiseSample);
    buffers[activeBufferIndex].push_back(sample);
 
-#if DM_WITH_PER_CHANNEL_AUDIO_BUFFERS
+#if DM_WITH_UI
    square1Buffers[activeBufferIndex].push_back(square1Sample);
    square2Buffers[activeBufferIndex].push_back(square2Sample);
    waveBuffers[activeBufferIndex].push_back(waveSample);
    noiseBuffers[activeBufferIndex].push_back(noiseSample);
-#endif // DM_WITH_PER_CHANNEL_AUDIO_BUFFERS
+#endif // DM_WITH_UI
 }
 
 } // namespace DotMatrix

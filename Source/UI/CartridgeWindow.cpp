@@ -1,8 +1,8 @@
 #include "UI/UI.h"
 
 #include "UI/BeforeCoreIncludes.inl"
-#  include <DotMatrixCore/Core/Enum.h>
-#  include <DotMatrixCore/GameBoy/Cartridge.h>
+#  include "Core/Enum.h"
+#  include "GameBoy/Cartridge.h"
 #include "UI/AfterCoreIncludes.inl"
 
 #include <imgui.h>

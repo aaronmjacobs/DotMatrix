@@ -1,8 +1,8 @@
-#include "DotMatrixCore/Core/Assert.h"
-#include "DotMatrixCore/Core/Enum.h"
-#include "DotMatrixCore/Core/Log.h"
+#include "Core/Assert.h"
+#include "Core/Enum.h"
+#include "Core/Log.h"
 
-#include "DotMatrixCore/GameBoy/Cartridge.h"
+#include "GameBoy/Cartridge.h"
 
 #include <cstring>
 #include <memory>

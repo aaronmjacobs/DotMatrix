@@ -1,11 +1,13 @@
+#include "Core/Assert.h"
+#include "Core/Log.h"
+
+#include "GameBoy/SoundController.h"
+
 #include "Platform/Audio/AudioManager.h"
 
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <boxer/boxer.h>
-#include <DotMatrixCore/Core/Assert.h>
-#include <DotMatrixCore/Core/Log.h>
-#include <DotMatrixCore/GameBoy/SoundController.h>
 
 namespace
 {

@@ -1,8 +1,8 @@
 #include "UI/UI.h"
 
 #include "UI/BeforeCoreIncludes.inl"
-#  include "Emulator.h"
-#  include <DotMatrixCore/Core/Math.h>
+#  include "Core/Math.h"
+#  include "Emulator/Emulator.h"
 #include "UI/AfterCoreIncludes.inl"
 
 #include <imgui.h>
@@ -17,7 +17,7 @@ void UI::renderEmulatorWindow(Emulator& emulator) const
    ImGui::Begin("Emulator");
 
    float timeScale = static_cast<float>(emulator.timeScale);
-   ImGui::SliderFloat("Time scale", &timeScale, 0.0f, 1.0f, nullptr, 2.0f);
+   ImGui::SliderFloat("Time scale", &timeScale, 0.0f, 1.0f, nullptr, ImGuiSliderFlags_Logarithmic);
    emulator.timeScale = timeScale;
 
    uint64_t clockSpeed = Math::round<uint64_t>(CPU::kClockSpeed * timeScale);

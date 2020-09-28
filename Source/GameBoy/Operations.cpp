@@ -1,4 +1,4 @@
-#include "DotMatrixCore/GameBoy/Operations.h"
+#include "GameBoy/Operations.h"
 
 namespace DotMatrix
 {

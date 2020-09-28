@@ -1,9 +1,9 @@
-#include "DotMatrixCore/Core/Log.h"
-#include "DotMatrixCore/Core/Math.h"
+#include "Core/Log.h"
+#include "Core/Math.h"
 
-#include "DotMatrixCore/GameBoy/CPU.h"
-#include "DotMatrixCore/GameBoy/LCDController.h"
-#include "DotMatrixCore/GameBoy/GameBoy.h"
+#include "GameBoy/CPU.h"
+#include "GameBoy/LCDController.h"
+#include "GameBoy/GameBoy.h"
 
 #include <array>
 

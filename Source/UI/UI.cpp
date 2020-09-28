@@ -1,8 +1,8 @@
 #include "UI/UI.h"
 
 #include "UI/BeforeCoreIncludes.inl"
-#  include "Emulator.h"
-#  include <DotMatrixCore/GameBoy/GameBoy.h>
+#  include "Emulator/Emulator.h"
+#  include "GameBoy/GameBoy.h"
 #include "UI/AfterCoreIncludes.inl"
 
 #include <glad/glad.h>

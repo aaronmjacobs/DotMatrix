@@ -1,6 +1,7 @@
 #pragma once
 
-#include <DotMatrixCore/Core/Log.h>
+#include "Core/Log.h"
+
 #include <glad/glad.h>
 
 #include <array>

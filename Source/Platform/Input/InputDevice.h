@@ -1,6 +1,6 @@
 #pragma once
 
-#include <DotMatrixCore/GameBoy/GameBoy.h>
+#include "GameBoy/GameBoy.h"
 
 class InputDevice
 {

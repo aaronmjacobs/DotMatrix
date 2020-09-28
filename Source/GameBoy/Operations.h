@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DotMatrixCore/GameBoy/CPU.h"
+#include "GameBoy/CPU.h"
 
 #include <array>
 

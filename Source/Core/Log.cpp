@@ -1,4 +1,4 @@
-#include "DotMatrixCore/Core/Log.h"
+#include "Core/Log.h"
 
 #include <iomanip>
 #include <sstream>

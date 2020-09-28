@@ -1,6 +1,6 @@
-#include "Platform/Video/Texture.h"
+#include "Core/Assert.h"
 
-#include <DotMatrixCore/Core/Assert.h>
+#include "Platform/Video/Texture.h"
 
 Texture::Texture(GLenum textureTarget)
    : target(textureTarget)

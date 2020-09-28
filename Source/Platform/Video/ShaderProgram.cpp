@@ -1,7 +1,7 @@
+#include "Core/Assert.h"
+
 #include "Platform/Video/Shader.h"
 #include "Platform/Video/ShaderProgram.h"
-
-#include <DotMatrixCore/Core/Assert.h>
 
 namespace
 {

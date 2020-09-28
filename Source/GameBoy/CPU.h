@@ -1,7 +1,7 @@
 #pragma once
 
-#include "DotMatrixCore/Core/Assert.h"
-#include "DotMatrixCore/Core/Enum.h"
+#include "Core/Assert.h"
+#include "Core/Enum.h"
 
 #include <cstdint>
 

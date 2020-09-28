@@ -1,12 +1,12 @@
 #pragma once
 
-#include "DotMatrixCore/Core/Archive.h"
-#include "DotMatrixCore/Core/Assert.h"
-#include "DotMatrixCore/Core/Enum.h"
+#include "Core/Archive.h"
+#include "Core/Assert.h"
+#include "Core/Enum.h"
 
-#include "DotMatrixCore/GameBoy/CPU.h"
-#include "DotMatrixCore/GameBoy/LCDController.h"
-#include "DotMatrixCore/GameBoy/SoundController.h"
+#include "GameBoy/CPU.h"
+#include "GameBoy/LCDController.h"
+#include "GameBoy/SoundController.h"
 
 #include <array>
 #include <functional>

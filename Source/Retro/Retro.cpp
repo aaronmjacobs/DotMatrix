@@ -1,10 +1,10 @@
-#include "DotMatrixCore/Core/Assert.h"
+#include "Core/Assert.h"
 
-#include "DotMatrixCore/GameBoy/Cartridge.h"
-#include "DotMatrixCore/GameBoy/CPU.h"
-#include "DotMatrixCore/GameBoy/GameBoy.h"
-#include "DotMatrixCore/GameBoy/LCDController.h"
-#include "DotMatrixCore/GameBoy/SoundController.h"
+#include "GameBoy/Cartridge.h"
+#include "GameBoy/CPU.h"
+#include "GameBoy/GameBoy.h"
+#include "GameBoy/LCDController.h"
+#include "GameBoy/SoundController.h"
 
 #include <libretro.h>
 
@@ -150,7 +150,7 @@ void retro_get_system_info(struct retro_system_info* info)
    if (info)
    {
       info->library_name = DM_PROJECT_DISPLAY_NAME;
-      info->library_version = DM_CORE_VERSION_STRING;
+      info->library_version = DM_VERSION_STRING;
       info->valid_extensions = "";
       info->need_fullpath = false;
       info->block_extract = false;

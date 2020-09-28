@@ -9,9 +9,9 @@
 #include "UI/UI.h"
 
 #include "UI/BeforeCoreIncludes.inl"
-#  include <DotMatrixCore/GameBoy/CPU.h>
-#  include <DotMatrixCore/GameBoy/GameBoy.h>
-#  include <DotMatrixCore/GameBoy/Operations.h>
+#  include "GameBoy/CPU.h"
+#  include "GameBoy/GameBoy.h"
+#  include "GameBoy/Operations.h"
 #include "UI/AfterCoreIncludes.inl"
 
 #include <imgui.h>

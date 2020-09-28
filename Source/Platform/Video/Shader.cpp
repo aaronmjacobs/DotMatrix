@@ -1,6 +1,6 @@
-#include "Platform/Video/Shader.h"
+#include "Core/Assert.h"
 
-#include <DotMatrixCore/Core/Assert.h>
+#include "Platform/Video/Shader.h"
 
 Shader::Shader(const GLenum type)
    : id(glCreateShader(type))
