@@ -317,19 +317,19 @@ int main(int argc, char *argv[])
          std::optional<std::filesystem::path> resultPath;
          if (pathArg == "mooneye")
          {
-            testPath = IOUtils::getAboluteProjectPath("Roms/mooneye-gb_hwtests/acceptance");
-            resultPath = IOUtils::getAboluteProjectPath("Results/mooneye.csv");
+            testPath = IOUtils::getAboluteProjectPath("Test/Roms/mooneye-gb_hwtests/acceptance");
+            resultPath = IOUtils::getAboluteProjectPath("Test/Results/mooneye.csv");
          }
          else if (pathArg == "blargg")
          {
             isBlargg = true;
-            testPath = IOUtils::getAboluteProjectPath("Roms/blargg");
-            resultPath = IOUtils::getAboluteProjectPath("Results/blargg.csv");
+            testPath = IOUtils::getAboluteProjectPath("Test/Roms/blargg");
+            resultPath = IOUtils::getAboluteProjectPath("Test/Results/blargg.csv");
          }
          else
          {
             testPath = pathArg;
-            resultPath = IOUtils::getAboluteProjectPath("Results/misc.csv");
+            resultPath = IOUtils::getAboluteProjectPath("Test/Results/misc.csv");
          }
 
          if (argc > 3)
