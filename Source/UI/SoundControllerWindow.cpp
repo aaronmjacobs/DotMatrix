@@ -8,6 +8,7 @@
 #include <imgui.h>
 
 #include <cmath>
+#include <limits>
 #include <sstream>
 #include <string>
 
@@ -84,8 +85,8 @@ void UI::renderSoundControllerWindow(SoundController& soundController) const
       }
 
       ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 50.0f);
-      ImGui::PlotLines("Left", audioSampleGetter, &leftSamples, kNumPlottedSamples, offset, nullptr, SHRT_MIN, SHRT_MAX, ImVec2(0.0f, 100.0f));
-      ImGui::PlotLines("Right", audioSampleGetter, &rightSamples, kNumPlottedSamples, offset, nullptr, SHRT_MIN, SHRT_MAX, ImVec2(0.0f, 100.0f));
+      ImGui::PlotLines("Left", audioSampleGetter, &leftSamples, kNumPlottedSamples, offset, nullptr, std::numeric_limits<short>::min(), std::numeric_limits<short>::max(), ImVec2(0.0f, 100.0f));
+      ImGui::PlotLines("Right", audioSampleGetter, &rightSamples, kNumPlottedSamples, offset, nullptr, std::numeric_limits<short>::min(), std::numeric_limits<short>::max(), ImVec2(0.0f, 100.0f));
       ImGui::PopItemWidth();
    }
 
