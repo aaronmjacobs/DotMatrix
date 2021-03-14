@@ -604,7 +604,8 @@ void UI::renderDebuggerWindow(GameBoy& gameBoy) const
       ImGui::SetColumnWidth(1, 45.0f);
       ImGui::SetColumnWidth(2, 125.0f);
 
-      ImGuiListClipper clipper(0x10000);
+      ImGuiListClipper clipper;
+      clipper.Begin(0x10000);
       while (clipper.Step())
       {
          if (clipper.StepNo == 3 && scroll)

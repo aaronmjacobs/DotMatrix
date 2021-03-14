@@ -1,5 +1,9 @@
 #pragma once
 
+// macOS defines nil in MacTypes.h
+#if defined(nil)
+#undef nil
+#endif
 #include <logging.h>
 
 #include <cstring>

@@ -13,14 +13,15 @@ if(DOT_MATRIX_WITH_UI)
       "${IMGUI_DIR}/imgui_demo.cpp"
       "${IMGUI_DIR}/imgui_draw.cpp"
       "${IMGUI_DIR}/imgui_internal.h"
+      "${IMGUI_DIR}/imgui_tables.cpp"
       "${IMGUI_DIR}/imgui_widgets.cpp"
       "${IMGUI_DIR}/imstb_rectpack.h"
       "${IMGUI_DIR}/imstb_textedit.h"
       "${IMGUI_DIR}/imstb_truetype.h"
-      "${IMGUI_DIR}/examples/imgui_impl_glfw.h"
-      "${IMGUI_DIR}/examples/imgui_impl_glfw.cpp"
-      "${IMGUI_DIR}/examples/imgui_impl_opengl3.h"
-      "${IMGUI_DIR}/examples/imgui_impl_opengl3.cpp"
+      "${IMGUI_DIR}/backends/imgui_impl_glfw.h"
+      "${IMGUI_DIR}/backends/imgui_impl_glfw.cpp"
+      "${IMGUI_DIR}/backends/imgui_impl_opengl3.h"
+      "${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp"
    )
    target_sources(${PROJECT_NAME} PRIVATE "${IMGUI_SOURCES}")
    target_include_directories(${PROJECT_NAME} PRIVATE "${IMGUI_DIR}")
