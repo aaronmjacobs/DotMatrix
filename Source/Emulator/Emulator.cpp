@@ -615,8 +615,14 @@ void Emulator::saveThreadMain()
       {
          if (std::optional<std::filesystem::path> saveFilePath = getSavePath(saveData.gameTitle.c_str()))
          {
-            bool saved = IOUtils::writeBinaryFile(*saveFilePath, saveData.archive.getData());
+            if (std::filesystem::is_regular_file(*saveFilePath))
+            {
+               std::filesystem::path backupSaveFilePath = *saveFilePath;
+               backupSaveFilePath += ".bak";
+               std::filesystem::rename(*saveFilePath, backupSaveFilePath);
+            }
 
+            bool saved = IOUtils::writeBinaryFile(*saveFilePath, saveData.archive.getData());
             if (saved)
             {
                DM_LOG_INFO("Saved game to: " << *saveFilePath);
