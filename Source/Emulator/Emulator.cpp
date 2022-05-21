@@ -570,6 +570,11 @@ void Emulator::loadGame()
          if (gameBoy->loadCartRAM(cartRam))
          {
             DM_LOG_INFO("Loaded game from: " << *saveFilePath);
+
+            {
+               std::lock_guard<std::mutex> lock(saveThreadMutex);
+               lastLoadTime.store(glfwGetTime());
+            }
          }
       }
    }
@@ -619,7 +624,25 @@ void Emulator::saveThreadMain()
             {
                std::filesystem::path backupSaveFilePath = *saveFilePath;
                backupSaveFilePath += ".bak";
-               std::filesystem::rename(*saveFilePath, backupSaveFilePath);
+
+               bool timeSinceLastLoadSufficient = true;
+               bool backupTimeDiffSufficient = true;
+               if (std::filesystem::is_regular_file(backupSaveFilePath))
+               {
+                  double loadTimeDiff = glfwGetTime() - lastLoadTime.load();
+                  timeSinceLastLoadSufficient = loadTimeDiff > 3.0;
+
+                  std::filesystem::file_time_type saveModTime = std::filesystem::last_write_time(*saveFilePath);
+                  std::filesystem::file_time_type backupModTime = std::filesystem::last_write_time(backupSaveFilePath);
+                  auto modTimeDiff = saveModTime - backupModTime;
+
+                  backupTimeDiffSufficient = modTimeDiff > std::chrono::seconds(10);
+               }
+
+               if (timeSinceLastLoadSufficient && backupTimeDiffSufficient)
+               {
+                  std::filesystem::rename(*saveFilePath, backupSaveFilePath);
+               }
             }
 
             bool saved = IOUtils::writeBinaryFile(*saveFilePath, saveData.archive.getData());

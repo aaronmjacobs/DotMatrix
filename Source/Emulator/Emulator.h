@@ -115,11 +115,12 @@ private:
    ControllerInputDevice controllerInputDevice;
 
    bool cartWroteToRamLastFrame = false;
+   std::atomic<double> lastLoadTime = { 0.0 };
 
    std::thread saveThread;
    std::mutex saveThreadMutex;
    std::condition_variable saveThreadConditionVariable;
-   std::atomic_bool exiting = false;
+   std::atomic_bool exiting = { false };
    moodycamel::ReaderWriterQueue<SaveData> saveQueue;
 
    Bounds savedWindowBounds;
