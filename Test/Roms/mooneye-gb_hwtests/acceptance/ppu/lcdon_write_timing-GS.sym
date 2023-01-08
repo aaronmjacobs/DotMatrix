@@ -1,31 +1,43 @@
-; this file was created with wlalink by ville helin <vhelin@iki.fi>.
-; wla symbolic information for "acceptance/ppu/lcdon_write_timing-GS.gb".
+; this file was created with wlalink by ville helin <ville.helin@iki.fi>.
+; wla symbolic information for "/home/runner/work/mooneye-test-suite/mooneye-test-suite/build/acceptance/ppu/lcdon_write_timing-GS.gb".
+
+[information]
+version 2
 
 [labels]
-01:4a15 clear_oam
-01:4a1f clear_vram
-01:49d4 disable_lcd_safe
-01:49da disable_lcd_safe@wait_ly_0
-01:4a33 memcpy
-01:4a3c memset
-01:49f2 print_hex4
-01:4a29 print_hex8
-01:4a4c print_inline_string
-01:49fe print_load_font
-01:4a0a print_newline
-01:4a45 print_string
+01:4a30 clear_oam
+01:4a3a clear_vram
+01:49ef disable_ppu_safe
+01:49f5 disable_ppu_safe@wait_ly_0
+01:4a6a is_ppu_broken
+01:4a44 is_serial_broken
+01:4a58 memcpy
+01:4a61 memset
+01:4a0d print_hex4
+01:4a4e print_hex8
+01:4a70 print_inline_string
+01:4a19 print_load_font
+01:4a25 print_newline
+01:49df print_string
+01:49e7 print_string@char
+01:49ea print_string@newline
 01:48ed quit
-01:4902 quit@cb_return
-01:4907 quit@wait_ly_1
-01:490d quit@wait_ly_2
-01:4913 quit@wait_ly_3
-01:4919 quit@wait_ly_4
-01:4923 quit@success
-01:494a quit@failure
-01:4969 quit@halt
-01:496a quit@halt_execution_0
-01:49c0 reset_screen
-01:49e3 serial_send_byte
+01:4903 quit@callback
+01:4907 quit@cb_return
+01:4911 quit@wait_ly_1
+01:4917 quit@wait_ly_2
+01:491d quit@wait_ly_3
+01:4923 quit@wait_ly_4
+01:4929 quit@report_result
+01:492d quit@success
+01:493b quit@failure
+01:4943 quit@serial_dump
+01:4949 quit@normal
+01:4963 quit@fast
+01:4975 quit@halt
+01:4976 quit@halt_execution_0
+01:49cb reset_screen
+01:49fe serial_send_byte
 01:4000 font
 00:0150 main
 00:015c test_oam_access
@@ -46,16 +58,22 @@
 00:ff83 hram.fail_str
 00:ff83 hram.fail_str_l
 00:ff84 hram.fail_str_h
-01:496d run_tests
-01:4986 test_case
-01:49ba test_case_prologue
-01:49be test_case_epilogue
-01:49c0 test_case_end
+01:4978 run_tests
+01:4991 test_case
+01:49c5 test_case_prologue
+01:49c9 test_case_epilogue
+01:49cb test_case_end
+00:c000 RAM_USAGE_SLOT_2_BANK_0_START
+00:c13e RAM_USAGE_SLOT_2_BANK_0_END
+00:ff80 RAM_USAGE_SLOT_4_BANK_0_START
+00:ff84 RAM_USAGE_SLOT_4_BANK_0_END
 
 [definitions]
 0000000a _sizeof_clear_oam
 0000000a _sizeof_clear_vram
-0000000f _sizeof_disable_lcd_safe
+0000000f _sizeof_disable_ppu_safe
+00000006 _sizeof_is_ppu_broken
+0000000a _sizeof_is_serial_broken
 00000009 _sizeof_memcpy
 00000009 _sizeof_memset
 0000000c _sizeof_print_hex4
@@ -63,8 +81,8 @@
 00000006 _sizeof_print_inline_string
 0000000c _sizeof_print_load_font
 0000000b _sizeof_print_newline
-00000007 _sizeof_print_string
-00000080 _sizeof_quit
+00000010 _sizeof_print_string
+0000008b _sizeof_quit
 00000014 _sizeof_reset_screen
 0000000f _sizeof_serial_send_byte
 000007f0 _sizeof_font
@@ -86,6 +104,9 @@
 00000004 _sizeof_test_case_prologue
 00000002 _sizeof_test_case_epilogue
 00000000 _sizeof_test_case_end
+0000013e _sizeof_RAM_USAGE_SLOT_2_BANK_0_START
+00003e42 _sizeof_RAM_USAGE_SLOT_2_BANK_0_END
+00000004 _sizeof_RAM_USAGE_SLOT_4_BANK_0_START
 0000000c _sizeof_main
 0000000c _sizeof_test_oam_access
 0000000c _sizeof_test_vram_access

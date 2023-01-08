@@ -1,31 +1,43 @@
-; this file was created with wlalink by ville helin <vhelin@iki.fi>.
-; wla symbolic information for "acceptance/ppu/intr_2_mode0_timing_sprites.gb".
+; this file was created with wlalink by ville helin <ville.helin@iki.fi>.
+; wla symbolic information for "/home/runner/work/mooneye-test-suite/mooneye-test-suite/build/acceptance/ppu/intr_2_mode0_timing_sprites.gb".
+
+[information]
+version 2
 
 [labels]
-01:48c5 clear_oam
-01:48cf clear_vram
-01:4884 disable_lcd_safe
-01:488a disable_lcd_safe@wait_ly_0
-01:48e3 memcpy
-01:48ec memset
-01:48a2 print_hex4
-01:48d9 print_hex8
-01:48fc print_inline_string
-01:48ae print_load_font
-01:48ba print_newline
-01:48f5 print_string
+01:48e0 clear_oam
+01:48ea clear_vram
+01:489f disable_ppu_safe
+01:48a5 disable_ppu_safe@wait_ly_0
+01:491a is_ppu_broken
+01:48f4 is_serial_broken
+01:4908 memcpy
+01:4911 memset
+01:48bd print_hex4
+01:48fe print_hex8
+01:4920 print_inline_string
+01:48c9 print_load_font
+01:48d5 print_newline
+01:488f print_string
+01:4897 print_string@char
+01:489a print_string@newline
 01:47f0 quit
-01:4805 quit@cb_return
-01:480a quit@wait_ly_1
-01:4810 quit@wait_ly_2
-01:4816 quit@wait_ly_3
-01:481c quit@wait_ly_4
-01:4826 quit@success
-01:484d quit@failure
-01:486c quit@halt
-01:486d quit@halt_execution_0
-01:4870 reset_screen
-01:4893 serial_send_byte
+01:4806 quit@callback
+01:480a quit@cb_return
+01:4814 quit@wait_ly_1
+01:481a quit@wait_ly_2
+01:4820 quit@wait_ly_3
+01:4826 quit@wait_ly_4
+01:482c quit@report_result
+01:4830 quit@success
+01:483e quit@failure
+01:4846 quit@serial_dump
+01:484c quit@normal
+01:4866 quit@fast
+01:4878 quit@halt
+01:4879 quit@halt_execution_0
+01:487b reset_screen
+01:48ae serial_send_byte
 01:4000 font
 00:0150 main
 00:0176 _testcase_data_0
@@ -240,28 +252,32 @@
 00:0b42 _testcase_end_104
 00:0b49 _testcase_end_104@quit_inline_1
 00:0b5a run_testcase
-00:0b5c run_testcase@wait_ly_5
-00:0b62 run_testcase@wait_ly_6
-00:0b8d testcase_round_a
-00:0b98 testcase_round_a_ret
-00:0ba8 testcase_round_b
-00:0bb3 testcase_round_b_ret
-00:0bc4 prepare_sprites
-00:0bda prepare_nop_area
-00:0be3 setup_and_wait_mode2
-00:0be3 setup_and_wait_mode2@wait_ly_7
-00:0c06 test_fail
-00:0c0d test_fail@quit_inline_2
-00:0c2b fail_halt
-00:0c32 fail_halt@quit_inline_3
+00:0b7f testcase_round_a
+00:0b8a testcase_round_a_ret
+00:0b9a testcase_round_b
+00:0ba5 testcase_round_b_ret
+00:0bb6 prepare_sprites
+00:0bcc prepare_nop_area
+00:0bd5 setup_and_wait_mode2
+00:0bd5 setup_and_wait_mode2@wait_ly_5
+00:0bf8 test_fail
+00:0bff test_fail@quit_inline_2
+00:0c1d fail_halt
+00:0c24 fail_halt@quit_inline_3
 00:c000 nop_area_a
 00:c060 nop_area_b
 00:ff80 testcase_id
+00:c000 RAM_USAGE_SLOT_2_BANK_0_START
+00:c0bf RAM_USAGE_SLOT_2_BANK_0_END
+00:ff80 RAM_USAGE_SLOT_4_BANK_0_START
+00:ff81 RAM_USAGE_SLOT_4_BANK_0_END
 
 [definitions]
 0000000a _sizeof_clear_oam
 0000000a _sizeof_clear_vram
-0000000f _sizeof_disable_lcd_safe
+0000000f _sizeof_disable_ppu_safe
+00000006 _sizeof_is_ppu_broken
+0000000a _sizeof_is_serial_broken
 00000009 _sizeof_memcpy
 00000009 _sizeof_memset
 0000000c _sizeof_print_hex4
@@ -269,14 +285,17 @@
 00000006 _sizeof_print_inline_string
 0000000c _sizeof_print_load_font
 0000000b _sizeof_print_newline
-00000007 _sizeof_print_string
-00000080 _sizeof_quit
+00000010 _sizeof_print_string
+0000008b _sizeof_quit
 00000014 _sizeof_reset_screen
 0000000f _sizeof_serial_send_byte
 000007f0 _sizeof_font
 00000060 _sizeof_nop_area_a
 00000060 _sizeof_nop_area_b
 00000002 _sizeof_testcase_id
+000000bf _sizeof_RAM_USAGE_SLOT_2_BANK_0_START
+00003ec1 _sizeof_RAM_USAGE_SLOT_2_BANK_0_END
+00000001 _sizeof_RAM_USAGE_SLOT_4_BANK_0_START
 00000026 _sizeof_main
 00000002 _sizeof__testcase_data_0
 00000011 _sizeof__testcase_end_0
@@ -488,7 +507,7 @@
 00000011 _sizeof__testcase_end_103
 0000000b _sizeof__testcase_data_104
 00000018 _sizeof__testcase_end_104
-00000033 _sizeof_run_testcase
+00000025 _sizeof_run_testcase
 0000000b _sizeof_testcase_round_a
 00000010 _sizeof_testcase_round_a_ret
 0000000b _sizeof_testcase_round_b

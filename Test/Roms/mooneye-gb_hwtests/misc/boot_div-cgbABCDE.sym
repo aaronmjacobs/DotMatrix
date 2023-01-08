@@ -1,5 +1,8 @@
-; this file was created with wlalink by ville helin <vhelin@iki.fi>.
-; wla symbolic information for "misc/boot_div-cgbABCDE.gb".
+; this file was created with wlalink by ville helin <ville.helin@iki.fi>.
+; wla symbolic information for "/home/runner/work/mooneye-test-suite/mooneye-test-suite/build/misc/boot_div-cgbABCDE.gb".
+
+[information]
+version 2
 
 [labels]
 01:47f0 check_asserts_cb
@@ -55,32 +58,43 @@
 00:ff8e hram.regs_assert.reg_d
 00:ff8f hram.regs_assert.reg_l
 00:ff90 hram.regs_assert.reg_h
-01:4b85 clear_vram
-01:4b44 disable_lcd_safe
-01:4b4a disable_lcd_safe@wait_ly_0
-01:4b99 memcpy
-01:4ba2 memset
-01:4b62 print_hex4
-01:4b8f print_hex8
-01:4bb2 print_inline_string
-01:4b6e print_load_font
-01:4b7a print_newline
-01:4a2b print_reg_dump
-01:4bab print_string
-01:4ab0 quit
-01:4ac5 quit@cb_return
-01:4aca quit@wait_ly_1
-01:4ad0 quit@wait_ly_2
-01:4ad6 quit@wait_ly_3
-01:4adc quit@wait_ly_4
-01:4ae6 quit@success
-01:4b0d quit@failure
-01:4b2c quit@halt
-01:4b2d quit@halt_execution_0
-01:4b30 reset_screen
-01:4b53 serial_send_byte
+01:4ba0 clear_vram
+01:4b5f disable_ppu_safe
+01:4b65 disable_ppu_safe@wait_ly_0
+01:4bd0 is_ppu_broken
+01:4baa is_serial_broken
+01:4bbe memcpy
+01:4bc7 memset
+01:4b7d print_hex4
+01:4bb4 print_hex8
+01:4bd6 print_inline_string
+01:4b89 print_load_font
+01:4b95 print_newline
+01:4ab6 print_reg_dump
+01:4b4f print_string
+01:4b57 print_string@char
+01:4b5a print_string@newline
+01:4a2b quit
+01:4a41 quit@callback
+01:4a45 quit@cb_return
+01:4a4f quit@wait_ly_1
+01:4a55 quit@wait_ly_2
+01:4a5b quit@wait_ly_3
+01:4a61 quit@wait_ly_4
+01:4a67 quit@report_result
+01:4a6b quit@success
+01:4a79 quit@failure
+01:4a81 quit@serial_dump
+01:4a87 quit@normal
+01:4aa1 quit@fast
+01:4ab3 quit@halt
+01:4ab4 quit@halt_execution_0
+01:4b3b reset_screen
+01:4b6e serial_send_byte
 01:4000 font
 00:0150 main
+00:ff80 RAM_USAGE_SLOT_4_BANK_0_START
+00:ff90 RAM_USAGE_SLOT_4_BANK_0_END
 
 [definitions]
 0000023b _sizeof_check_asserts_cb
@@ -104,7 +118,9 @@
 00000001 _sizeof_hram.regs_assert.reg_l
 00000001 _sizeof_hram.regs_assert.reg_h
 0000000a _sizeof_clear_vram
-0000000f _sizeof_disable_lcd_safe
+0000000f _sizeof_disable_ppu_safe
+00000006 _sizeof_is_ppu_broken
+0000000a _sizeof_is_serial_broken
 00000009 _sizeof_memcpy
 00000009 _sizeof_memset
 0000000c _sizeof_print_hex4
@@ -113,8 +129,9 @@
 0000000c _sizeof_print_load_font
 0000000b _sizeof_print_newline
 00000085 _sizeof_print_reg_dump
-00000007 _sizeof_print_string
-00000080 _sizeof_quit
+00000010 _sizeof_print_string
+0000008b _sizeof_quit
 00000014 _sizeof_reset_screen
 0000000f _sizeof_serial_send_byte
 000007f0 _sizeof_font
+00000010 _sizeof_RAM_USAGE_SLOT_4_BANK_0_START
