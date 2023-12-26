@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.8)
 ### Project Info ###
 
 # Project definition
-project(glad VERSION 0.1.14 LANGUAGES C)
+project(glad VERSION 0.1.36 LANGUAGES C)
 set(DEBUG_PROJECT_NAME "${PROJECT_NAME}-debug")
 
 # Directories

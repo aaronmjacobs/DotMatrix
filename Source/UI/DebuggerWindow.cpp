@@ -538,17 +538,16 @@ void UI::renderDebuggerWindow(GameBoy& gameBoy) const
             static int currentLabel = 0;
             bool goToLabel = ImGui::Button("Go to label");
             ImGui::SameLine();
-            goToLabel |= ImGui::Combo("##label", &currentLabel, [](void* data, int idx, const char** out_text)
+            goToLabel |= ImGui::Combo("##label", &currentLabel, [](void* data, int idx) -> const char*
             {
                Symbols& symbolsData = *reinterpret_cast<Symbols*>(data);
 
                if (const Label* label = symbolsData.findLabelByIndex(idx))
                {
-                  *out_text = label->name.data();
-                  return true;
+                  return label->name.data();
                }
 
-               return false;
+               return nullptr;
             }, static_cast<void*>(&symbols.value()), static_cast<int>(symbols->getNumLabels()));
 
             if (goToLabel)
@@ -606,11 +605,13 @@ void UI::renderDebuggerWindow(GameBoy& gameBoy) const
 
       ImGuiListClipper clipper;
       clipper.Begin(0x10000);
+
       while (clipper.Step())
       {
-         if (clipper.StepNo == 3 && scroll)
+         if (scroll && clipper.ItemsHeight >= 0)
          {
             ImGui::SetScrollFromPosY(ImGui::GetCursorStartPos().y + scrollAddress * clipper.ItemsHeight, 0.25f);
+            scroll = false;
          }
 
          for (int line = clipper.DisplayStart; line < clipper.DisplayEnd; ++line)
