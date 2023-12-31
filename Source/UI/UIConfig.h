@@ -17,7 +17,7 @@
 //---- Don't implement demo windows functionality (ShowDemoWindow()/ShowStyleEditor()/ShowUserGuide() methods will be empty)
 #if !DM_DEBUG
 #  define IMGUI_DISABLE_DEMO_WINDOWS
-#  define IMGUI_DISABLE_METRICS_WINDOW
+#  define IMGUI_DISABLE_DEBUG_TOOLS
 #endif // !DM_DEBUG
 
 // Avoid unnecessary reinterpret_cast calls
