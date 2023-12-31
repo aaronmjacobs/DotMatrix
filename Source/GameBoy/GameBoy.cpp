@@ -228,7 +228,7 @@ bool GameBoy::shouldBreak() const
 
 bool GameBoy::shouldStepCPU() const
 {
-   return hasProgram() & !cpu.isStopped();
+   return hasProgram() && !cpu.isStopped();
 }
 
 void GameBoy::machineCycleJoypad()
