@@ -182,7 +182,7 @@ bool AudioManager::canQueue() const
    return numProcessed > 0;
 }
 
-void AudioManager::queue(const std::vector<DotMatrix::AudioSample>& audioData)
+void AudioManager::queue(std::span<DotMatrix::AudioSample> audioData)
 {
    DM_ASSERT(!audioData.empty());
    DM_ASSERT(canQueue());
@@ -191,7 +191,7 @@ void AudioManager::queue(const std::vector<DotMatrix::AudioSample>& audioData)
    alSourceUnqueueBuffers(source, 1, &buffer);
    checkAlError("unqueueing buffer");
 
-   alBufferData(buffer, AL_FORMAT_STEREO16, audioData.data(), static_cast<ALsizei>(audioData.size() * sizeof(DotMatrix::AudioSample)), static_cast<ALsizei>(DotMatrix::SoundController::kSampleRate));
+   alBufferData(buffer, AL_FORMAT_STEREO16, audioData.data(), static_cast<ALsizei>(audioData.size_bytes()), static_cast<ALsizei>(DotMatrix::SoundController::kSampleRate));
    checkAlError("setting buffer data");
 
    alSourceQueueBuffers(source, 1, &buffer);
@@ -210,6 +210,11 @@ void AudioManager::queue(const std::vector<DotMatrix::AudioSample>& audioData)
 
 void AudioManager::setPitch(float pitch)
 {
-   alSourcef(source, AL_PITCH, pitch);
-   checkAlError("setting source pitch");
+   if (pitch != currentPitch)
+   {
+      alSourcef(source, AL_PITCH, pitch);
+      checkAlError("setting source pitch");
+
+      currentPitch = pitch;
+   }
 }

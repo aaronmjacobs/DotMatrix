@@ -4,9 +4,6 @@
 
 #include "GameBoy/LCDController.h"
 
-#if DM_WITH_AUDIO
-#include "Platform/Audio/AudioManager.h"
-#endif // DM_WITH_AUDIO
 #include "Platform/Input/ControllerInputDevice.h"
 #include "Platform/Input/KeyboardInputDevice.h"
 
@@ -87,16 +84,18 @@ public:
 private:
    void resetGameBoy(std::unique_ptr<DotMatrix::Cartridge> cartridge);
    void toggleFullScreen();
+
    void loadGame();
    void saveGameAsync();
    void saveThreadMain();
 
+#if DM_WITH_AUDIO
+   void audioThreadMain();
+#endif // DM_WITH_AUDIO
+
    GLFWwindow* window = nullptr;
    std::unique_ptr<DotMatrix::GameBoy> gameBoy;
    std::unique_ptr<Renderer> renderer;
-#if DM_WITH_AUDIO
-   AudioManager audioManager;
-#endif // DM_WITH_AUDIO
 
    std::unique_ptr<PixelArray> pixels;
 
@@ -117,10 +116,17 @@ private:
    bool cartWroteToRamLastFrame = false;
    std::atomic<double> lastLoadTime = { 0.0 };
 
+   std::atomic_bool exiting = { false };
+
+#if DM_WITH_AUDIO
+   std::thread audioThread;
+   std::mutex audioThreadMutex;
+   std::condition_variable audioThreadConditionVariable;
+#endif // DM_WITH_AUDIO
+
    std::thread saveThread;
    std::mutex saveThreadMutex;
    std::condition_variable saveThreadConditionVariable;
-   std::atomic_bool exiting = { false };
    moodycamel::ReaderWriterQueue<SaveData> saveQueue;
 
    Bounds savedWindowBounds;

@@ -9,6 +9,7 @@ set(CORE_SOURCE_FILES
    "${SRC_DIR}/Core/Log.h"
    "${SRC_DIR}/Core/Log.cpp"
    "${SRC_DIR}/Core/Math.h"
+   "${SRC_DIR}/Core/RingBuffer.h"
 )
 
 set(EMULATOR_SOURCE_FILES

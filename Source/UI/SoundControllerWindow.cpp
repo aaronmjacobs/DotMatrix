@@ -19,6 +19,14 @@ namespace
 {
    const int kNumPlottedSamples = SoundController::kSampleRate / 4;
 
+   enum class ChannelType
+   {
+      Square1,
+      Square2,
+      Wave,
+      Noise
+   };
+
    float audioSampleGetter(void* data, int index)
    {
       std::vector<float>* floatSamples = reinterpret_cast<std::vector<float>*>(data);
@@ -26,11 +34,30 @@ namespace
       return (*floatSamples)[index];
    }
 
-   void updateSamples(std::vector<float>& samples, int& offset, const std::vector<int8_t>& audioData)
+   void updateSamples(std::vector<float>& samples, int& offset, std::span<const SoundController::UIData> uiDataSpan, ChannelType channelType)
    {
-      for (int8_t audioSample : audioData)
+      for (const SoundController::UIData& uiData : uiDataSpan)
       {
-         samples[offset] = static_cast<float>(audioSample);
+         int8_t sample = 0;
+         switch (channelType)
+         {
+         case ChannelType::Square1:
+            sample = uiData.square1;
+            break;
+         case ChannelType::Square2:
+            sample = uiData.square2;
+            break;
+         case ChannelType::Wave:
+            sample = uiData.wave;
+            break;
+         case ChannelType::Noise:
+            sample = uiData.noise;
+            break;
+         default:
+            break;
+         }
+
+         samples[offset] = static_cast<float>(sample);
          offset = (offset + 1) % kNumPlottedSamples;
       }
    }
@@ -63,6 +90,10 @@ void UI::renderSoundControllerWindow(SoundController& soundController) const
    ImGui::SetNextWindowSize(ImVec2(570.0f, 451.0f), ImGuiCond_FirstUseEver);
    ImGui::Begin("Sound Controller");
 
+   static std::vector<SoundController::UIData> uiDataVector(SoundController::kBufferSize);
+   std::size_t numValues = soundController.consumeUIData(uiDataVector);
+   std::span<SoundController::UIData> uiDataSpan(uiDataVector.data(), numValues);
+
    if (ImGui::CollapsingHeader("Output", ImGuiTreeNodeFlags_DefaultOpen))
    {
       bool powerEnabled = soundController.powerEnabled;
@@ -76,11 +107,10 @@ void UI::renderSoundControllerWindow(SoundController& soundController) const
       static std::vector<float> rightSamples(kNumPlottedSamples);
       static int offset = 0;
 
-      const std::vector<AudioSample>& audioData = soundController.getAudioData();
-      for (const AudioSample& audioSample : audioData)
+      for (const SoundController::UIData& uiData : uiDataSpan)
       {
-         leftSamples[offset] = static_cast<float>(audioSample.left);
-         rightSamples[offset] = static_cast<float>(audioSample.right);
+         leftSamples[offset] = static_cast<float>(uiData.sample.left);
+         rightSamples[offset] = static_cast<float>(uiData.sample.right);
          offset = (offset + 1) % kNumPlottedSamples;
       }
 
@@ -127,7 +157,8 @@ void UI::renderSoundControllerWindow(SoundController& soundController) const
 
       static std::vector<float> samples(kNumPlottedSamples);
       static int offset = 0;
-      updateSamples(samples, offset, soundController.getSquare1Data());
+
+      updateSamples(samples, offset, uiDataSpan, ChannelType::Square1);
 
       renderSoundChannel(squareWaveChannel1, samples, offset);
       renderSoundTimer(squareWaveChannel1.timer, kWaveMaxPeriod, true);
@@ -147,7 +178,8 @@ void UI::renderSoundControllerWindow(SoundController& soundController) const
 
       static std::vector<float> samples(kNumPlottedSamples);
       static int offset = 0;
-      updateSamples(samples, offset, soundController.getSquare2Data());
+
+      updateSamples(samples, offset, uiDataSpan, ChannelType::Square2);
 
       renderSoundChannel(squareWaveChannel2, samples, offset);
       renderSoundTimer(squareWaveChannel2.timer, kWaveMaxPeriod, true);
@@ -166,7 +198,8 @@ void UI::renderSoundControllerWindow(SoundController& soundController) const
 
       static std::vector<float> samples(kNumPlottedSamples);
       static int offset = 0;
-      updateSamples(samples, offset, soundController.getWaveData());
+
+      updateSamples(samples, offset, uiDataSpan, ChannelType::Wave);
 
       renderSoundChannel(waveChannel, samples, offset);
       renderSoundTimer(waveChannel.timer, kWaveMaxPeriod, true);
@@ -186,7 +219,8 @@ void UI::renderSoundControllerWindow(SoundController& soundController) const
 
       static std::vector<float> samples(kNumPlottedSamples);
       static int offset = 0;
-      updateSamples(samples, offset, soundController.getNoiseData());
+
+      updateSamples(samples, offset, uiDataSpan, ChannelType::Noise);
 
       renderSoundChannel(noiseChannel, samples, offset);
       renderSoundTimer(noiseChannel.timer, kMaxNoisePeriod, false);

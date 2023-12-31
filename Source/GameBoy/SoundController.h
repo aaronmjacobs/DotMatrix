@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Core/RingBuffer.h"
+
 #include "GameBoy/CPU.h"
 
 #include <array>
 #include <cstdint>
-#include <vector>
+#include <span>
 
 namespace DotMatrix
 {
@@ -677,36 +679,13 @@ class SoundController
 {
 public:
    static const size_t kSampleRate = 65536;
+   static const size_t kBufferSize = 4096;
 
    SoundController();
 
-   void setGenerateAudioData(bool generateAudioData)
+   std::size_t consumeAudio(std::span<AudioSample> buffer)
    {
-      generateData = generateAudioData;
-
-      if (!generateData)
-      {
-         cyclesSinceLastSample = 0;
-         for (std::vector<AudioSample>& buffer : buffers)
-         {
-            buffer.clear();
-         }
-      }
-   }
-
-   const std::vector<AudioSample>& swapAudioBuffers()
-   {
-      activeBufferIndex = !activeBufferIndex;
-
-      buffers[activeBufferIndex].clear();
-#if DM_WITH_UI
-      square1Buffers[activeBufferIndex].clear();
-      square2Buffers[activeBufferIndex].clear();
-      waveBuffers[activeBufferIndex].clear();
-      noiseBuffers[activeBufferIndex].clear();
-#endif // DM_WITH_UI
-
-      return buffers[!activeBufferIndex];
+      return audioRingBuffer.pop(buffer);
    }
 
    void machineCycle();
@@ -716,30 +695,6 @@ public:
 
 private:
    friend class FrameSequencer;
-
-   const std::vector<AudioSample>& getAudioData() const
-   {
-      return buffers[activeBufferIndex];
-   }
-
-#if DM_WITH_UI
-   const std::vector<int8_t>& getSquare1Data() const
-   {
-      return square1Buffers[activeBufferIndex];
-   }
-   const std::vector<int8_t>& getSquare2Data() const
-   {
-      return square2Buffers[activeBufferIndex];
-   }
-   const std::vector<int8_t>& getWaveData() const
-   {
-      return waveBuffers[activeBufferIndex];
-   }
-   const std::vector<int8_t>& getNoiseData() const
-   {
-      return noiseBuffers[activeBufferIndex];
-   }
-#endif // DM_WITH_UI
 
    uint8_t readNr52() const;
    void writeNr52(uint8_t value);
@@ -775,16 +730,25 @@ private:
    WaveChannel waveChannel;
    NoiseChannel noiseChannel;
 
-   bool generateData = false;
+   RingBuffer<AudioSample, kBufferSize> audioRingBuffer;
    uint8_t cyclesSinceLastSample = 0;
-   std::size_t activeBufferIndex = 0;
-   std::array<std::vector<AudioSample>, 2> buffers;
 
 #if DM_WITH_UI
-   std::array<std::vector<int8_t>, 2> square1Buffers;
-   std::array<std::vector<int8_t>, 2> square2Buffers;
-   std::array<std::vector<int8_t>, 2> waveBuffers;
-   std::array<std::vector<int8_t>, 2> noiseBuffers;
+   struct UIData
+   {
+      AudioSample sample = {};
+      int8_t square1 = 0;
+      int8_t square2 = 0;
+      int8_t wave = 0;
+      int8_t noise = 0;
+   };
+
+   RingBuffer<UIData, kBufferSize> uiRingBuffer;
+
+   std::size_t consumeUIData(std::span<UIData> buffer)
+   {
+      return uiRingBuffer.pop(buffer);
+   }
 #endif // DM_WITH_UI
 };
 

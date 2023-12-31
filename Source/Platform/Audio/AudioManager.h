@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <vector>
+#include <span>
 
 struct ALCcontext;
 struct ALCdevice;
@@ -28,7 +28,7 @@ public:
    }
 
    bool canQueue() const;
-   void queue(const std::vector<DotMatrix::AudioSample>& audioData);
+   void queue(std::span<DotMatrix::AudioSample> audioData);
 
    void setPitch(float pitch);
 
@@ -37,4 +37,5 @@ private:
    std::unique_ptr<ALCcontext, std::function<void(ALCcontext*)>> context;
    ALuint source = 0;
    std::array<ALuint, 3> buffers = {};
+   float currentPitch = -1.0f;
 };

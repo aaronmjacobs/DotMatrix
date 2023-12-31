@@ -8,6 +8,9 @@
 #include "GameBoy/GameBoy.h"
 #include "GameBoy/LCDController.h"
 
+#if DM_WITH_AUDIO
+#include "Platform/Audio/AudioManager.h"
+#endif // DM_WITH_AUDIO
 #include "Platform/Video/Renderer.h"
 
 #if DM_WITH_UI
@@ -235,8 +238,11 @@ Emulator::Emulator()
 Emulator::~Emulator()
 {
    {
-      std::lock_guard<std::mutex> lock(saveThreadMutex);
-      exiting = true;
+      std::lock_guard<std::mutex> saveLock(saveThreadMutex);
+#if DM_WITH_AUDIO
+      std::lock_guard<std::mutex> audioLock(audioThreadMutex);
+#endif // DM_WITH_AUDIO
+      exiting.store(true);
    }
 
    if (saveThread.joinable())
@@ -244,6 +250,14 @@ Emulator::~Emulator()
       saveThreadConditionVariable.notify_all();
       saveThread.join();
    }
+
+#if DM_WITH_AUDIO
+   if (audioThread.joinable())
+   {
+      audioThreadConditionVariable.notify_all();
+      audioThread.join();
+   }
+#endif // DM_WITH_AUDIO
 
 #if DM_WITH_UI
    ui = nullptr;
@@ -328,6 +342,13 @@ bool Emulator::init()
       saveThreadMain();
    });
 
+#if DM_WITH_AUDIO
+   audioThread = std::thread([this]
+   {
+      audioThreadMain();
+   });
+#endif // DM_WITH_AUDIO
+
 #if DM_WITH_UI
    ui = std::make_unique<UI>(window);
 #endif // DM_WITH_UI
@@ -388,18 +409,6 @@ void Emulator::render()
          ui->render(*this);
       }
 #endif // DM_WITH_UI
-
-#if DM_WITH_AUDIO
-      if (gameBoy && audioManager.canQueue())
-      {
-         const std::vector<DotMatrix::AudioSample>& audioData = gameBoy->getSoundController().swapAudioBuffers();
-
-         if (!audioData.empty())
-         {
-            audioManager.queue(audioData);
-         }
-      }
-#endif // DM_WITH_AUDIO
    }
 
    glfwSwapBuffers(window);
@@ -494,7 +503,12 @@ void Emulator::onWindowRefreshRequested()
 
 void Emulator::resetGameBoy(std::unique_ptr<DotMatrix::Cartridge> cartridge)
 {
-   gameBoy = std::make_unique<DotMatrix::GameBoy>();
+   {
+#if DM_WITH_AUDIO
+      std::unique_lock<std::mutex> lock(audioThreadMutex);
+#endif // DM_WITH_AUDIO
+      gameBoy = std::make_unique<DotMatrix::GameBoy>();
+   }
 
 #if DM_WITH_BOOTSTRAP
    if (bootstrap.size() == 256)
@@ -504,14 +518,6 @@ void Emulator::resetGameBoy(std::unique_ptr<DotMatrix::Cartridge> cartridge)
 #endif // DM_WITH_BOOTSTRAP
 
    gameBoy->setCartridge(std::move(cartridge));
-
-#if DM_WITH_AUDIO
-   // Don't generate audio data if the audio manager isn't valid
-   const bool generateAudioData = audioManager.isValid();
-#else
-   const bool generateAudioData = false;
-#endif
-   gameBoy->getSoundController().setGenerateAudioData(generateAudioData);
 
 #if DM_WITH_UI
    // Render once before ticking (to make sure we hit any initial breakpoints)
@@ -556,6 +562,33 @@ void Emulator::toggleFullScreen()
       }
    }
 }
+
+#if DM_WITH_AUDIO
+void Emulator::audioThreadMain()
+{
+   AudioManager audioManager;
+   std::vector<AudioSample> audioBuffer(SoundController::kBufferSize);
+
+   std::unique_lock<std::mutex> lock(audioThreadMutex);
+   while (!exiting.load())
+   {
+      if (gameBoy && gameBoy->hasProgram() && audioManager.canQueue())
+      {
+         std::size_t numSamples = gameBoy->getSoundController().consumeAudio(audioBuffer);
+         if (numSamples > 0)
+         {
+            audioManager.queue(std::span<AudioSample>(audioBuffer.data(), numSamples));
+         }
+      }
+
+#if DM_WITH_UI
+      audioManager.setPitch(timeScale);
+#endif // DM_WITH_UI
+
+      audioThreadConditionVariable.wait_for(lock, std::chrono::milliseconds(4));
+   }
+}
+#endif // DM_WITH_AUDIO
 
 void Emulator::loadGame()
 {
@@ -606,11 +639,11 @@ void Emulator::saveThreadMain()
 {
    std::unique_lock<std::mutex> lock(saveThreadMutex);
 
-   while (!exiting)
+   while (!exiting.load())
    {
       saveThreadConditionVariable.wait(lock, [this]() -> bool
       {
-         return exiting || saveQueue.peek() != nullptr;
+         return exiting.load() || saveQueue.peek() != nullptr;
       });
 
       lock.unlock();

@@ -526,33 +526,6 @@ void Mixer::writeNr51(uint8_t value)
 SoundController::SoundController()
    : frameSequencer(*this)
 {
-   // Try to guess a reasonable amount of data to reserve
-   // For now, 1/30th of a second's worth
-   static const std::size_t kReserveSamples = kSampleRate / 30;
-
-   for (std::vector<AudioSample>& buffer : buffers)
-   {
-      buffer.reserve(kReserveSamples);
-   }
-
-#if DM_WITH_UI
-   for (std::vector<int8_t>& buffer : square1Buffers)
-   {
-      buffer.reserve(kReserveSamples);
-   }
-   for (std::vector<int8_t>& buffer : square2Buffers)
-   {
-      buffer.reserve(kReserveSamples);
-   }
-   for (std::vector<int8_t>& buffer : waveBuffers)
-   {
-      buffer.reserve(kReserveSamples);
-   }
-   for (std::vector<int8_t>& buffer : noiseBuffers)
-   {
-      buffer.reserve(kReserveSamples);
-   }
-#endif // DM_WITH_UI
 }
 
 void SoundController::machineCycle()
@@ -574,10 +547,7 @@ void SoundController::machineCycle()
       cyclesSinceLastSample -= kCyclesPerSample;
       DM_ASSERT(cyclesSinceLastSample < kCyclesPerSample);
 
-      if (generateData)
-      {
-         pushSample();
-      }
+      pushSample();
    }
 }
 
@@ -722,13 +692,17 @@ void SoundController::pushSample()
    int8_t noiseSample = noiseChannel.getCurrentAudioSample();
 
    AudioSample sample = mixer.mix(square1Sample, square2Sample, waveSample, noiseSample);
-   buffers[activeBufferIndex].push_back(sample);
+   audioRingBuffer.push(sample);
 
 #if DM_WITH_UI
-   square1Buffers[activeBufferIndex].push_back(square1Sample);
-   square2Buffers[activeBufferIndex].push_back(square2Sample);
-   waveBuffers[activeBufferIndex].push_back(waveSample);
-   noiseBuffers[activeBufferIndex].push_back(noiseSample);
+   UIData uiData;
+   uiData.sample = sample;
+   uiData.square1 = square1Sample;
+   uiData.square2 = square2Sample;
+   uiData.wave = waveSample;
+   uiData.noise = noiseSample;
+
+   uiRingBuffer.push(uiData);
 #endif // DM_WITH_UI
 }
 
