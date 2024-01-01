@@ -678,7 +678,7 @@ private:
 class SoundController
 {
 public:
-   static const size_t kSampleRate = 65536;
+   static const size_t kSampleRate = 44100;
    static const size_t kBufferSize = 4096;
 
    SoundController();
@@ -732,6 +732,8 @@ private:
 
    RingBuffer<AudioSample, kBufferSize> audioRingBuffer;
    uint8_t cyclesSinceLastSample = 0;
+   uint8_t cyclesForNextSample = CPU::kClockSpeed / kSampleRate;
+   float remainderCycles = 0.0f;
 
 #if DM_WITH_UI
    struct UIData

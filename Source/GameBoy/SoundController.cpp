@@ -530,8 +530,9 @@ SoundController::SoundController()
 
 void SoundController::machineCycle()
 {
-   static const uint8_t kCyclesPerSample = CPU::kClockSpeed / kSampleRate;
-   DM_STATIC_ASSERT(CPU::kClockSpeed % kSampleRate == 0, "Sample rate does not divide evenly into the CPU clock speed!");
+   static const double kIdealCyclesPerSample = static_cast<double>(CPU::kClockSpeed) / kSampleRate;
+   static const uint8_t kDefaultCyclesPerSample = static_cast<uint8_t>(kIdealCyclesPerSample);
+   static const float kCycleRemainder = kIdealCyclesPerSample - kDefaultCyclesPerSample;
 
    frameSequencer.machineCycle();
 
@@ -542,10 +543,20 @@ void SoundController::machineCycle()
 
    cyclesSinceLastSample += CPU::kClockCyclesPerMachineCycle;
 
-   if (cyclesSinceLastSample >= kCyclesPerSample)
+   if (cyclesSinceLastSample >= cyclesForNextSample)
    {
-      cyclesSinceLastSample -= kCyclesPerSample;
-      DM_ASSERT(cyclesSinceLastSample < kCyclesPerSample);
+      cyclesSinceLastSample -= cyclesForNextSample;
+      remainderCycles += kCycleRemainder;
+
+      cyclesForNextSample = kDefaultCyclesPerSample;
+      if (remainderCycles >= 1.0f)
+      {
+         remainderCycles -= 1.0f;
+         DM_ASSERT(remainderCycles < 1.0f);
+
+         ++cyclesForNextSample;
+      }
+      DM_ASSERT(cyclesSinceLastSample < cyclesForNextSample);
 
       pushSample();
    }
