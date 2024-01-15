@@ -51,6 +51,7 @@ namespace
    {
       std::unique_ptr<DotMatrix::GameBoy> gameBoy;
       std::unique_ptr<PixelArray> pixels;
+      std::vector<DotMatrix::AudioSample> audioBuffer(DotMatrix::SoundController::kBufferSize);
 
       uint32_t frameCounter = 0;
       double frameTime = 0.0;
@@ -205,14 +206,12 @@ void retro_run(void)
       }
       State::gameBoy->setJoypadState(joypad);
 
-      State::gameBoy->getSoundController().setGenerateAudioData(Callbacks::audioSampleBatch != nullptr);
-
       State::gameBoy->tick(State::frameTime);
 
-      const std::vector<DotMatrix::AudioSample>& audioData = State::gameBoy->getSoundController().swapAudioBuffers();
-      if (Callbacks::audioSampleBatch && !audioData.empty())
+      std::size_t numSamples = State::gameBoy->getSoundController().consumeAudio(State::audioBuffer);
+      if (Callbacks::audioSampleBatch && numSamples > 0)
       {
-         Callbacks::audioSampleBatch(&audioData[0].left, audioData.size());
+         Callbacks::audioSampleBatch(&State::audioBuffer[0].left, numSamples);
       }
 
       uint32_t newFrameCounter = State::gameBoy->getLCDController().getFrameCounter();
