@@ -65,10 +65,10 @@ public:
       return (*buffer)[oldReadOffset];
    }
 
-   std::size_t pop(std::span<T> elements)
+   std::size_t pop(std::span<T> elements, std::size_t customWriteOffset = Size)
    {
       std::size_t elementsSize = elements.size();
-      std::size_t localWriteOffset = writeOffset;
+      std::size_t localWriteOffset = customWriteOffset < Size ? customWriteOffset : writeOffset;
 
       std::size_t copyOffset = 0;
       while (copyOffset < elementsSize && readOffset != localWriteOffset)
@@ -92,6 +92,11 @@ public:
       }
 
       return copyOffset;
+   }
+
+   std::size_t getWriteOffset() const
+   {
+      return writeOffset;
    }
 
    constexpr std::size_t size() const
