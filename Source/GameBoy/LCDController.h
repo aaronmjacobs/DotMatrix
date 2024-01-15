@@ -24,7 +24,8 @@ public:
    {
       for (std::size_t i = 0; i < buffers.size(); ++i)
       {
-         buffers[i] = std::make_unique<Framebuffer>(Framebuffer{});
+         buffers[i] = std::make_unique<Framebuffer>();
+         buffers[i]->fill(0x00);
       }
    }
 
