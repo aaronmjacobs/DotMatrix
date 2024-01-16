@@ -25,3 +25,6 @@
 [submodule "Libraries/readerwriterqueue"]
 	path = Libraries/readerwriterqueue
 	url = https://github.com/cameron314/readerwriterqueue.git
+[submodule "Libraries/playdate-cpp"]
+	path = Libraries/playdate-cpp
+	url = https://github.com/nstbayless/playdate-cpp.git
