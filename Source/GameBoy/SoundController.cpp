@@ -532,7 +532,7 @@ void SoundController::machineCycle()
 {
    static const double kIdealCyclesPerSample = static_cast<double>(CPU::kClockSpeed) / kSampleRate;
    static const uint8_t kDefaultCyclesPerSample = static_cast<uint8_t>(kIdealCyclesPerSample);
-   static const float kCycleRemainder = kIdealCyclesPerSample - kDefaultCyclesPerSample;
+   static const float kCycleRemainder = static_cast<float>(kIdealCyclesPerSample - kDefaultCyclesPerSample);
 
    frameSequencer.machineCycle();
 
@@ -703,7 +703,13 @@ void SoundController::pushSample()
    int8_t noiseSample = noiseChannel.getCurrentAudioSample();
 
    AudioSample sample = mixer.mix(square1Sample, square2Sample, waveSample, noiseSample);
+
+#if DM_PROJECT_PLAYDATE
+   leftAudioRingBuffer.push(sample.left);
+   rightAudioRingBuffer.push(sample.right);
+#else
    audioRingBuffer.push(sample);
+#endif
 
 #if DM_WITH_UI
    UIData uiData;

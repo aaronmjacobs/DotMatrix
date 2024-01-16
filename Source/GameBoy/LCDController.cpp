@@ -562,7 +562,7 @@ void LCDController::scanSprites(Framebuffer& framebuffer, uint8_t line)
       for (uint8_t col = 0; col < kSpriteWidth; ++col)
       {
          int16_t x = attributes.xPos - kSpriteWidth + col;
-         if (x < 0 || x > kScreenWidth)
+         if (x < 0 || x > static_cast<int16_t>(kScreenWidth))
          {
             continue;
          }

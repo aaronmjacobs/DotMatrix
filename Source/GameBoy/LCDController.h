@@ -46,13 +46,13 @@ public:
 
    void flip()
    {
-      writeIndex = (writeIndex + 1) % buffers.size();
+      writeIndex = !writeIndex;
       ++frameCounter;
    }
 
 private:
    std::array<std::unique_ptr<Framebuffer>, 2> buffers;
-   std::size_t writeIndex = 0;
+   bool writeIndex = false;
    uint32_t frameCounter = 0;
 };
 

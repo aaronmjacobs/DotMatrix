@@ -9,6 +9,9 @@
 #include <cstring>
 #include <ctime>
 #include <string>
+#if DM_PROJECT_PLAYDATE
+#include <sstream>
+#endif // DM_PROJECT_PLAYDATE
 
 namespace DotMatrix
 {
@@ -22,7 +25,7 @@ namespace Log
    tm getCurrentTime();
 
    // Text formatting policy
-   class text_formating_policy : public templog::formating_policy_base<text_formating_policy>
+   class text_formatting_policy : public templog::formating_policy_base<text_formatting_policy>
    {
    public:
       template<class WritePolicy_, int Sev_, int Aud_, class WriteToken_, class ParamList_>
@@ -52,9 +55,34 @@ namespace Log
 #  define DM_LOG_CERR_SEV_THRESHOLD templog::sev_fatal + 1
 #endif
 
-   using cerr_logger = templog::logger<templog::non_filtering_logger<text_formating_policy, templog::std_write_policy>
-                                       , DM_LOG_CERR_SEV_THRESHOLD
-                                       , templog::audience_list<templog::aud_developer>>;
+#if DM_PROJECT_PLAYDATE
+   class playdate_write_policy : public templog::incremental_write_policy_base<playdate_write_policy, false>
+   {
+   public:
+      template< int Sev_, int Aud_ >
+      struct writes { enum { result = true }; };
+
+      static bool is_writing(int /*sev*/, int /*aud*/) { return true; }
+
+      static void begin_write() { ss = std::ostringstream{}; }
+
+      template< typename T >
+      static void write_obj(const T& obj) { ss << obj; }
+
+      static void end_write();
+
+   private:
+      static std::ostringstream ss;
+   };
+
+   using dm_write_policy = playdate_write_policy;
+#else
+   using dm_write_policy = templog::std_write_policy;
+#endif // DM_PROJECT_PLAYDATE
+
+   using dm_logger = templog::logger<templog::non_filtering_logger<text_formatting_policy, dm_write_policy>
+      , DM_LOG_CERR_SEV_THRESHOLD
+      , templog::audience_list<templog::aud_developer>>;
 
 #undef DM_LOG_CERR_SEV_THRESHOLD
 }
@@ -71,7 +99,7 @@ namespace Log
 // Fatal   : For logging fatal errors that prevent the program from continuing
 
 #if DM_DEBUG
-#  define DM_LOG(log_message, log_severity) do { TEMPLOG_LOG(DotMatrix::Log::cerr_logger, log_severity, templog::aud_developer) << log_message; } while (0)
+#  define DM_LOG(log_message, log_severity) do { TEMPLOG_LOG(DotMatrix::Log::dm_logger, log_severity, templog::aud_developer) << log_message; } while (0)
 #else
 #  define DM_LOG(_log_message_, log_severity) do {} while (0)
 #endif

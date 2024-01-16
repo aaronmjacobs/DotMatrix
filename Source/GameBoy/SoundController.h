@@ -683,10 +683,25 @@ public:
 
    SoundController();
 
+#if DM_PROJECT_PLAYDATE
+   std::size_t consumeAudio(std::span<int16_t> leftBuffer, std::span<int16_t> rightBuffer)
+   {
+      DM_ASSERT(leftBuffer.size() == rightBuffer.size());
+
+      std::size_t writeOffset = leftAudioRingBuffer.getWriteOffset();
+
+      std::size_t leftNum = leftAudioRingBuffer.pop(leftBuffer, writeOffset);
+      std::size_t rightNum = rightAudioRingBuffer.pop(rightBuffer, writeOffset);
+      DM_ASSERT(leftNum == rightNum);
+
+      return leftNum;
+   }
+#else
    std::size_t consumeAudio(std::span<AudioSample> buffer)
    {
       return audioRingBuffer.pop(buffer);
    }
+#endif
 
    void machineCycle();
 
@@ -730,7 +745,13 @@ private:
    WaveChannel waveChannel;
    NoiseChannel noiseChannel;
 
+#if DM_PROJECT_PLAYDATE
+   RingBuffer<int16_t, kBufferSize> leftAudioRingBuffer;
+   RingBuffer<int16_t, kBufferSize> rightAudioRingBuffer;
+#else
    RingBuffer<AudioSample, kBufferSize> audioRingBuffer;
+#endif
+
    uint8_t cyclesSinceLastSample = 0;
    uint8_t cyclesForNextSample = CPU::kClockSpeed / kSampleRate;
    float remainderCycles = 0.0f;

@@ -120,7 +120,11 @@ void GameBoy::machineCycle()
    machineCycleTima();
    machineCycleSerial();
    lcdController.machineCycle();
+
+   // Sound emulation is expensive on the PlayDate, so we don't give the sound controller machine cycles when audio is disabled
+#if !DM_PLATFORM_PLAYDATE || DM_WITH_AUDIO
    soundController.machineCycle();
+#endif // !DM_PLATFORM_PLAYDATE || DM_WITH_AUDIO
 }
 
 #if DM_WITH_BOOTSTRAP

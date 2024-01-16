@@ -3,6 +3,12 @@
 #include <iomanip>
 #include <sstream>
 
+#if DM_PROJECT_PLAYDATE
+#include <pdcpp/pdnewlib.h>
+
+extern PlaydateAPI* g_pd;
+#endif // DM_PROJECT_PLAYDATE
+
 namespace DotMatrix
 {
 
@@ -56,6 +62,20 @@ namespace Log
 
       return time;
    }
+
+#if DM_PROJECT_PLAYDATE
+   // static
+   std::ostringstream playdate_write_policy::ss;
+
+   // static
+   void playdate_write_policy::end_write()
+   {
+      if (g_pd)
+      {
+         g_pd->system->logToConsole(ss.str().c_str());
+      }
+   }
+#endif // DM_PROJECT_PLAYDATE
 }
 
 } // namespace DotMatrix
