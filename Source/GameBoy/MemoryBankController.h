@@ -50,7 +50,7 @@ protected:
    bool wroteToRam = false;
 };
 
-class MBCNull : public MemoryBankController
+class MBCNull final : public MemoryBankController
 {
 public:
    MBCNull(const Cartridge& cartridge);
@@ -59,7 +59,7 @@ public:
    void write(uint16_t address, uint8_t value) override;
 };
 
-class MBC1 : public MemoryBankController
+class MBC1 final : public MemoryBankController
 {
 public:
    MBC1(const Cartridge& cartridge);
@@ -85,7 +85,7 @@ private:
    std::array<RamBank, 4> ramBanks = {};
 };
 
-class MBC2 : public MemoryBankController
+class MBC2 final : public MemoryBankController
 {
 public:
    MBC2(const Cartridge& cartridge);
@@ -103,7 +103,7 @@ private:
    std::array<uint8_t, 0x0200> ram = {};
 };
 
-class MBC3 : public MemoryBankController
+class MBC3 final : public MemoryBankController
 {
 public:
    MBC3(const Cartridge& cartridge);
@@ -162,7 +162,7 @@ private:
    std::array<RamBank, 4> ramBanks = {};
 };
 
-class MBC5 : public MemoryBankController
+class MBC5 final : public MemoryBankController
 {
 public:
    MBC5(const Cartridge& cartridge);
