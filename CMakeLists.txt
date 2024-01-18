@@ -52,7 +52,7 @@ target_compile_definitions(${RETRO_PROJECT_NAME} PRIVATE DM_WITH_UI=0)
 target_compile_definitions(${RETRO_PROJECT_NAME} INTERFACE DM_PROJECT_PLAYDATE=0)
 target_compile_definitions(${RETRO_PROJECT_NAME} INTERFACE DM_PLATFORM_PLAYDATE=0)
 
-set(PLAYDATE_PROJECT_NAME "${PROJECT_NAME}PlayDate")
+set(PLAYDATE_PROJECT_NAME "${PROJECT_NAME}Playdate")
 add_subdirectory("${PROJECT_SOURCE_DIR}/Libraries/playdate-cpp")
 set(ENVSDK $ENV{PLAYDATE_SDK_PATH})
 file(TO_CMAKE_PATH ${ENVSDK} SDK)

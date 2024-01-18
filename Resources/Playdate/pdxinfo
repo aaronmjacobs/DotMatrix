@@ -1,0 +1,7 @@
+name=@PROJECT_DISPLAY_NAME@
+author=Aaron Jacobs
+description=A Game Boy emulator.
+bundleID=com.aaronmjacobs.dotmatrix
+version=@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@
+buildNumber=@PROJECT_VERSION_TWEAK@
+imagePath=.

@@ -69,7 +69,7 @@ set(RETRO_SOURCE_FILES
 )
 
 set(PLAYDATE_SOURCE_FILES
-   "${SRC_DIR}/PlayDate/PlayDate.cpp"
+   "${SRC_DIR}/Playdate/Playdate.cpp"
 )
 
 set(TEST_SOURCE_FILES
