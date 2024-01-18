@@ -1,3 +1,4 @@
+#include "Core/Enum.h"
 #include "Core/Log.h"
 #include "Core/Math.h"
 
@@ -50,7 +51,7 @@ namespace
       DM_STATIC_ASSERT(checkBitOperand(Opr::Bit1, 1) && checkBitOperand(Opr::Bit2, 2) && checkBitOperand(Opr::Bit3, 3)
                     && checkBitOperand(Opr::Bit4, 4) && checkBitOperand(Opr::Bit5, 5) && checkBitOperand(Opr::Bit6, 6)
                     && checkBitOperand(Opr::Bit7, 7), "Number operands are in an incorrect order");
-      DM_ASSERT(operand >= Opr::Bit0 && operand <= Opr::Bit7, "Bad bitOprMask() operand: %hhu", operand);
+      DM_ASSERT(operand >= Opr::Bit0 && operand <= Opr::Bit7, "Bad bitOprMask() operand: %hhu", Enum::cast(operand));
 
       uint8_t value = Enum::cast(operand) - Enum::cast(Opr::Bit0);
       return 1 << value;
@@ -183,7 +184,7 @@ uint8_t CPU::Operand::read8() const
       value = gb.read(imm16);
       break;
    default:
-      DM_ASSERT(false, "Invalid 8-bit read operand: %hhu", opr);
+      DM_ASSERT(false, "Invalid 8-bit read operand: %hhu", Enum::cast(opr));
       break;
    }
 
@@ -220,7 +221,7 @@ uint16_t CPU::Operand::read16() const
       value = imm16;
       break;
    default:
-      DM_ASSERT(false, "Invalid 16-bit read operand: %hhu", opr);
+      DM_ASSERT(false, "Invalid 16-bit read operand: %hhu", Enum::cast(opr));
       break;
    }
 
@@ -274,7 +275,7 @@ void CPU::Operand::write8(uint8_t value)
       gb.write(imm16, value);
       break;
    default:
-      DM_ASSERT(false, "Invalid 8-bit write operand: %hhu", opr);
+      DM_ASSERT(false, "Invalid 8-bit write operand: %hhu", Enum::cast(opr));
       break;
    }
 }
@@ -306,7 +307,7 @@ void CPU::Operand::write16(uint16_t value)
       gb.write(imm16 + 1, (value >> 8) & 0x00FF);
       break;
    default:
-      DM_ASSERT(false, "Invalid 16-bit write operand: %hhu", opr);
+      DM_ASSERT(false, "Invalid 16-bit write operand: %hhu", Enum::cast(opr));
       break;
    }
 }
@@ -987,7 +988,7 @@ void CPU::execute8(Operation operation)
    // Invalid instruction
    default:
    {
-      DM_ASSERT(false, "Invalid 8-bit instruction: %hhu", operation.ins);
+      DM_ASSERT(false, "Invalid 8-bit instruction: %hhu", Enum::cast(operation.ins));
       break;
    }
    }
@@ -1239,7 +1240,7 @@ void CPU::execute16(Operation operation)
    // Invalid instruction
    default:
    {
-      DM_ASSERT(false, "Invalid 16-bit instruction: %hhu", operation.ins);
+      DM_ASSERT(false, "Invalid 16-bit instruction: %hhu", Enum::cast(operation.ins));
       break;
    }
    }
