@@ -1,3 +1,4 @@
+#include "Core/Archive.h"
 #include "Core/Log.h"
 
 #include "GameBoy/Cartridge.h"
@@ -46,6 +47,8 @@ namespace
       std::unique_ptr<DotMatrix::GameBoy> gameBoy;
       LCDBitmap* bitmap = nullptr;
       float lastTime = 0.0f;
+      bool wroteToRamLastFrame = false;
+      bool abss = false;
 
 #if DM_WITH_AUDIO
       SoundSource* soundSource = nullptr;
@@ -72,6 +75,70 @@ namespace
    }
 #endif // DM_WITH_AUDIO
 
+   std::vector<uint8_t> readBinaryFile(PlaydateAPI* pd, const std::string& path)
+   {
+      std::vector<uint8_t> data;
+
+      if (SDFile* file = pd->file->open(path.c_str(), static_cast<FileOptions>(kFileRead | kFileReadData)))
+      {
+         pd->file->seek(file, 0, SEEK_END);
+         int len = pd->file->tell(file);
+         pd->file->seek(file, 0, SEEK_SET);
+
+         if (len > 0)
+         {
+            data = std::vector<uint8_t>(len);
+
+            int read = 0;
+            while (read < len)
+            {
+               int remaining = len - read;
+               int readThisLoop = pd->file->read(file, &data[read], remaining);
+
+               if (readThisLoop < 0)
+               {
+                  data.clear();
+                  break;
+               }
+
+               read += readThisLoop;
+            }
+         }
+
+         pd->file->close(file);
+      }
+
+      return data;
+   }
+
+   bool writeBinaryFile(PlaydateAPI* pd, const std::string& path, const std::vector<uint8_t>& data)
+   {
+      bool success = false;
+      if (SDFile* file = pd->file->open(path.c_str(), static_cast<FileOptions>(kFileWrite)))
+      {
+         int len = static_cast<int>(data.size());
+
+         int written = 0;
+         while (written < len)
+         {
+            int remaining = len - written;
+            int writtenThisLoop = pd->file->write(file, &data[written], remaining);
+
+            if (writtenThisLoop < 0)
+            {
+               break;
+            }
+
+            written += writtenThisLoop;
+         }
+         success = written == len;
+
+         pd->file->close(file);
+      }
+
+      return success;
+   }
+
    std::string findRom(PlaydateAPI* pd)
    {
       std::string romPath;
@@ -95,33 +162,11 @@ namespace
    std::unique_ptr<DotMatrix::Cartridge> loadCartridge(PlaydateAPI* pd)
    {
       std::string romPath = findRom(pd);
-
-      SDFile* file = pd->file->open(romPath.c_str(), static_cast<FileOptions>(kFileRead | kFileReadData));
-      if (!file)
+      std::vector<uint8_t> data = readBinaryFile(pd, romPath);
+      if (data.empty())
       {
-         pd->system->error("Failed to open ROM file: %s", pd->file->geterr());
-         return nullptr;
+         pd->system->error("Failed to read ROM file: %s", pd->file->geterr());
       }
-
-      pd->file->seek(file, 0, SEEK_END);
-      int len = pd->file->tell(file);
-      pd->file->seek(file, 0, SEEK_SET);
-      if (len < 0)
-      {
-         pd->system->error("Invalid ROM file length");
-         return nullptr;
-      }
-
-      std::vector<uint8_t> data(len);
-      int read = 0;
-      while (read < len)
-      {
-         int remaining = len - read;
-         read += pd->file->read(file, &data[read], static_cast<int>(remaining));
-      }
-
-      pd->file->close(file);
-      file = nullptr;
 
       std::string error;
       if (std::unique_ptr<DotMatrix::Cartridge> cartridge = DotMatrix::Cartridge::fromData(std::move(data), error))
@@ -131,6 +176,64 @@ namespace
 
       pd->system->error("Failed to create cartridge: %s", error.c_str());
       return nullptr;
+   }
+
+   std::string getSaveName(const char* title)
+   {
+      // Start with the cartridge title
+      std::string fileName = title;
+
+      // Remove all non-letters
+      fileName.erase(std::remove_if(fileName.begin(), fileName.end(), [](char c) { return !isalpha(c); }), fileName.end());
+
+      // Lower case
+      std::transform(fileName.begin(), fileName.end(), fileName.begin(), ::tolower);
+
+      if (!fileName.empty())
+      {
+         // Extension
+         fileName += ".sav";
+      }
+
+      return fileName;
+   }
+
+   void loadGame(PlaydateAPI* pd)
+   {
+      if (State::gameBoy)
+      {
+         std::string saveName = getSaveName(State::gameBoy->title());
+         if (!saveName.empty())
+         {
+            std::vector<uint8_t> data = readBinaryFile(pd, saveName);
+            if (!data.empty())
+            {
+               DotMatrix::Archive cartRam(std::move(data));
+
+               if (State::gameBoy->loadCartRAM(cartRam))
+               {
+                  DM_LOG_INFO("Loaded game from: " << saveName);
+               }
+            }
+         }
+      }
+   }
+
+   void saveGame(PlaydateAPI* pd)
+   {
+      if (State::gameBoy)
+      {
+         std::string saveName = getSaveName(State::gameBoy->title());
+         if (!saveName.empty())
+         {
+            DotMatrix::Archive cartRam = State::gameBoy->saveCartRAM();
+
+            if (writeBinaryFile(pd, saveName, cartRam.getData()))
+            {
+               DM_LOG_INFO("Saved game to: " << saveName);
+            }
+         }
+      }
    }
 
    void framebufferToBitmap(PlaydateAPI* pd, const DotMatrix::Framebuffer& framebuffer, LCDBitmap* bitmap)
@@ -194,11 +297,29 @@ namespace
       joypad.down = buttons & kButtonDown;
       joypad.a = buttons & kButtonA;
       joypad.b = buttons & kButtonB;
-      joypad.select = crankChange < 0.0f;
-      joypad.start = crankChange > 0.0f;
+      joypad.select = crankChange < -5.0f;
+      joypad.start = crankChange > 5.0f;
+
+      if (State::abss)
+      {
+         State::abss = false;
+
+         joypad.a = true;
+         joypad.b = true;
+         joypad.start = true;
+         joypad.select = true;
+      }
+
       State::gameBoy->setJoypadState(joypad);
 
       State::gameBoy->tick(static_cast<double>(dt));
+
+      bool wroteToRamThisFrame = State::gameBoy->cartWroteToRamThisFrame();
+      if (!wroteToRamThisFrame && State::wroteToRamLastFrame)
+      {
+         saveGame(pd);
+      }
+      State::wroteToRamLastFrame = wroteToRamThisFrame;
 
       constexpr int kX = (LCD_COLUMNS - DotMatrix::kScreenWidth) / 2;
       constexpr int kY = (LCD_ROWS - DotMatrix::kScreenHeight) / 2;
@@ -225,6 +346,7 @@ namespace
          State::gameBoy = std::make_unique<DotMatrix::GameBoy>();
       }
       State::gameBoy->setCartridge(loadCartridge(pd));
+      loadGame(pd);
 
       State::bitmap = pd->graphics->newBitmap(static_cast<int>(DotMatrix::kScreenWidth), static_cast<int>(DotMatrix::kScreenHeight), kColorBlack);
 
@@ -233,6 +355,8 @@ namespace
 #if DM_WITH_AUDIO
       State::soundSource = pd->sound->addSource(audioSourceFunction, nullptr, 1);
 #endif // DM_WITH_AUDIO
+
+      pd->system->addMenuItem("abss", [](void* userdata) { State::abss = true; }, nullptr);
    }
 
    void terminate(PlaydateAPI* pd)
