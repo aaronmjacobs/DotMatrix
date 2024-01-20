@@ -294,9 +294,7 @@ void GameBoy::machineCycleTima()
 
    // Increase TIMA on falling edge
    // This can be caused by a counter increase, counter reset, TAC change, TIMA disable, etc.
-   bool enabled = (tac & TAC::TimerStartStop) != 0;
-   uint16_t mask = TAC::kCounterMasks[tac & TAC::InputClockSelect];
-   bool timerBit = (counter & mask) != 0 && enabled;
+   bool timerBit = timerEnabled && (counter & timerMask) != 0;
 
    if (lastTimerBit && !timerBit)
    {
@@ -470,6 +468,8 @@ void GameBoy::writeIO(uint16_t address, uint8_t value)
          break;
       case 0xFF07:
          tac = value & 0x07;
+         timerEnabled = (tac & TAC::TimerStartStop) != 0;
+         timerMask = TAC::kCounterMasks[tac & TAC::InputClockSelect];
          break;
       case 0xFF0F: // IF
          ifr = value & 0x1F;

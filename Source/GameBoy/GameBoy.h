@@ -229,6 +229,8 @@ private:
    bool ifWritten = false;
    bool timaReloadedWithTma = false;
    bool lastTimerBit = false;
+   bool timerEnabled = false;
+   uint16_t timerMask = 0x00;
 
    SerialControlRegister serialControlRegister;
    uint16_t serialCycles = 0;
