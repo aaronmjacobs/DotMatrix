@@ -156,9 +156,9 @@ struct Operation
 class CPU
 {
 public:
-   static const uint8_t kClockCyclesPerMachineCycle = 4;
-   static const uint64_t kClockSpeed = 4194304; // 4.194304 MHz TODO handle GBC / SGB
-   static const uint64_t kMachineSpeed = kClockSpeed / kClockCyclesPerMachineCycle;
+   static constexpr uint8_t kClockCyclesPerMachineCycle = 4;
+   static constexpr uint64_t kClockSpeed = 4194304; // 4.194304 MHz TODO handle GBC / SGB
+   static constexpr uint64_t kMachineSpeed = kClockSpeed / kClockCyclesPerMachineCycle;
 
    CPU(GameBoy& gb);
 
