@@ -294,6 +294,7 @@ const char* Cartridge::getTypeName(Type type)
 
 Cartridge::Cartridge(std::vector<uint8_t> data, const Header& headerData)
    : cartData(std::move(data))
+   , cartDataSize(cartData.size())
    , header(headerData)
    , cartTitle({})
    , ramPresent(cartHasRAM(header.type))

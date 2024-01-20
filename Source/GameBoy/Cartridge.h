@@ -26,9 +26,9 @@ public:
 
    uint8_t data(size_t address) const
    {
-      if (address < cartData.size())
+      if (address < cartDataSize)
       {
-         return cartData[address];;
+         return cartData[address];
       }
 
       return GameBoy::kInvalidAddressByte;
@@ -209,6 +209,8 @@ private:
    }
 
    std::vector<uint8_t> cartData;
+   std::size_t cartDataSize = 0;
+
    Header header;
    std::array<char, 17> cartTitle;
 
