@@ -118,7 +118,12 @@ void GameBoy::machineCycle()
 
    machineCycleJoypad();
    machineCycleTima();
+
+   // Not /that/ expensive, but we don't use serial for anything at the moment, so
+#if !DM_PLATFORM_PLAYDATE
    machineCycleSerial();
+#endif // DM_PLATFORM_PLAYDATE
+
    lcdController.machineCycle();
 
    // Sound emulation is expensive on the PlayDate, so we don't give the sound controller machine cycles when audio is disabled
