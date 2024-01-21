@@ -116,7 +116,6 @@ void GameBoy::machineCycle()
    totalCycles += CPU::kClockCyclesPerMachineCycle;
    counter += CPU::kClockCyclesPerMachineCycle;
 
-   machineCycleJoypad();
    machineCycleTima();
 
    // Not /that/ expensive, but we don't use serial for anything at the moment, so
@@ -240,42 +239,6 @@ bool GameBoy::shouldStepCPU() const
    return hasProgram() && !cpu.isStopped();
 }
 
-void GameBoy::machineCycleJoypad()
-{
-   uint8_t dpadVals = P1::InMask;
-   if ((p1 & P1::P14OutPort) == 0x00)
-   {
-      uint8_t right = joypad.right ? 0x00 : P1::P10InPort;
-      uint8_t left = joypad.left ? 0x00 : P1::P11InPort;
-      uint8_t up = joypad.up ? 0x00 : P1::P12InPort;
-      uint8_t down = joypad.down ? 0x00 : P1::P13InPort;
-
-      dpadVals = (right | left | up | down);
-   }
-
-   uint8_t faceVals = P1::InMask;
-   if ((p1 & P1::P15OutPort) == 0x00)
-   {
-      uint8_t a = joypad.a ? 0x00 : P1::P10InPort;
-      uint8_t b = joypad.b ? 0x00 : P1::P11InPort;
-      uint8_t select = joypad.select ? 0x00 : P1::P12InPort;
-      uint8_t start = joypad.start ? 0x00 : P1::P13InPort;
-
-      faceVals = (a | b | select | start);
-   }
-
-   uint8_t inputVals = dpadVals & faceVals;
-   uint8_t inputChange = inputVals ^ lastInputVals;
-   if ((inputVals & inputChange) != inputChange)
-   {
-      // At least one bit went from high to low
-      requestInterrupt(Interrupt::Joypad);
-   }
-   lastInputVals = inputVals;
-
-   p1 = (p1 & P1::OutMask) | (inputVals & P1::InMask);
-}
-
 void GameBoy::machineCycleTima()
 {
    timaReloadedWithTma = false;
@@ -342,6 +305,42 @@ void GameBoy::machineCycleSerial()
          requestInterrupt(Interrupt::Serial);
       }
    }
+}
+
+void GameBoy::updateP1()
+{
+   uint8_t dpadVals = P1::InMask;
+   if ((p1 & P1::P14OutPort) == 0x00)
+   {
+      uint8_t right = joypad.right ? 0x00 : P1::P10InPort;
+      uint8_t left = joypad.left ? 0x00 : P1::P11InPort;
+      uint8_t up = joypad.up ? 0x00 : P1::P12InPort;
+      uint8_t down = joypad.down ? 0x00 : P1::P13InPort;
+
+      dpadVals = (right | left | up | down);
+   }
+
+   uint8_t faceVals = P1::InMask;
+   if ((p1 & P1::P15OutPort) == 0x00)
+   {
+      uint8_t a = joypad.a ? 0x00 : P1::P10InPort;
+      uint8_t b = joypad.b ? 0x00 : P1::P11InPort;
+      uint8_t select = joypad.select ? 0x00 : P1::P12InPort;
+      uint8_t start = joypad.start ? 0x00 : P1::P13InPort;
+
+      faceVals = (a | b | select | start);
+   }
+
+   uint8_t inputVals = dpadVals & faceVals;
+   uint8_t inputChange = inputVals ^ lastInputVals;
+   if ((inputVals & inputChange) != inputChange)
+   {
+      // At least one bit went from high to low
+      requestInterrupt(Interrupt::Joypad);
+   }
+   lastInputVals = inputVals;
+
+   p1 = (p1 & P1::OutMask) | (inputVals & P1::InMask);
 }
 
 uint8_t GameBoy::readIO(uint16_t address) const
@@ -442,6 +441,7 @@ void GameBoy::writeIO(uint16_t address, uint8_t value)
       {
       case 0xFF00:
          p1 = value & 0x3F;
+         updateP1();
          break;
       case 0xFF01:
          sb = value;

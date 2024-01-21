@@ -146,6 +146,7 @@ public:
    void setJoypadState(Joypad joypadState)
    {
       joypad = joypadState;
+      updateP1();
    }
 
    uint8_t read(uint16_t address)
@@ -189,9 +190,10 @@ public:
 private:
    bool shouldStepCPU() const;
 
-   void machineCycleJoypad();
    void machineCycleTima();
    void machineCycleSerial();
+
+   void updateP1();
 
    uint8_t readIO(uint16_t address) const;
    void writeIO(uint16_t address, uint8_t value);
