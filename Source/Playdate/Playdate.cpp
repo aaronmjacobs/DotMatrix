@@ -16,7 +16,25 @@
 #include <utility>
 #include <vector>
 
+#define DM_PLAYDATE_SCALE 1
+
 PlaydateAPI* g_pd = nullptr;
+
+#if DM_PLATFORM_PLAYDATE && PPK_ASSERT_ENABLED
+namespace ppk
+{
+namespace assert
+{
+namespace implementation
+{
+   void throwException(const ppk::assert::AssertionException& e)
+   {
+      abort();
+   }
+}
+}
+}
+#endif // DM_PLATFORM_PLAYDATE && PPK_ASSERT_ENABLED
 
 #if DM_PLATFORM_PLAYDATE
 #include <sys/time.h>
@@ -48,6 +66,11 @@ namespace
       LCDBitmap* bitmap = nullptr;
       float lastTime = 0.0f;
       bool wroteToRamLastFrame = false;
+
+      int yOffset = 0;
+
+      bool start = false;
+      bool select = false;
       bool abss = false;
 
 #if DM_WITH_AUDIO
@@ -236,6 +259,48 @@ namespace
       }
    }
 
+   DotMatrix::Joypad pollInput(PlaydateAPI* pd)
+   {
+      PDButtons currentButtons{}; // Current button state
+      PDButtons pushedButtons{}; // Buttons pushed over the last frame
+      pd->system->getButtonState(&currentButtons, &pushedButtons, nullptr);
+      PDButtons buttons = static_cast<PDButtons>(currentButtons | pushedButtons);
+
+      DotMatrix::Joypad joypad;
+      joypad.right = buttons & kButtonRight;
+      joypad.left = buttons & kButtonLeft;
+      joypad.up = buttons & kButtonUp;
+      joypad.down = buttons & kButtonDown;
+      joypad.a = buttons & kButtonA;
+      joypad.b = buttons & kButtonB;
+
+      if (State::start)
+      {
+         State::start = false;
+
+         joypad.start = true;
+      }
+
+      if (State::select)
+      {
+         State::select = false;
+
+         joypad.select = true;
+      }
+
+      if (State::abss)
+      {
+         State::abss = false;
+
+         joypad.a = true;
+         joypad.b = true;
+         joypad.start = true;
+         joypad.select = true;
+      }
+
+      return joypad;
+   }
+
    void framebufferToBitmap(PlaydateAPI* pd, const DotMatrix::Framebuffer& framebuffer, LCDBitmap* bitmap)
    {
       static int width = 0;
@@ -248,11 +313,42 @@ namespace
          pd->graphics->getBitmapData(bitmap, &width, &height, &rowbytes, &mask, &data);
       }
 
-      if (!data || rowbytes != 20)
+#if DM_PLAYDATE_SCALE
+      constexpr int kExpectedRowbytes = 40;
+#else
+      constexpr int kExpectedRowbytes = 20;
+#endif
+
+      if (!data || rowbytes != kExpectedRowbytes)
       {
          return;
       }
 
+#if DM_PLAYDATE_SCALE
+      for (int y = 0; y < static_cast<int>(DotMatrix::kScreenHeight); ++y)
+      {
+         for (int x = 0; x < static_cast<int>(DotMatrix::kScreenWidth); x += 4)
+         {
+            int topByteOffset = (x / 4) + 2 * y * rowbytes;
+            int bottomByteOffset = topByteOffset + rowbytes;
+
+            uint8_t& topByte = data[topByteOffset];
+            uint8_t& bottomByte = data[bottomByteOffset];
+
+            topByte = 0;
+            bottomByte = 0;
+
+            for (int xOffset = 0; xOffset < 4; ++xOffset)
+            {
+               int bitOffset = 6 - 2 * xOffset;
+
+               uint8_t pixel = ~framebuffer[x + xOffset + y * DotMatrix::kScreenWidth] & 0x03;
+               topByte |= pixel << bitOffset;
+               bottomByte |= (pixel == 1 || pixel == 2 ? pixel - 1 : pixel) << bitOffset;
+            }
+         }
+      }
+#else
       int byteOffset = 0;
       int bitOffset = 7;
       for (int i = 0; i < width * height; ++i)
@@ -263,7 +359,7 @@ namespace
             byte = 0;
          }
 
-         byte |= (framebuffer[i] > 1 ? 1 : 0) << bitOffset;
+         byte |= ((framebuffer[i] > 1 ? 0 : 1) << bitOffset);
 
          --bitOffset;
          if (bitOffset < 0)
@@ -272,6 +368,51 @@ namespace
             bitOffset = 7;
          }
       }
+#endif
+   }
+
+   void render(PlaydateAPI* pd)
+   {
+#if DM_PLAYDATE_SCALE
+      constexpr float kScale = 1.0f; // static_cast<float>(LCD_ROWS) / (DotMatrix::kScreenHeight * 2);
+      constexpr int kX = (LCD_COLUMNS - (DotMatrix::kScreenWidth * 2 * kScale)) / 2;
+      constexpr int kY = (LCD_ROWS - (DotMatrix::kScreenHeight * 2 * kScale)) / 2;
+#else
+      constexpr float kScale = 1.0f;
+      constexpr int kX = (LCD_COLUMNS - DotMatrix::kScreenWidth) / 2;
+      constexpr int kY = (LCD_ROWS - DotMatrix::kScreenHeight) / 2;
+#endif
+
+      framebufferToBitmap(pd, State::gameBoy->getLCDController().getFramebuffer(), State::bitmap);
+
+      if (pd->system->isCrankDocked())
+      {
+         State::yOffset = 0;
+      }
+      else
+      {
+         float crankChange = pd->system->getCrankChange();
+         State::yOffset -= static_cast<int>(crankChange * 0.5f);
+
+         if (State::yOffset > -kY)
+         {
+            State::yOffset = -kY;
+         }
+
+         if (State::yOffset < kY)
+         {
+            State::yOffset = kY;
+         }
+      }
+
+#if DM_PLAYDATE_SCALE && 0
+      pd->graphics->drawScaledBitmap(State::bitmap, kX, kY, kScale, kScale);
+#else
+      int y = kY + State::yOffset;
+      pd->graphics->drawBitmap(State::bitmap, kX, y, kBitmapUnflipped);
+#endif
+
+      pd->system->drawFPS(0, 0);
    }
 
    int tick(void* userdata)
@@ -286,31 +427,7 @@ namespace
       dt = std::min(dt, 0.017f); // Prevent framerate spiraling
 #endif // DM_PLATFORM_PLAYDATE
 
-      PDButtons buttons{};
-      pd->system->getButtonState(&buttons, nullptr, nullptr);
-      float crankChange = pd->system->getCrankChange();
-
-      DotMatrix::Joypad joypad;
-      joypad.right = buttons & kButtonRight;
-      joypad.left = buttons & kButtonLeft;
-      joypad.up = buttons & kButtonUp;
-      joypad.down = buttons & kButtonDown;
-      joypad.a = buttons & kButtonA;
-      joypad.b = buttons & kButtonB;
-      joypad.select = crankChange < -5.0f;
-      joypad.start = crankChange > 5.0f;
-
-      if (State::abss)
-      {
-         State::abss = false;
-
-         joypad.a = true;
-         joypad.b = true;
-         joypad.start = true;
-         joypad.select = true;
-      }
-
-      State::gameBoy->setJoypadState(joypad);
+      State::gameBoy->setJoypadState(pollInput(pd));
 
       State::gameBoy->tick(static_cast<double>(dt));
 
@@ -321,13 +438,7 @@ namespace
       }
       State::wroteToRamLastFrame = wroteToRamThisFrame;
 
-      constexpr int kX = (LCD_COLUMNS - DotMatrix::kScreenWidth) / 2;
-      constexpr int kY = (LCD_ROWS - DotMatrix::kScreenHeight) / 2;
-
-      framebufferToBitmap(pd, State::gameBoy->getLCDController().getFramebuffer(), State::bitmap);
-      pd->graphics->drawBitmap(State::bitmap, kX, kY, kBitmapUnflipped);
-
-      pd->system->drawFPS(0, 0);
+      render(pd);
 
       return 1;
    }
@@ -336,6 +447,7 @@ namespace
    {
       g_pd = pd;
 
+      pd->display->setRefreshRate(0.0f);
       pd->system->setUpdateCallback(tick, pd);
 
       {
@@ -348,7 +460,13 @@ namespace
       State::gameBoy->setCartridge(loadCartridge(pd));
       loadGame(pd);
 
-      State::bitmap = pd->graphics->newBitmap(static_cast<int>(DotMatrix::kScreenWidth), static_cast<int>(DotMatrix::kScreenHeight), kColorBlack);
+#if DM_PLAYDATE_SCALE
+      constexpr int kBitmapScale = 2;
+#else
+      constexpr int kBitmapScale = 1;
+#endif
+
+      State::bitmap = pd->graphics->newBitmap(static_cast<int>(DotMatrix::kScreenWidth * kBitmapScale), static_cast<int>(DotMatrix::kScreenHeight * kBitmapScale), kColorBlack);
 
       pd->system->resetElapsedTime();
 
@@ -356,6 +474,8 @@ namespace
       State::soundSource = pd->sound->addSource(audioSourceFunction, nullptr, 1);
 #endif // DM_WITH_AUDIO
 
+      pd->system->addMenuItem("start", [](void* userdata) { State::start = true; }, nullptr);
+      pd->system->addMenuItem("select", [](void* userdata) { State::select = true; }, nullptr);
       pd->system->addMenuItem("abss", [](void* userdata) { State::abss = true; }, nullptr);
    }
 
