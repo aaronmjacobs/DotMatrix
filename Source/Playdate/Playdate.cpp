@@ -69,9 +69,9 @@ namespace
 
       int yOffset = 0;
 
-      bool start = false;
-      bool select = false;
-      bool abss = false;
+      int startFrames = 0;
+      int selectFrames = 0;
+      int abssFrames = 0;
 
 #if DM_WITH_AUDIO
       SoundSource* soundSource = nullptr;
@@ -274,23 +274,23 @@ namespace
       joypad.a = buttons & kButtonA;
       joypad.b = buttons & kButtonB;
 
-      if (State::start)
+      if (State::startFrames > 0)
       {
-         State::start = false;
+         --State::startFrames;
 
          joypad.start = true;
       }
 
-      if (State::select)
+      if (State::selectFrames > 0)
       {
-         State::select = false;
+         --State::selectFrames;
 
          joypad.select = true;
       }
 
-      if (State::abss)
+      if (State::abssFrames > 0)
       {
-         State::abss = false;
+         --State::abssFrames;
 
          joypad.a = true;
          joypad.b = true;
@@ -474,9 +474,11 @@ namespace
       State::soundSource = pd->sound->addSource(audioSourceFunction, nullptr, 1);
 #endif // DM_WITH_AUDIO
 
-      pd->system->addMenuItem("start", [](void* userdata) { State::start = true; }, nullptr);
-      pd->system->addMenuItem("select", [](void* userdata) { State::select = true; }, nullptr);
-      pd->system->addMenuItem("abss", [](void* userdata) { State::abss = true; }, nullptr);
+      static constexpr int kMenuInputFrames = 3;
+
+      pd->system->addMenuItem("start", [](void* userdata) { State::startFrames = kMenuInputFrames; }, nullptr);
+      pd->system->addMenuItem("select", [](void* userdata) { State::selectFrames = kMenuInputFrames; }, nullptr);
+      pd->system->addMenuItem("abss", [](void* userdata) { State::abssFrames = kMenuInputFrames; }, nullptr);
    }
 
    void terminate(PlaydateAPI* pd)
