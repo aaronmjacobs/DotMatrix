@@ -375,8 +375,8 @@ namespace
    {
 #if DM_PLAYDATE_SCALE
       constexpr float kScale = 1.0f; // static_cast<float>(LCD_ROWS) / (DotMatrix::kScreenHeight * 2);
-      constexpr int kX = (LCD_COLUMNS - (DotMatrix::kScreenWidth * 2 * kScale)) / 2;
-      constexpr int kY = (LCD_ROWS - (DotMatrix::kScreenHeight * 2 * kScale)) / 2;
+      constexpr int kX = static_cast<int>((LCD_COLUMNS - (DotMatrix::kScreenWidth * 2 * kScale)) / 2);
+      constexpr int kY = static_cast<int>((LCD_ROWS - (DotMatrix::kScreenHeight * 2 * kScale)) / 2);
 #else
       constexpr float kScale = 1.0f;
       constexpr int kX = (LCD_COLUMNS - DotMatrix::kScreenWidth) / 2;

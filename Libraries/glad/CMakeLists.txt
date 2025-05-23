@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 
 ### Project Info ###
 
 # Project definition
-project(glad VERSION 0.1.36 LANGUAGES C)
+project(glad VERSION 2.0.8 LANGUAGES C)
 set(DEBUG_PROJECT_NAME "${PROJECT_NAME}-debug")
 
 # Directories
@@ -16,20 +16,20 @@ set(DEBUG_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/debug/src")
 
 # Headers
 set(HEADERS
-   "${INCLUDE_DIR}/glad/glad.h"
+   "${INCLUDE_DIR}/glad/gl.h"
    "${INCLUDE_DIR}/KHR/khrplatform.h"
 )
 set(DEBUG_HEADERS
-   "${DEBUG_INCLUDE_DIR}/glad/glad.h"
+   "${DEBUG_INCLUDE_DIR}/glad/gl.h"
    "${DEBUG_INCLUDE_DIR}/KHR/khrplatform.h"
 )
 
 # Sources
 set(SOURCES
-   "${SRC_DIR}/glad.c"
+   "${SRC_DIR}/gl.c"
 )
 set(DEBUG_SOURCES
-   "${DEBUG_SRC_DIR}/glad.c"
+   "${DEBUG_SRC_DIR}/gl.c"
 )
 
 ### Target Info ###

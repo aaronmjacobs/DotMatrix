@@ -3,7 +3,7 @@
 #include "Platform/Video/Mesh.h"
 #include "Platform/Video/ShaderProgram.h"
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 
 class Model
 {

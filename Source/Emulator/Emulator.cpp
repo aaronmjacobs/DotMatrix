@@ -18,7 +18,7 @@
 #endif // DM_WITH_UI
 
 #include <boxer/boxer.h>
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <PlatformUtils/IOUtils.h>
 
@@ -97,7 +97,7 @@ namespace
       }
    }
 
-   void gladPostCallback(const char* name, void* funcptr, int numArgs, ...)
+   void gladPostCallback(void* ret, const char* name, GLADapiproc apiproc, int len_args, ...)
    {
       GLenum errorCode = glad_glGetError();
       DM_ASSERT(errorCode == GL_NO_ERROR, "OpenGL error %d (%s) in %s", errorCode, getGlErrorName(errorCode), name);
@@ -110,12 +110,12 @@ namespace
 
       if (!loaded)
       {
-         loaded = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)) != 0;
+         loaded = gladLoadGL(glfwGetProcAddress) != 0;
 
 #if DM_DEBUG
          if (loaded)
          {
-            glad_set_post_callback(gladPostCallback);
+            gladSetGLPostCallback(gladPostCallback);
          }
 #endif // DM_DEBUG
       }

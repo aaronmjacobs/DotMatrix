@@ -18,18 +18,18 @@ namespace
       uint16_t address = 0;
    };
 
-   ImU8 readMemory(const ImU8* data, std::size_t offset)
+   ImU8 readMemory(const ImU8* mem, size_t off, void* user_data)
    {
-      const MemoryHelper* memoryHelper = reinterpret_cast<const MemoryHelper*>(data);
+      const MemoryHelper* memoryHelper = reinterpret_cast<const MemoryHelper*>(user_data);
 
-      return memoryHelper->gameBoy->readDirect(memoryHelper->address + static_cast<uint16_t>(offset));
+      return memoryHelper->gameBoy->readDirect(memoryHelper->address + static_cast<uint16_t>(off));
    }
 
-   void writeMemory(ImU8* data, std::size_t offset, ImU8 value)
+   void writeMemory(ImU8* mem, size_t off, ImU8 d, void* user_data)
    {
-      MemoryHelper* memoryHelper = reinterpret_cast<MemoryHelper*>(data);
+      MemoryHelper* memoryHelper = reinterpret_cast<MemoryHelper*>(user_data);
 
-      memoryHelper->gameBoy->writeDirect(memoryHelper->address + static_cast<uint16_t>(offset), value);
+      memoryHelper->gameBoy->writeDirect(memoryHelper->address + static_cast<uint16_t>(off), d);
    }
 
    MemoryEditor createMemoryEditor()
@@ -54,7 +54,8 @@ namespace
          memoryHelper.address = address;
 
          static MemoryEditor memoryEditor = createMemoryEditor();
-         memoryEditor.DrawContents(&memoryHelper, size, address);
+         memoryEditor.UserData = &memoryHelper;
+         memoryEditor.DrawContents(nullptr, size, address);
 
          ImGui::EndTabItem();
       }
