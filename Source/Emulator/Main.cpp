@@ -1,6 +1,6 @@
-#if defined(_WIN32) && !DM_DEBUG
+#if defined(_WIN32) && !DM_WITH_DEBUG_UTILS
 #  pragma comment(linker, "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
-#endif // defined(_WIN32) && !DM_DEBUG
+#endif // defined(_WIN32) && !DM_WITH_DEBUG_UTILS
 
 #include "Core/Assert.h"
 #include "Core/Log.h"
@@ -10,7 +10,7 @@
 #include <boxer/boxer.h>
 #include <GLFW/glfw3.h>
 
-#if DM_DEBUG
+#if DM_WITH_DEBUG_UTILS
 namespace
 {
    void errorCallback(int errorCode, const char* description)
@@ -18,15 +18,15 @@ namespace
       DM_ASSERT(false, "GLFW error %d: %s", errorCode, description);
    }
 }
-#endif // DM_DEBUG
+#endif // DM_WITH_DEBUG_UTILS
 
 int main(int argc, char* argv[])
 {
    DM_LOG_INFO(DM_PROJECT_DISPLAY_NAME << " version " << DM_VERSION_STRING);
 
-#if DM_DEBUG
+#if DM_WITH_DEBUG_UTILS
    glfwSetErrorCallback(errorCallback);
-#endif // DM_DEBUG
+#endif // DM_WITH_DEBUG_UTILS
 
    if (!glfwInit())
    {

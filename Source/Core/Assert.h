@@ -1,12 +1,11 @@
 #pragma once
 
-#if DM_DEBUG == NDEBUG
-#  error "DM_DEBUG and NDEBUG are both defined"
-#endif // DM_DEBUG == NDEBUG
-
 #if defined(DM_ASSERT)
 #  error "DM_ASSERT already defined"
 #endif // defined(DM_ASSERT)
+
+#define PPK_ASSERT_ENABLED DM_WITH_DEBUG_UTILS
+#define PPK_ASSERT_DISABLE_STL // Reduce compile times
 
 #include <ppk_assert.h>
 

@@ -41,7 +41,7 @@ namespace
       return x == header.headerChecksum;
    }
 
-#if DM_DEBUG
+#if DM_WITH_DEBUG_UTILS
    bool performGlobalChecksum(const Cartridge::Header& header, const std::vector<uint8_t>& data)
    {
       // Checksum (higher byte first) produced by adding all bytes of a cartridge except for two checksum bytes and taking
@@ -62,7 +62,7 @@ namespace
 
       return header.globalChecksum[0] == high && header.globalChecksum[1] == low;
    }
-#endif // DM_DEBUG
+#endif // DM_WITH_DEBUG_UTILS
 
    bool cartHasRAM(Cartridge::Type type)
    {
@@ -158,12 +158,12 @@ std::unique_ptr<Cartridge> Cartridge::fromData(std::vector<uint8_t> data, std::s
       return nullptr;
    }
 
-#if DM_DEBUG
+#if DM_WITH_DEBUG_UTILS
    if (!performGlobalChecksum(header, data))
    {
       DM_LOG_WARNING("Cartridge failed global checksum");
    }
-#endif // DM_DEBUG
+#endif // DM_WITH_DEBUG_UTILS
 
    std::unique_ptr<Cartridge> cart(new Cartridge(std::move(data), header));
 

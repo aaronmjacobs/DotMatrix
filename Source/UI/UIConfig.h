@@ -15,10 +15,10 @@
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 
 //---- Don't implement demo windows functionality (ShowDemoWindow()/ShowStyleEditor()/ShowUserGuide() methods will be empty)
-#if !DM_DEBUG
+#if !DM_WITH_DEBUG_UTILS
 #  define IMGUI_DISABLE_DEMO_WINDOWS
 #  define IMGUI_DISABLE_DEBUG_TOOLS
-#endif // !DM_DEBUG
+#endif // !DM_WITH_DEBUG_UTILS
 
 // Avoid unnecessary reinterpret_cast calls
 #define ImTextureID unsigned int

@@ -11,7 +11,7 @@
 
 namespace
 {
-#if DM_DEBUG
+#if DM_WITH_DEBUG_UTILS
    const char* alErrorString(ALenum error)
    {
       switch (error)
@@ -53,22 +53,22 @@ namespace
          return "Invalid error";
       }
    }
-#endif // DM_DEBUG
+#endif // DM_WITH_DEBUG_UTILS
 
    void checkAlError(const char* location)
    {
-#if DM_DEBUG
+#if DM_WITH_DEBUG_UTILS
       ALenum error = alGetError();
       DM_ASSERT(error == AL_NO_ERROR, "OpenAL error while %s: %s", location, alErrorString(error));
-#endif // DM_DEBUG
+#endif // DM_WITH_DEBUG_UTILS
    }
 
    void checkAlcError(ALCdevice* device, const char* location)
    {
-#if DM_DEBUG
+#if DM_WITH_DEBUG_UTILS
       ALCenum error = alcGetError(device);
       DM_ASSERT(error == ALC_NO_ERROR, "OpenAL context error while %s: %s", location, alcErrorString(error));
-#endif // DM_DEBUG
+#endif // DM_WITH_DEBUG_UTILS
    }
 
    void deleteDevice(ALCdevice* device)

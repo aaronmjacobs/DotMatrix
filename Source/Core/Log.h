@@ -48,7 +48,7 @@ namespace Log
       }
    };
 
-#if DM_DEBUG
+#if DM_WITH_DEBUG_UTILS
 #  define DM_LOG_CERR_SEV_THRESHOLD templog::sev_debug
 #else
 // Prevent text logging in release builds
@@ -98,7 +98,7 @@ namespace Log
 // Error   : For logging errors that do not prevent the program from continuing
 // Fatal   : For logging fatal errors that prevent the program from continuing
 
-#if DM_DEBUG
+#if DM_WITH_DEBUG_UTILS
 #  define DM_LOG(log_message, log_severity) do { TEMPLOG_LOG(DotMatrix::Log::dm_logger, log_severity, templog::aud_developer) << log_message; } while (0)
 #else
 #  define DM_LOG(_log_message_, log_severity) do {} while (0)
