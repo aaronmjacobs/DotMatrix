@@ -2,33 +2,29 @@
 ; wla symbolic information for "/home/runner/work/mooneye-test-suite/mooneye-test-suite/build/acceptance/ppu/intr_2_mode0_timing_sprites.gb".
 
 [information]
-version 2
+version 3
+wlasymbol true
 
 [labels]
-01:48e0 clear_oam
-01:48ea clear_vram
-01:489f disable_ppu_safe
-01:48a5 disable_ppu_safe@wait_ly_0
-01:491a is_ppu_broken
-01:48f4 is_serial_broken
-01:4908 memcpy
-01:4911 memset
-01:48bd print_hex4
-01:48fe print_hex8
-01:4920 print_inline_string
-01:48c9 print_load_font
-01:48d5 print_newline
-01:488f print_string
-01:4897 print_string@char
-01:489a print_string@newline
+01:48f5 clear_oam
+01:48ff clear_vram
+01:48a3 disable_ppu_safe
+01:492f is_ppu_broken
+01:4909 is_serial_broken
+01:491d memcpy
+01:4926 memset
+01:48d2 print_hex4
+01:4913 print_hex8
+01:4935 print_inline_string
+01:48de print_load_font
+01:48ea print_newline
+01:48b3 print_string
+01:48bb print_string@char
+01:48be print_string@newline
 01:47f0 quit
 01:4806 quit@callback
 01:480a quit@cb_return
-01:4814 quit@wait_ly_1
-01:481a quit@wait_ly_2
-01:4820 quit@wait_ly_3
-01:4826 quit@wait_ly_4
-01:482c quit@report_result
+01:482b quit@report_result
 01:4830 quit@success
 01:483e quit@failure
 01:4846 quit@serial_dump
@@ -37,7 +33,10 @@ version 2
 01:4878 quit@halt
 01:4879 quit@halt_execution_0
 01:487b reset_screen
-01:48ae serial_send_byte
+01:488f serial_send_byte
+01:ff80 hram.serial_timeout
+01:48c3 wait_ly_with_timeout
+01:48d0 wait_ly_with_timeout@timeout
 01:4000 font
 00:0150 main
 00:0176 _testcase_data_0
@@ -259,7 +258,7 @@ version 2
 00:0bb6 prepare_sprites
 00:0bcc prepare_nop_area
 00:0bd5 setup_and_wait_mode2
-00:0bd5 setup_and_wait_mode2@wait_ly_5
+00:0bd5 setup_and_wait_mode2@wait_ly_0
 00:0bf8 test_fail
 00:0bff test_fail@quit_inline_2
 00:0c1d fail_halt
@@ -271,11 +270,13 @@ version 2
 00:c0bf RAM_USAGE_SLOT_2_BANK_0_END
 00:ff80 RAM_USAGE_SLOT_4_BANK_0_START
 00:ff81 RAM_USAGE_SLOT_4_BANK_0_END
+01:ff80 RAM_USAGE_SLOT_4_BANK_1_START
+01:ff80 RAM_USAGE_SLOT_4_BANK_1_END
 
 [definitions]
 0000000a _sizeof_clear_oam
 0000000a _sizeof_clear_vram
-0000000f _sizeof_disable_ppu_safe
+00000010 _sizeof_disable_ppu_safe
 00000006 _sizeof_is_ppu_broken
 0000000a _sizeof_is_serial_broken
 00000009 _sizeof_memcpy
@@ -288,14 +289,18 @@ version 2
 00000010 _sizeof_print_string
 0000008b _sizeof_quit
 00000014 _sizeof_reset_screen
-0000000f _sizeof_serial_send_byte
+00000014 _sizeof_serial_send_byte
+00000001 _sizeof_hram.serial_timeout
+0000000f _sizeof_wait_ly_with_timeout
 000007f0 _sizeof_font
 00000060 _sizeof_nop_area_a
 00000060 _sizeof_nop_area_b
 00000002 _sizeof_testcase_id
 000000bf _sizeof_RAM_USAGE_SLOT_2_BANK_0_START
 00003ec1 _sizeof_RAM_USAGE_SLOT_2_BANK_0_END
-00000001 _sizeof_RAM_USAGE_SLOT_4_BANK_0_START
+00000000 _sizeof_RAM_USAGE_SLOT_4_BANK_1_END
+00000000 _sizeof_RAM_USAGE_SLOT_4_BANK_0_START
+00000001 _sizeof_RAM_USAGE_SLOT_4_BANK_1_START
 00000026 _sizeof_main
 00000002 _sizeof__testcase_data_0
 00000011 _sizeof__testcase_end_0
@@ -516,3 +521,29 @@ version 2
 00000009 _sizeof_prepare_nop_area
 00000023 _sizeof_setup_and_wait_mode2
 00000025 _sizeof_test_fail
+
+[sections]
+00004000 01:0000 4000 000007f0 Font
+000047f0 01:07f0 47f0 0000008b quit
+0000487b 01:087b 487b 00000014 reset_screen
+0000488f 01:088f 488f 00000014 serial_send_byte
+000048a3 01:08a3 48a3 00000010 disable_ppu_safe
+000048b3 01:08b3 48b3 00000010 print_string
+000048c3 01:08c3 48c3 0000000f wait_ly_with_timeout
+000048d2 01:08d2 48d2 0000000c print_hex4
+000048de 01:08de 48de 0000000c print_load_font
+000048ea 01:08ea 48ea 0000000b print_newline
+000048f5 01:08f5 48f5 0000000a clear_oam
+000048ff 01:08ff 48ff 0000000a clear_vram
+00004909 01:0909 4909 0000000a is_serial_broken
+00004913 01:0913 4913 0000000a print_hex8
+0000491d 01:091d 491d 00000009 memcpy
+00004926 01:0926 4926 00000009 memset
+0000492f 01:092f 492f 00000006 is_ppu_broken
+00004935 01:0935 4935 00000006 print_inline_string
+00000100 00:0100 0100 00000004 Header
+
+[ramsections]
+00:0000 c000 000000c0 Test-WRAM
+00:0000 ff80 00000002 Test-HRAM
+01:0000 ff80 00000001 Runtime-Serial
