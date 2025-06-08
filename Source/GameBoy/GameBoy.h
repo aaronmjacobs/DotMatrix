@@ -226,7 +226,7 @@ private:
    Joypad joypad;
    uint8_t lastInputVals;
 
-   uint16_t counter = 0;
+   uint16_t counter = 0xABCC;
    bool timaOverloaded = false;
    bool ifWritten = false;
    bool timaReloadedWithTma = false;
@@ -258,7 +258,7 @@ private:
    uint8_t tma = 0x00; // Timer modulo (0xFF06)
    uint8_t tac = 0x00; // Timer control (0xFF07)
 
-   uint8_t ifr = 0x00; // Interrupt flag (0xFF0F)
+   uint8_t ifr = 0x01; // Interrupt flag (0xFF0F)
    uint8_t ie = 0x00; // Interrupt enable register (0xFFFF)
 };
 

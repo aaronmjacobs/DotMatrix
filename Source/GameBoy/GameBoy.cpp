@@ -55,6 +55,7 @@ GameBoy::GameBoy()
    , lcdController(*this)
    , lastInputVals(P1::InMask)
 {
+   updateP1();
 }
 
 // Need to define destructor in a location where the Cartridge class is defined, so a default deleter can be generated for it

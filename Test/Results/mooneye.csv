@@ -8,7 +8,7 @@
 "boot_div2-S.gb",fail
 "boot_hwio-S.gb",fail
 "boot_hwio-dmg0.gb",fail
-"boot_hwio-dmgABCmgb.gb",fail
+"boot_hwio-dmgABCmgb.gb",pass
 "boot_regs-dmg0.gb",fail
 "boot_regs-dmgABC.gb",pass
 "boot_regs-mgb.gb",fail

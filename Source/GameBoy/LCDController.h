@@ -95,14 +95,14 @@ private:
 
    struct ControlRegister
    {
-      bool lcdDisplayEnabled = false;
+      bool lcdDisplayEnabled = true;
       bool windowUseUpperTileMap = false;
       bool windowDisplayEnabled = false;
-      bool bgAndWindowUseUnsignedTileData = false;
+      bool bgAndWindowUseUnsignedTileData = true;
       bool bgUseUpperTileMap = false;
       bool useLargeSpriteSize = false;
       bool spriteDisplayEnabled = false;
-      bool bgWindowDisplayEnabled = false;
+      bool bgWindowDisplayEnabled = true;
 
       uint8_t read() const;
       void write(uint8_t value);
@@ -115,7 +115,7 @@ private:
       bool vBlankInterrupt = false;
       bool hBlankInterrupt = false;
       bool coincidenceFlag = false;
-      Mode mode = Mode::VBlank;
+      Mode mode = Mode::HBlank;
 
       uint8_t read() const;
       void write(uint8_t value);
@@ -167,10 +167,10 @@ private:
 
    uint8_t scy = 0;
    uint8_t scx = 0;
-   uint8_t ly = 144;
+   uint8_t ly = 0;
    uint8_t lyc = 0;
    uint8_t dma = 0;
-   uint8_t bgp = 0;
+   uint8_t bgp = 0xFC;
    uint8_t obp0 = 0;
    uint8_t obp1 = 0;
    uint8_t wy = 0;

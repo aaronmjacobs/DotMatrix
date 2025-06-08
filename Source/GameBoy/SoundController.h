@@ -83,6 +83,11 @@ private:
 class DutyUnit
 {
 public:
+   DutyUnit(uint8_t initialIndex)
+      : index(initialIndex)
+   {
+   }
+
    void clock()
    {
       high = kDutyMasks[index][counter];
@@ -189,6 +194,14 @@ private:
 class EnvelopeUnit
 {
 public:
+   EnvelopeUnit(bool startEnabled)
+      : period(startEnabled ? 0x03 : 0x00)
+      , volumeLoad(startEnabled ? 0x0F : 0x00)
+      , enabled(startEnabled)
+      , dacPowered(startEnabled)
+   {
+   }
+
    void clock();
 
    void trigger()
@@ -443,7 +456,7 @@ private:
 class SquareWaveChannel : public SoundChannel
 {
 public:
-   SquareWaveChannel();
+   SquareWaveChannel(bool isFirstSquareWaveChannel);
 
    bool isEnabled() const
    {
@@ -659,19 +672,19 @@ public:
    void writeNr51(uint8_t value);
 
 private:
-   uint8_t leftVolume = 0x01;
-   uint8_t rightVolume = 0x01;
+   uint8_t leftVolume = 0x08;
+   uint8_t rightVolume = 0x08;
 
    bool vinLeftEnabled = false;
    bool vinRightEnabled = false;
 
-   bool square1LeftEnabled = false;
-   bool square1RightEnabled = false;
-   bool square2LeftEnabled = false;
-   bool square2RightEnabled = false;
-   bool waveLeftEnabled = false;
+   bool square1LeftEnabled = true;
+   bool square1RightEnabled = true;
+   bool square2LeftEnabled = true;
+   bool square2RightEnabled = true;
+   bool waveLeftEnabled = true;
    bool waveRightEnabled = false;
-   bool noiseLeftEnabled = false;
+   bool noiseLeftEnabled = true;
    bool noiseRightEnabled = false;
 };
 
@@ -738,7 +751,7 @@ private:
 
    FrameSequencer frameSequencer;
    Mixer mixer;
-   bool powerEnabled = false;
+   bool powerEnabled = true;
 
    SquareWaveChannel squareWaveChannel1;
    SquareWaveChannel squareWaveChannel2;

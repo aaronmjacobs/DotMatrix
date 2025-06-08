@@ -103,9 +103,11 @@ void LFSRUnit::clock()
    }
 }
 
-SquareWaveChannel::SquareWaveChannel()
+SquareWaveChannel::SquareWaveChannel(bool isFirstSquareWaveChannel)
    : timer(*this)
+   , dutyUnit(isFirstSquareWaveChannel ? 2 : 0)
    , lengthUnit(*this, 64)
+   , envelopeUnit(isFirstSquareWaveChannel)
    , sweepUnit(*this)
 {
 }
@@ -325,6 +327,7 @@ void WaveChannel::write(uint16_t address, uint8_t value)
 NoiseChannel::NoiseChannel()
    : timer(*this)
    , lengthUnit(*this, 64)
+   , envelopeUnit(false)
 {
 }
 
@@ -525,6 +528,8 @@ void Mixer::writeNr51(uint8_t value)
 
 SoundController::SoundController()
    : frameSequencer(*this)
+   , squareWaveChannel1(true)
+   , squareWaveChannel2(false)
 {
 }
 
